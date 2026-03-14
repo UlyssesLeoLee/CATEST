@@ -5,7 +5,7 @@
 ![Next.js](https://img.shields.io/badge/frontend-Next.js-black.svg)
 ![Agent](https://img.shields.io/badge/orchestrator-LangGraph-green.svg)
 
-**CATEST** 是一款专为**代码审校 (Code Review)** 和**技术文档翻译**设计的分布式、Agent驱动的 RAG (Retrieval-Augmented Generation) 平台。它通过模块化的知识检索体系，将传统的静态检测升级为具备上下文感知能力的智能助手。
+**CATEST** 是一款专为**代码审校 (Code Review)** 和**技术文档翻译**设计的分布式、Agent驱动的 RAG (Retrieval-Augmented Generation) 平台。它是通过模块化的知识检索体系，将传统的静态检测升级为具备上下文感知能力的智能助手。
 
 ---
 
