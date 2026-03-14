@@ -1,0 +1,7 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running `E:\DevCache\cargo\target\debug\catest-embedding.exe`
+[2m2026-03-14T19:13:09.765592Z[0m [32m INFO[0m [2mcatest_embedding[0m[2m:[0m Starting AI Ingestion Worker (Qdrant + Neo4j)
+[2m2026-03-14T19:13:09.765699Z[0m [32m INFO[0m [2mcatest_embedding[0m[2m:[0m Embedding model: intfloat/multilingual-e5-small (dim=384), Reranker: BAAI/bge-reranker-v2-m3
+Failed to obtain server version. Unable to check client-server compatibility. Set check_compatibility=false to skip version check.
+Error: Error in the response: Unknown error h2 protocol error: http2 error MetadataMap { headers: {} }
+error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-embedding.exe` (exit code: 1)

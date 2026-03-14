@@ -1,0 +1,151 @@
+   Compiling embedding v0.1.0 (E:\CATEST\crates\embedding)
+warning: unused import: `uuid::Uuid`
+ --> crates\parser\src\lib.rs:3:5
+  |
+3 | use uuid::Uuid;
+  |     ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `sqlx::PgPool`
+ --> crates\parser\src\lib.rs:4:5
+  |
+4 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: field `language` is never read
+ --> crates\parser\src\lib.rs:8:5
+  |
+6 | pub struct Segmenter {
+  |            --------- field in this struct
+7 |     parser: Parser,
+8 |     language: String,
+  |     ^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: unused import: `App`
+ --> crates\gateway\src\main.rs:1:22
+  |
+1 | use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+  |                      ^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `parser` (lib) generated 3 warnings (run `cargo fix --lib -p parser` to apply 2 suggestions)
+warning: `gateway` (bin "gateway" test) generated 1 warning (run `cargo fix --bin "gateway" --tests` to apply 1 suggestion)
+warning: `parser` (lib test) generated 3 warnings (3 duplicates)
+warning: unused import: `Sha256`
+ --> crates\parser\src\main.rs:4:12
+  |
+4 | use sha2::{Sha256, Digest};
+  |            ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Digest`
+ --> crates\parser\src\main.rs:4:20
+  |
+4 | use sha2::{Sha256, Digest};
+  |                    ^^^^^^
+
+warning: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `parser` (bin "parser" test) generated 2 warnings (run `cargo fix --bin "parser" --tests` to apply 1 suggestion)
+warning: `ingestion` (bin "ingestion" test) generated 1 warning (run `cargo fix --bin "ingestion" --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.87s
+     Running unittests src\lib.rs (E:\DevCache\cargo\target\debug\deps\common-00714ed5ed739a87.exe)
+
+running 4 tests
+test models::tests::test_file_serialization ... ok
+test models::tests::test_project_serialization ... ok
+test models::tests::test_tenant_serialization ... ok
+test models::tests::test_repository_serialization ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (E:\DevCache\cargo\target\debug\deps\embedding-106da58d0dacd92c.exe)
+
+running 1 test
+test tests::test_payload_conversion ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (E:\DevCache\cargo\target\debug\deps\embedding-f00d15339c2fd899.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (E:\DevCache\cargo\target\debug\deps\gateway-9feb4568d0fe2029.exe)
+
+running 1 test
+test tests::test_healthz_get ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (E:\DevCache\cargo\target\debug\deps\ingestion-bc058d0725772148.exe)
+
+running 1 test
+test tests::test_scan_and_index_files ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\main.rs (E:\DevCache\cargo\target\debug\deps\ingestion-92712150a1716c33.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (E:\DevCache\cargo\target\debug\deps\parser-0e797d4d17757baf.exe)
+
+running 2 tests
+test tests::test_segmenter_unsupported_language ... ok
+test tests::test_segmenter_rust ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (E:\DevCache\cargo\target\debug\deps\parser-2bc88b15a7dbaa1b.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (E:\DevCache\cargo\target\debug\deps\review-3ef452fd603c6669.exe)
+
+running 2 tests
+test tests::test_create_review_task ... ok
+test tests::test_healthz_get ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests common
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests embedding
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests ingestion
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests parser
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

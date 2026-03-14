@@ -1,0 +1,40 @@
+   Compiling tree-sitter v0.22.6
+   Compiling tree-sitter-rust v0.21.2
+   Compiling tree-sitter-java v0.21.0
+   Compiling catest-parser v0.1.0 (E:\CATEST\crates\parser)
+warning: unused import: `uuid::Uuid`
+ --> crates\parser\src\lib.rs:3:5
+  |
+3 | use uuid::Uuid;
+  |     ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `sqlx::PgPool`
+ --> crates\parser\src\lib.rs:4:5
+  |
+4 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: field `language` is never read
+ --> crates\parser\src\lib.rs:8:5
+  |
+6 | pub struct Segmenter {
+  |            --------- field in this struct
+7 |     parser: Parser,
+8 |     language: String,
+  |     ^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: `catest-parser` (lib) generated 3 warnings (run `cargo fix --lib -p catest-parser` to apply 2 suggestions)
+error[E0432]: unresolved import `parser`
+ --> crates\parser\src\main.rs:2:5
+  |
+2 | use parser::Segmenter;
+  |     ^^^^^^ use of unresolved module or unlinked crate `parser`
+  |
+  = help: if you wanted to use a crate named `parser`, use `cargo add parser` to add it to your `Cargo.toml`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `catest-parser` (bin "catest-parser") due to 1 previous error

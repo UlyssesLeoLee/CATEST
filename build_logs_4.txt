@@ -1,0 +1,69 @@
+warning: unused import: `uuid::Uuid`
+ --> crates\parser\src\lib.rs:3:5
+  |
+3 | use uuid::Uuid;
+  |     ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `sqlx::PgPool`
+ --> crates\parser\src\lib.rs:4:5
+  |
+4 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: field `language` is never read
+ --> crates\parser\src\lib.rs:8:5
+  |
+6 | pub struct Segmenter {
+  |            --------- field in this struct
+7 |     parser: Parser,
+8 |     language: String,
+  |     ^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: unused import: `App`
+ --> crates\gateway\src\main.rs:1:22
+  |
+1 | use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+  |                      ^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `parser` (lib) generated 3 warnings (run `cargo fix --lib -p parser` to apply 2 suggestions)
+warning: `gateway` (bin "gateway") generated 1 warning (run `cargo fix --bin "gateway"` to apply 1 suggestion)
+warning: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+    Checking parser v0.1.0 (E:\CATEST\crates\parser)
+warning: `ingestion` (bin "ingestion") generated 1 warning (run `cargo fix --bin "ingestion"` to apply 1 suggestion)
+error[E0507]: cannot move out of `seg.symbol_name` which is behind a shared reference
+  --> crates\parser\src\main.rs:44:23
+   |
+44 |                 .bind(seg.symbol_name)
+   |                       ^^^^^^^^^^^^^^^ move occurs because `seg.symbol_name` has type `Option<std::string::String>`, which does not implement the `Copy` trait
+   |
+help: consider cloning the value if the performance cost is acceptable
+   |
+44 |                 .bind(seg.symbol_name.clone())
+   |                                      ++++++++
+
+error[E0507]: cannot move out of `seg.code_text` which is behind a shared reference
+  --> crates\parser\src\main.rs:45:23
+   |
+45 |                 .bind(seg.code_text)
+   |                       ^^^^^^^^^^^^^ move occurs because `seg.code_text` has type `std::string::String`, which does not implement the `Copy` trait
+   |
+help: consider cloning the value if the performance cost is acceptable
+   |
+45 |                 .bind(seg.code_text.clone())
+   |                                    ++++++++
+
+For more information about this error, try `rustc --explain E0507`.
+error: could not compile `parser` (bin "parser") due to 2 previous errors

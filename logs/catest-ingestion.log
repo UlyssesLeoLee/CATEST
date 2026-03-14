@@ -1,0 +1,24 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+warning: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `catest-ingestion` (bin "catest-ingestion") generated 1 warning (run `cargo fix --bin "catest-ingestion"` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.70s
+     Running `E:\DevCache\cargo\target\debug\catest-ingestion.exe`
+[2m2026-03-14T19:21:40.981543Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-14T19:21:41.021041Z[0m [33m WARN[0m [2mcatest_ingestion[0m[2m:[0m DEMO_PROJECT_ID not set, ingestion might fail
+[2m2026-03-14T19:21:41.021123Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "E:\\Temp\\catest-8ced8029-a7bd-45de-a5e8-00952d3a57f1"
+Error: error returned from database: there is no unique or exclusion constraint matching the ON CONFLICT specification
+
+Caused by:
+    there is no unique or exclusion constraint matching the ON CONFLICT specification
+error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-ingestion.exe` (exit code: 1)

@@ -1,0 +1,32 @@
+    Blocking waiting for file lock on build directory
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.99s
+     Running `E:\DevCache\cargo\target\debug\catest-review.exe`
+[2m2026-03-14T19:11:52.740509Z[0m [32m INFO[0m [2mcatest_review[0m[2m:[0m Starting Review Service on port 33081
+[2m2026-03-14T19:11:52.772998Z[0m [32m INFO[0m [2mactix_server::builder[0m[2m:[0m starting 24 workers
+[2m2026-03-14T19:11:52.773058Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m Actix runtime found; starting in Actix runtime
+[2m2026-03-14T19:11:52.773081Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m starting service: "actix-web-service-0.0.0.0:33081", workers: 24, listening on: 0.0.0.0:33081
+[2m2026-03-14T19:17:56.063690Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m SIGINT received; starting forced shutdown
+[2m2026-03-14T19:17:56.063919Z[0m [32m INFO[0m [2mactix_server::accept[0m[2m:[0m accept thread stopped
+[2m2026-03-14T19:17:56.064008Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064370Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064385Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064410Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064417Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064417Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064390Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064423Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064459Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064473Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064560Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064495Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064726Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064464Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064592Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064482Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064837Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.065016Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.065028Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.065041Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.065022Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.065014Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.065014Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker

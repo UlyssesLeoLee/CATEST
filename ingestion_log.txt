@@ -1,0 +1,19 @@
+warning: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `catest-ingestion` (bin "catest-ingestion") generated 1 warning (run `cargo fix --bin "catest-ingestion"` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.25s
+     Running `E:\DevCache\cargo\target\debug\catest-ingestion.exe`
+[2m2026-03-14T19:13:13.370601Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-14T19:13:13.398067Z[0m [33m WARN[0m [2mcatest_ingestion[0m[2m:[0m DEMO_PROJECT_ID not set, ingestion might fail
+[2m2026-03-14T19:13:13.398124Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "E:\\Temp\\catest-870765bc-7260-4a8b-a0c3-7bf9cba25a4b"
+Error: error returned from database: relation "files" does not exist
+
+Caused by:
+    relation "files" does not exist
+error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-ingestion.exe` (exit code: 1)

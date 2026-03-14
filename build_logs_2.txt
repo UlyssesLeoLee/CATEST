@@ -1,0 +1,118 @@
+warning: unused import: `uuid::Uuid`
+ --> crates\parser\src\lib.rs:3:5
+  |
+3 | use uuid::Uuid;
+  |     ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `sqlx::PgPool`
+ --> crates\parser\src\lib.rs:4:5
+  |
+4 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: field `language` is never read
+ --> crates\parser\src\lib.rs:8:5
+  |
+6 | pub struct Segmenter {
+  |            --------- field in this struct
+7 |     parser: Parser,
+8 |     language: String,
+  |     ^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+    Checking review v0.1.0 (E:\CATEST\crates\review)
+warning: unused import: `App`
+ --> crates\gateway\src\main.rs:1:22
+  |
+1 | use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+  |                      ^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `parser` (lib) generated 3 warnings (run `cargo fix --lib -p parser` to apply 2 suggestions)
+warning: `gateway` (bin "gateway") generated 1 warning (run `cargo fix --bin "gateway"` to apply 1 suggestion)
+    Checking ingestion v0.1.0 (E:\CATEST\crates\ingestion)
+    Checking parser v0.1.0 (E:\CATEST\crates\parser)
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chrono`
+  --> crates\ingestion\src\main.rs:44:22
+   |
+44 |         occurred_at: chrono::Utc::now(),
+   |                      ^^^^^^ use of unresolved module or unlinked crate `chrono`
+   |
+   = help: if you wanted to use a crate named `chrono`, use `cargo add chrono` to add it to your `Cargo.toml`
+help: consider importing this struct
+   |
+1  + use sqlx::types::chrono::Utc;
+   |
+help: if you import `Utc`, refer to it directly
+   |
+44 -         occurred_at: chrono::Utc::now(),
+44 +         occurred_at: Utc::now(),
+   |
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chrono`
+  --> crates\parser\src\main.rs:59:30
+   |
+59 |                 occurred_at: chrono::Utc::now(),
+   |                              ^^^^^^ use of unresolved module or unlinked crate `chrono`
+   |
+   = help: if you wanted to use a crate named `chrono`, use `cargo add chrono` to add it to your `Cargo.toml`
+help: consider importing this struct
+   |
+1  + use sqlx::types::chrono::Utc;
+   |
+help: if you import `Utc`, refer to it directly
+   |
+59 -                 occurred_at: chrono::Utc::now(),
+59 +                 occurred_at: Utc::now(),
+   |
+
+warning: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Sha256`
+ --> crates\parser\src\main.rs:4:12
+  |
+4 | use sha2::{Sha256, Digest};
+  |            ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chrono`
+  --> crates\review\src\main.rs:33:22
+   |
+33 |         occurred_at: chrono::Utc::now(),
+   |                      ^^^^^^ use of unresolved module or unlinked crate `chrono`
+   |
+   = help: if you wanted to use a crate named `chrono`, use `cargo add chrono` to add it to your `Cargo.toml`
+help: consider importing this struct
+   |
+1  + use sqlx::types::chrono::Utc;
+   |
+help: if you import `Utc`, refer to it directly
+   |
+33 -         occurred_at: chrono::Utc::now(),
+33 +         occurred_at: Utc::now(),
+   |
+
+For more information about this error, try `rustc --explain E0433`.
+warning: unused import: `Digest`
+ --> crates\parser\src\main.rs:4:20
+  |
+4 | use sha2::{Sha256, Digest};
+  |                    ^^^^^^
+
+warning: `ingestion` (bin "ingestion") generated 1 warning
+error: could not compile `ingestion` (bin "ingestion") due to 1 previous error; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `parser` (bin "parser") generated 2 warnings
+error: could not compile `parser` (bin "parser") due to 1 previous error; 2 warnings emitted
+error: could not compile `review` (bin "review") due to 1 previous error

@@ -1,0 +1,28 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.37s
+     Running `E:\DevCache\cargo\target\debug\catest-gateway.exe`
+[2m2026-03-14T19:11:26.323890Z[0m [32m INFO[0m [2mcatest_gateway[0m[2m:[0m Starting Gateway on port 33080
+Failed to obtain server version. Unable to check client-server compatibility. Set check_compatibility=false to skip version check.
+[2m2026-03-14T19:11:26.382566Z[0m [32m INFO[0m [2mneo4rs::pool[0m[2m:[0m creating connection pool with max size 16
+[2m2026-03-14T19:11:26.383168Z[0m [32m INFO[0m [2mactix_server::builder[0m[2m:[0m starting 24 workers
+[2m2026-03-14T19:11:26.383264Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m Actix runtime found; starting in Actix runtime
+[2m2026-03-14T19:11:26.383306Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m starting service: "actix-web-service-0.0.0.0:33080", workers: 24, listening on: 0.0.0.0:33080
+[2m2026-03-14T19:17:56.063167Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m SIGINT received; starting forced shutdown
+[2m2026-03-14T19:17:56.063651Z[0m [32m INFO[0m [2mactix_server::accept[0m[2m:[0m accept thread stopped
+[2m2026-03-14T19:17:56.063682Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.063689Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.063809Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.063942Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.063636Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064050Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064072Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064088Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064090Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064206Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064254Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064278Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064220Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064311Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064363Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064306Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064320Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker
+[2m2026-03-14T19:17:56.064326Z[0m [32m INFO[0m [2mactix_server::worker[0m[2m:[0m shutting down idle worker

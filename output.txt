@@ -1,0 +1,88 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running `E:\DevCache\cargo\target\debug\gateway.exe`
+[2m2026-03-14T18:56:18.577311Z[0m [32m INFO[0m [2mgateway[0m[2m:[0m Starting Gateway on port 33080
+Failed to obtain server version. Unable to check client-server compatibility. Set check_compatibility=false to skip version check.
+[2m2026-03-14T18:56:18.628522Z[0m [32m INFO[0m [2mneo4rs::pool[0m[2m:[0m creating connection pool with max size 16
+[2m2026-03-14T18:56:18.628892Z[0m [32m INFO[0m [2mactix_server::builder[0m[2m:[0m starting 24 workers
+[2m2026-03-14T18:56:18.628954Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m Actix runtime found; starting in Actix runtime
+[2m2026-03-14T18:56:18.628976Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m starting service: "actix-web-service-0.0.0.0:33080", workers: 24, listening on: 0.0.0.0:33080
+%3|1773514581.664|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2046ms in state CONNECT)
+[2m2026-03-14T18:56:21.664957Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2046ms in state CONNECT)
+[2m2026-03-14T18:56:21.665070Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:21.665088Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:21.665101Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514585.679|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2031ms in state CONNECT)
+[2m2026-03-14T18:56:25.679557Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2031ms in state CONNECT)
+[2m2026-03-14T18:56:25.679613Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:25.679645Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:25.679693Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514589.702|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2016ms in state CONNECT, 1 identical error(s) suppressed)
+[2m2026-03-14T18:56:29.702774Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2016ms in state CONNECT, 1 identical error(s) suppressed)
+[2m2026-03-14T18:56:29.702816Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:29.702912Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:29.702930Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514593.764|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2033ms in state CONNECT)
+[2m2026-03-14T18:56:33.764879Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2033ms in state CONNECT)
+[2m2026-03-14T18:56:33.764940Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:33.764957Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:33.764978Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:37.795491Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:37.795593Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514601.794|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2025ms in state CONNECT)
+[2m2026-03-14T18:56:41.794751Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2025ms in state CONNECT)
+[2m2026-03-14T18:56:41.794812Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:41.794830Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:41.794840Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514605.832|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2017ms in state CONNECT)
+[2m2026-03-14T18:56:45.832600Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2017ms in state CONNECT)
+[2m2026-03-14T18:56:45.832685Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:45.832698Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:45.832706Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:49.882317Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:49.882400Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514613.910|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2028ms in state CONNECT)
+[2m2026-03-14T18:56:53.911078Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2028ms in state CONNECT)
+[2m2026-03-14T18:56:53.911183Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:53.911202Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:53.911216Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514617.948|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2030ms in state CONNECT)
+[2m2026-03-14T18:56:57.948987Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2030ms in state CONNECT)
+[2m2026-03-14T18:56:57.949026Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:56:57.949040Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:56:57.949095Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514621.969|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2028ms in state CONNECT, 1 identical error(s) suppressed)
+[2m2026-03-14T18:57:01.969839Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2028ms in state CONNECT, 1 identical error(s) suppressed)
+[2m2026-03-14T18:57:01.969913Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:01.969948Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:01.969972Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514626.044|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2046ms in state CONNECT)
+[2m2026-03-14T18:57:06.044754Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2046ms in state CONNECT)
+[2m2026-03-14T18:57:06.044805Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:06.044820Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:06.044829Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:10.051749Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:10.051796Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:14.114227Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:14.114322Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514638.139|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2021ms in state CONNECT)
+[2m2026-03-14T18:57:18.140138Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2021ms in state CONNECT)
+[2m2026-03-14T18:57:18.140248Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:18.140280Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:18.140308Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:22.164753Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:22.164795Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:26.183101Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:26.183163Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%3|1773514650.219|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2037ms in state CONNECT)
+[2m2026-03-14T18:57:30.219945Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv6#[::1]:9092 failed: Unknown error (after 2037ms in state CONNECT)
+[2m2026-03-14T18:57:30.219999Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:30.220013Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-14T18:57:30.220073Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+%6|1773514651.728|FAIL|rdkafka#producer-1| [thrd:localhost:39092/bootstrap]: localhost:39092/bootstrap: Disconnected: connection closed by peer: POLLHUP (after 1ms in state APIVERSION_QUERY)
+%6|1773514652.033|FAIL|rdkafka#producer-1| [thrd:localhost:39092/bootstrap]: localhost:39092/bootstrap: Disconnected: connection closed by peer: POLLHUP (after 3ms in state APIVERSION_QUERY, 1 identical error(s) suppressed)
+%3|1773514654.249|FAIL|rdkafka#producer-1| [thrd:localhost:9092/1]: localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2023ms in state CONNECT)
+[2m2026-03-14T18:57:34.250271Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): localhost:9092/1: Connect to ipv4#127.0.0.1:9092 failed: Unknown error (after 2023ms in state CONNECT)
+[2m2026-03-14T18:57:34.250313Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-14T18:57:34.250328Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 2/2 brokers are down
+[2m2026-03-14T18:57:34.250338Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\gateway.exe` (exit code: 1)

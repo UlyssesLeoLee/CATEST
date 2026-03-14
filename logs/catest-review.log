@@ -1,0 +1,9 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.55s
+     Running `E:\DevCache\cargo\target\debug\catest-review.exe`
+[2m2026-03-14T19:21:40.580701Z[0m [32m INFO[0m [2mcatest_review[0m[2m:[0m Starting Review Service on port 33081
+[2m2026-03-14T19:21:40.635856Z[0m [32m INFO[0m [2mactix_server::builder[0m[2m:[0m starting 24 workers
+[2m2026-03-14T19:21:40.636019Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m Actix runtime found; starting in Actix runtime
+[2m2026-03-14T19:21:40.636071Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m starting service: "actix-web-service-0.0.0.0:33081", workers: 24, listening on: 0.0.0.0:33081

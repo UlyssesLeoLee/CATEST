@@ -1,0 +1,57 @@
+    Checking stream-events v0.1.0 (E:\CATEST\crates\stream-events)
+warning: unused import: `App`
+ --> crates\gateway\src\main.rs:1:22
+  |
+1 | use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+  |                      ^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `gateway` (bin "gateway") generated 1 warning (run `cargo fix --bin "gateway"` to apply 1 suggestion)
+error[E0432]: unresolved import `futures`
+ --> crates\stream-events\src\consumer.rs:6:5
+  |
+6 | use futures::StreamExt;
+  |     ^^^^^^^ use of unresolved module or unlinked crate `futures`
+  |
+  = help: if you wanted to use a crate named `futures`, use `cargo add futures` to add it to your `Cargo.toml`
+
+warning: unused import: `StreamConsumer`
+ --> crates\stream-events\src\producer.rs:4:25
+  |
+4 | use rdkafka::consumer::{StreamConsumer, Consumer};
+  |                         ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+error[E0599]: no method named `next` found for struct `MessageStream` in the current scope
+   --> crates\stream-events\src\consumer.rs:39:42
+    |
+39  |         while let Some(message) = stream.next().await {
+    |                                          ^^^^
+    |
+   ::: E:\DevCache\cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-util-0.3.32\src\stream\stream\mod.rs:273:8
+    |
+273 |     fn next(&mut self) -> Next<'_, Self>
+    |        ---- the method is available for `MessageStream<'_, DefaultConsumerContext>` here
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `StreamExt` which provides `next` is implemented but not in scope; perhaps you want to import it
+    |
+1   + use futures_util::stream::stream::StreamExt;
+    |
+help: there is a method `try_next` with a similar name
+    |
+39  |         while let Some(message) = stream.try_next().await {
+    |                                          ++++
+
+warning: unused import: `Consumer`
+ --> crates\stream-events\src\producer.rs:4:41
+  |
+4 | use rdkafka::consumer::{StreamConsumer, Consumer};
+  |                                         ^^^^^^^^
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+warning: `stream-events` (lib) generated 2 warnings
+error: could not compile `stream-events` (lib) due to 2 previous errors; 2 warnings emitted

@@ -1,0 +1,20 @@
+   Compiling catest-ingestion v0.1.0 (E:\CATEST\crates\ingestion)
+error[E0432]: unresolved import `ingestion`
+ --> crates\ingestion\src\main.rs:2:5
+  |
+2 | use ingestion::{clone_repo, scan_and_index_files};
+  |     ^^^^^^^^^ use of unresolved module or unlinked crate `ingestion`
+  |
+  = help: if you wanted to use a crate named `ingestion`, use `cargo add ingestion` to add it to your `Cargo.toml`
+
+warning: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+For more information about this error, try `rustc --explain E0432`.
+warning: `catest-ingestion` (bin "catest-ingestion") generated 1 warning
+error: could not compile `catest-ingestion` (bin "catest-ingestion") due to 1 previous error; 1 warning emitted

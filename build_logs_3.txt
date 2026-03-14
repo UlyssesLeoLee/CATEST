@@ -1,0 +1,83 @@
+warning: unused import: `uuid::Uuid`
+ --> crates\parser\src\lib.rs:3:5
+  |
+3 | use uuid::Uuid;
+  |     ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `sqlx::PgPool`
+ --> crates\parser\src\lib.rs:4:5
+  |
+4 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+
+warning: field `language` is never read
+ --> crates\parser\src\lib.rs:8:5
+  |
+6 | pub struct Segmenter {
+  |            --------- field in this struct
+7 |     parser: Parser,
+8 |     language: String,
+  |     ^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: unused import: `App`
+ --> crates\gateway\src\main.rs:1:22
+  |
+1 | use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+  |                      ^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: `parser` (lib) generated 3 warnings (run `cargo fix --lib -p parser` to apply 2 suggestions)
+warning: `gateway` (bin "gateway") generated 1 warning (run `cargo fix --bin "gateway"` to apply 1 suggestion)
+warning: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+    Checking parser v0.1.0 (E:\CATEST\crates\parser)
+warning: `ingestion` (bin "ingestion") generated 1 warning (run `cargo fix --bin "ingestion"` to apply 1 suggestion)
+warning: unused import: `Sha256`
+ --> crates\parser\src\main.rs:4:12
+  |
+4 | use sha2::{Sha256, Digest};
+  |            ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Digest`
+ --> crates\parser\src\main.rs:4:20
+  |
+4 | use sha2::{Sha256, Digest};
+  |                    ^^^^^^
+
+error[E0382]: borrow of moved value: `segments`
+   --> crates\parser\src\main.rs:57:32
+    |
+38  |             let segments = segmenter.segment_code(&file.content_text)?;
+    |                 -------- move occurs because `segments` has type `Vec<CodeSegment>`, which does not implement the `Copy` trait
+39  |             for seg in segments {
+    |                        -------- `segments` moved due to this implicit call to `.into_iter()`
+...
+57  |                 segment_count: segments.len(),
+    |                                ^^^^^^^^ value borrowed here after move
+    |
+note: `into_iter` takes ownership of the receiver `self`, which moves `segments`
+   --> E:\DevCache\rustup\toolchains\1.89.0-x86_64-pc-windows-msvc\lib/rustlib/src/rust\library\core\src\iter\traits\collect.rs:310:18
+    |
+310 |     fn into_iter(self) -> Self::IntoIter;
+    |                  ^^^^
+help: consider iterating over a slice of the `Vec<CodeSegment>`'s content to avoid moving into the `for` loop
+    |
+39  |             for seg in &segments {
+    |                        +
+
+For more information about this error, try `rustc --explain E0382`.
+warning: `parser` (bin "parser") generated 2 warnings
+error: could not compile `parser` (bin "parser") due to 1 previous error; 2 warnings emitted

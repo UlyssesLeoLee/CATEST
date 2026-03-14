@@ -1,0 +1,20 @@
+[package]
+name = "catest-ingestion"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+sqlx = { workspace = true }
+git2 = "0.19"
+walkdir = { workspace = true }
+sha2 = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+stream-events = { path = "../stream-events" }
+
+[dev-dependencies]
+tempfile = "3.10"

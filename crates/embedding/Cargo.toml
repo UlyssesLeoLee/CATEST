@@ -1,0 +1,17 @@
+[package]
+name = "catest-embedding"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+qdrant-client = { workspace = true }
+sqlx = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+stream-events = { path = "../stream-events" }
+neo4rs = { workspace = true }

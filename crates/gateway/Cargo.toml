@@ -1,0 +1,20 @@
+[package]
+name = "catest-gateway"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+actix-web = { workspace = true }
+tower-http = { version = "0.5", features = ["cors"] }
+sqlx = { workspace = true }
+stream-events = { path = "../stream-events" }
+serde = { workspace = true }
+uuid = { workspace = true }
+qdrant-client.workspace = true
+neo4rs.workspace = true
+serde_json.workspace = true
+chrono.workspace = true

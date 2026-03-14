@@ -1,0 +1,17 @@
+[package]
+name = "catest-review"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+sqlx = { workspace = true }
+actix-web = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+stream-events = { path = "../stream-events" }
