@@ -65,7 +65,7 @@ export default function RagDashboard() {
       <header className="max-w-6xl mx-auto mb-8 flex justify-between items-end border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Database className="text-indigo-400" />
+            <img src="/icon.png" alt="CATEST" className="w-8 h-8 object-contain" />
             CATEST RAG Ingestion Pipeline
           </h1>
           <p className="text-slate-400 mt-2">

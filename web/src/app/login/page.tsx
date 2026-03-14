@@ -78,8 +78,13 @@ export default function LoginPage() {
               <ArrowLeft size={20} />
             </button>
           )}
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-500/10 text-indigo-400 mb-6 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-            <Code2 size={32} />
+          <div className="relative inline-flex items-center justify-center w-20 h-20 mb-6 group">
+            <div className="absolute inset-0 bg-indigo-500/20 rounded-3xl blur-xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
+            <img 
+              src="/icon.png" 
+              alt="CATEST" 
+              className="relative w-16 h-16 object-contain filter drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+            />
           </div>
           <h1 className="text-2xl font-bold text-slate-100 mb-2">CATEST</h1>
           <p className="text-slate-400 text-sm">

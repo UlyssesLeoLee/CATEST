@@ -102,7 +102,7 @@ export default function AccountPage() {
       {/* Top Bar */}
       <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur border-b border-slate-800 px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2 font-semibold text-lg">
-          <div className="w-6 h-6 rounded bg-indigo-500/20 text-indigo-400 grid place-items-center border border-indigo-500/30 text-xs font-bold">C</div>
+          <img src="/icon.png" alt="CATEST" className="w-6 h-6 object-contain" />
           CATEST
         </div>
         <div className="flex items-center gap-6 text-sm">

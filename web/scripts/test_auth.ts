@@ -1,10 +1,10 @@
-import { registerUser, loginUser } from '../src/app/actions/auth';
+import { startRegistration, loginUser } from '../src/app/actions/auth';
 import dotenv from 'dotenv';
 dotenv.config();
 
 async function testAuth() {
   console.log('Testing Registration...');
-  const regRes = await registerUser('test2@catest.app', 'securepassword');
+  const regRes = await startRegistration('test2@catest.app', 'securepassword');
   console.log('Register Result:', regRes);
 
   console.log('Testing Login...');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Code2,
@@ -12,104 +12,209 @@ import {
   LogOut,
   ChevronRight,
   MessageSquareDiff,
-  Bot
+  Bot,
+  Plus,
+  FolderOpen,
+  FilePlus,
+  Loader2,
+  Upload,
+  ArrowRight,
+  Zap,
+  Monitor
 } from 'lucide-react';
 import { logout } from '../actions/auth';
 import { runAgentReview } from '../actions/agent';
+import { createWorkspace, getWorkspaceData, updateSegmentTranslation, confirmAndSyncWorkspace } from '../actions/workspace';
 
-// Mock Data for the MVP
-const MOCK_FILES = [
-  { id: '1', name: 'auth.service.ts', status: 'pending', errors: 2 },
-  { id: '2', name: 'user.controller.ts', status: 'passed', errors: 0 },
-  { id: '3', name: 'database.config.ts', status: 'pending', errors: 1 },
-];
+type FileItem = {
+  id: string;
+  name: string;
+  content?: string;
+  status: string;
+  errors?: number;
+};
 
-const MOCK_SEGMENTS = [
-  {
-    id: 's1',
-    lineInfo: 'L12-L18',
-    content: 'async function verifyToken(token: string) {\n  const decoded = jwt.decode(token);\n  // Missing signature verification!\n  return decoded;\n}',
-    severity: 'error',
-    message: 'JWT token decoded without signature verification. Use jwt.verify() instead.'
-  },
-  {
-    id: 's2',
-    lineInfo: 'L45-L50',
-    content: 'function hashPassword(password: string) {\n  return crypto.createHash("md5").update(password).digest("hex");\n}',
-    severity: 'warning',
-    message: 'MD5 is deprecated and insecure for password hashing. Use bcrypt or argon2.'
-  }
-];
+type CodeSegment = {
+  id: string;
+  file_id?: string;
+  source: string;
+  target: string;
+  lineInfo: string;
+  status: string; // 'pending', 'confirmed', 'synced'
+  severity?: 'error' | 'warning' | 'info';
+};
 
 export default function ReviewDashboard() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState('');
-  const [activeFile, setActiveFile] = useState(MOCK_FILES[0].id);
-  const [activeSegment, setActiveSegment] = useState(MOCK_SEGMENTS[0].id);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [segments, setSegments] = useState<CodeSegment[]>([]);
+  const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
+  
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isAgentRunning, setIsAgentRunning] = useState(false);
   const [execLogs, setExecLogs] = useState<string[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Basic Auth Check — read email once on mount, no further re-renders
     const userData = localStorage.getItem('user');
     if (!userData) {
       router.push('/login');
-    } else {
-      const parsed = JSON.parse(userData) as { email?: string };
-      if (parsed.email) setUserEmail(parsed.email);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const parsed = JSON.parse(userData) as { email?: string };
+    if (parsed.email) setUserEmail(parsed.email);
+
+    // Try to load existing workspace from localStorage
+    const savedWsId = localStorage.getItem('active_workspace_id');
+    if (savedWsId) {
+      void loadWorkspace(savedWsId);
+    }
+  }, [router]);
+
+  const loadWorkspace = async (wsId: string) => {
+    const data = await getWorkspaceData(wsId);
+    if (data && data.files) {
+      setWorkspaceId(wsId);
+      localStorage.setItem('active_workspace_id', wsId);
+      
+      const mappedFiles: FileItem[] = data.files.map((f: any) => ({
+        id: f.id,
+        name: f.path,
+        status: f.status
+      }));
+      setFiles(mappedFiles);
+
+      // Load segments for the first file if none active
+      if (mappedFiles.length > 0) {
+        const firstFileId = mappedFiles[0].id;
+        setActiveFileId(firstFileId);
+        const fileSegments = data.segments
+          .filter((s: any) => s.file_id === firstFileId)
+          .map((s: any) => ({
+            id: s.id,
+            file_id: s.file_id,
+            source: s.source_text,
+            target: s.target_text || '',
+            lineInfo: 'L', // Placeholder
+            status: s.status,
+            severity: 'info' as const
+          }));
+        
+        // Recover line numbers
+        const finalSegments = fileSegments.map((s, i) => ({
+          ...s,
+          lineInfo: `${i + 1}`
+        }));
+
+        setSegments(finalSegments);
+        if (finalSegments.length > 0) setActiveSegmentId(finalSegments[0].id);
+      }
+    }
+  };
+
+  const handleFiles = async (selectedFiles: FileList | null) => {
+    if (!selectedFiles) return;
+    
+    const filesToCreate: { path: string; content: string }[] = [];
+    for (let i = 0; i < selectedFiles.length; i++) {
+        const f = selectedFiles[i];
+        if (f.size > 2 * 1024 * 1024) continue; // Skip large files
+        const content = await f.text();
+        filesToCreate.push({
+            path: (f as any).webkitRelativePath || f.name,
+            content
+        });
+    }
+    
+    if (filesToCreate.length > 0) {
+      const res = await createWorkspace(filesToCreate);
+      if (res.success && res.workspaceId) {
+        await loadWorkspace(res.workspaceId);
+      }
+    }
+  };
+
+  const selectFile = async (fileId: string) => {
+    if (!workspaceId) return;
+    setActiveFileId(fileId);
+    
+    const data = await getWorkspaceData(workspaceId);
+    const fileSegments = data.segments
+      .filter((s: any) => s.file_id === fileId)
+      .map((s: any) => ({
+        id: s.id,
+        file_id: s.file_id,
+        source: s.source_text,
+        target: s.target_text || '',
+        lineInfo: 'L',
+        status: s.status,
+        severity: 'info' as const
+      }));
+    
+    const finalSegments = fileSegments.map((s, i) => ({
+      ...s,
+      lineInfo: `${i + 1}`
+    }));
+
+    setSegments(finalSegments);
+    if (finalSegments.length > 0) setActiveSegmentId(finalSegments[0].id);
+  };
+
+  const handleUpdateContent = async (segmentId: string, newTarget: string) => {
+    if (!workspaceId) return;
+    // Optimistic UI
+    setSegments(prev => prev.map(s => s.id === segmentId ? { ...s, target: newTarget, status: 'confirmed' } : s));
+    await updateSegmentTranslation(workspaceId, segmentId, newTarget);
+  };
+
+  const handleSync = async () => {
+    if (!workspaceId) return;
+    setIsSyncing(true);
+    const res = await confirmAndSyncWorkspace(workspaceId);
+    if (res.success) {
+      await loadWorkspace(workspaceId); // Refresh statuses
+    }
+    setIsSyncing(false);
+  };
 
   const handleLogout = async () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('active_workspace_id');
     await logout();
     router.push('/login');
   };
 
-  const handleMockExecute = () => {
-    setIsExecuting(true);
-    setExecLogs(['Initializing Sandbox...', 'Compiling TypeScript...', 'Running analysis hooks...']);
-    
-    setTimeout(() => {
-      setExecLogs(prev => [...prev, '► Executing segment s1: verifyToken()']);
-    }, 800);
-
-    setTimeout(() => {
-      setExecLogs(prev => [...prev, '[ERROR] Insecure JWT decode detected in runtime sandbox!']);
-    }, 1600);
-
-    setTimeout(() => {
-      setExecLogs(prev => [...prev, 'Execution completed in 1.42s']);
-      setIsExecuting(false);
-    }, 2400);
-  };
+  const activeSegment = segments.find(s => s.id === activeSegmentId);
 
   const handleAgentReview = async () => {
-    const segment = MOCK_SEGMENTS.find(s => s.id === activeSegment);
-    if (!segment) return;
+    if (!activeSegment) return;
     
     setIsAgentRunning(true);
-    setExecLogs(['--- Starting LangGraph Agentic Review ---', 'Initializing Context...', `Querying segment: ${segment.lineInfo}`]);
+    setExecLogs(['--- Starting LangGraph Agentic Review ---', 'Initializing Context...', `Reviewing line: ${activeSegment.lineInfo}`]);
     
     const res = await runAgentReview({
-      query: "审查这段代码，检查命名、规则和历史记录。",
-      segmentSource: segment.content, // Mocking source as the content itself for MVP
-      segmentTarget: segment.content,
+      query: "审查并给出优化建议",
+      segmentSource: activeSegment.source,
+      segmentTarget: activeSegment.target,
     });
 
     if (res.success && res.data) {
       setExecLogs(prev => [
         ...prev,
-        `> Intents Detected: ${res.data?.intentsClassified?.join(", ") || "None"}`,
-        `> Evidence Gathered: ${Object.keys(res.data?.evidenceGathered || {}).join(", ") || "None"}`,
+        `> Line Scan: ${activeSegment.lineInfo}`,
+        `> Contextual Analysis Complete.`,
         '',
-        '--- Agent Response ---',
-        res.data?.agentResponse || "No response generated.",
+        '--- Agent Suggestion ---',
+        res.data?.agentResponse || "Looks good.",
       ]);
     } else {
-      setExecLogs(prev => [...prev, `[ERROR] Agent failed: ${res.error}`]);
+      setExecLogs(prev => [...prev, `[ERROR] Analysis failed: ${res.error}`]);
     }
     
     setIsAgentRunning(false);
@@ -118,181 +223,261 @@ export default function ReviewDashboard() {
   return (
     <div className="h-screen w-full flex flex-col bg-slate-950 text-slate-300 font-sans overflow-hidden">
       
-      {/* Top Navigation Bar */}
-      <header className="h-14 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-6 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-            <Code2 size={18} />
+      {/* Top Header */}
+      <header className="h-14 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-6 shrink-0 shadow-lg z-20">
+        <div 
+          onClick={() => router.push('/workspace')}
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all group relative"
+          title="Back to Workspace"
+        >
+          <div className="relative">
+            <img src="/icon.png" alt="CATEST Logo" className="w-8 h-8 object-contain group-hover:scale-110 transition-transform relative z-10" />
+            {/* Functional Integration: Pulse when background processes are active */}
+            {(isSyncing || isAgentRunning) && (
+              <div className="absolute inset-0 bg-indigo-500/60 blur-md rounded-full animate-ping z-0" />
+            )}
+            <div className="absolute inset-0 bg-indigo-500/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="font-semibold text-slate-100">CATEST Workspace</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 ml-2">Snapshot #a9f2b</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-400">{userEmail}</span>
-          <button 
-            onClick={handleLogout}
-            className="text-slate-500 hover:text-red-400 transition-colors"
-            title="Sign Out"
-          >
-            <LogOut size={18} />
-          </button>
-        </div>
-      </header>
-
-      {/* Main Dual-Pane Workspace */}
-      <div className="flex-1 flex overflow-hidden">
-        
-        {/* Left Sidebar: File Tree */}
-        <div className="w-64 border-r border-slate-800 bg-slate-900/30 flex flex-col shrink-0">
-          <div className="p-4 uppercase text-xs font-semibold tracking-wider text-slate-500">
-            Files under review
+          <div className="flex flex-col">
+            <span className="font-black text-slate-100 tracking-tighter text-lg leading-none">CATEST STUDIO</span>
+            <span className="text-[10px] text-indigo-400 font-bold tracking-[0.2em] mt-1">CAT-POWERED CODE REVIEW</span>
           </div>
-          <div className="flex-1 overflow-y-auto px-2 space-y-1">
-            {MOCK_FILES.map(file => (
-              <button
-                key={file.id}
-                onClick={() => setActiveFile(file.id)}
-                className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
-                  activeFile === file.id 
-                    ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20' 
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'
-                }`}
-              >
-                <FileCode2 size={16} className={file.status === 'passed' ? 'text-green-500' : 'text-amber-500'} />
-                <span className="truncate flex-1">{file.name}</span>
-                {file.errors > 0 && (
-                  <span className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded-full">
-                    {file.errors}
-                  </span>
-                )}
+        </div>
+        <div className="flex items-center gap-5">
+          <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-0.5">
+            {['Review', 'Memory', 'Glossary'].map(tab => (
+              <button key={tab} className={`px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${tab === 'Review' ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-600 hover:text-slate-400'}`}>
+                {tab}
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Middle Column: Source Code Segments */}
-        <div className="flex-1 border-r border-slate-800 flex flex-col overflow-hidden bg-slate-950">
-          <div className="h-12 border-b border-slate-800 flex items-center px-4 bg-slate-900/50 shrink-0">
-            <h2 className="text-sm font-medium text-slate-200 flex items-center gap-2">
-              <ChevronRight size={16} className="text-slate-600" />
-              Source Segments
-            </h2>
+          <div className="h-4 w-px bg-slate-800" />
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-200 leading-none">{userEmail.split('@')[0]}</p>
+              <p className="text-[9px] text-slate-500 font-mono mt-0.5">Professional Auditor</p>
+            </div>
+            <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+              <LogOut size={16} />
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {MOCK_SEGMENTS.map(seg => (
-              <div 
-                key={seg.id}
-                onClick={() => setActiveSegment(seg.id)}
-                className={`rounded-xl border transition-all cursor-pointer overflow-hidden ${
-                  activeSegment === seg.id 
-                    ? 'border-indigo-500/50 ring-1 ring-indigo-500/20' 
-                    : 'border-slate-800 hover:border-slate-700'
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* Left: Project Files */}
+        <nav className="w-72 border-r border-slate-800 bg-slate-900/10 flex flex-col shrink-0">
+          <div className="p-4 flex items-center justify-between border-b border-slate-800/50">
+            <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Project Files</h3>
+            <div className="flex gap-2">
+                <button onClick={() => fileInputRef.current?.click()} className="group p-2 hover:bg-slate-800 rounded-lg transition-all" title="Add Files">
+                    <FilePlus size={16} className="text-slate-500 group-hover:text-indigo-400" />
+                </button>
+                <button onClick={() => folderInputRef.current?.click()} className="group p-2 hover:bg-slate-800 rounded-lg transition-all" title="Add Project Folder">
+                    <FolderOpen size={16} className="text-slate-500 group-hover:text-indigo-400" />
+                </button>
+            </div>
+            <input type="file" multiple className="hidden" ref={fileInputRef} onChange={(e) => handleFiles(e.target.files)} />
+            <input type="file" multiple className="hidden" ref={folderInputRef} 
+                // @ts-expect-error -- webkitdirectory
+                webkitdirectory="true" directory="" onChange={(e) => handleFiles(e.target.files)} />
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+            {files.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-slate-800/50 rounded-2xl opacity-40">
+                    <Upload size={32} />
+                    <p className="text-[11px] font-bold uppercase mt-4 tracking-widest">Workspace Empty</p>
+                </div>
+            )}
+            {files.map(file => (
+              <button
+                key={file.id}
+                onClick={() => selectFile(file.id)}
+                className={`w-full group flex items-center gap-3 px-4 py-3 rounded-xl text-xs transition-all border ${
+                  activeFileId === file.id 
+                    ? 'bg-indigo-600/10 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-600/5' 
+                    : 'text-slate-500 hover:bg-slate-800 hover:text-slate-200 border-transparent'
                 }`}
               >
-                <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-xs font-mono text-slate-500">
-                  <span>{seg.lineInfo}</span>
-                  <span className={`flex items-center gap-1 ${seg.severity === 'error' ? 'text-red-400' : 'text-amber-400'}`}>
-                    {seg.severity === 'error' ? <AlertCircle size={14} /> : <AlertCircle size={14} />}
-                    {seg.severity.toUpperCase()}
-                  </span>
+                <FileCode2 size={16} className={activeFileId === file.id ? 'text-indigo-400' : 'text-slate-600'} />
+                <div className="flex-1 text-left truncate font-mono text-[11px]">{file.name}</div>
+                {file.status === 'confirmed' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse ring-4 ring-green-500/10" />}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-5 border-t border-slate-800/50 bg-slate-900/20">
+            <div className="bg-slate-950 rounded-xl p-3 border border-slate-800 space-y-2">
+                <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
+                    <span>File Quality Score</span>
+                    <span className="text-green-400">92%</span>
                 </div>
-                <div className="p-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjMDUwNTA1IjI+PC9yZWN0Pgo8cGF0aCBkPSJNMCAwTDAgNEwyIDRMMiAwWk0yIDJMNCAyTDQgMEwyIDBaIiBmaWxsPSIjMEEwQTBBIj48L3BhdGg+Cjwvc3ZnPg==')]">
-                  <pre className="text-sm font-mono text-slate-300 leading-relaxed overflow-x-auto">
-                    <code>{seg.content}</code>
-                  </pre>
+                <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-indigo-600 to-green-500" style={{ width: '92%' }} />
+                </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Center: Professional CAT-Style Editor */}
+        <main className="flex-1 flex flex-col bg-slate-950 overflow-hidden relative">
+          {/* Status Overlay for Loading */}
+          {segments.length === 0 && activeFileId && (
+            <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                        <Loader2 size={48} className="text-indigo-500 animate-spin" />
+                        <div className="absolute inset-0 blur-xl bg-indigo-500/20 animate-pulse"></div>
+                    </div>
+                    <p className="font-mono text-[10px] text-indigo-400 uppercase tracking-[0.5em] animate-pulse">Parsing Segments...</p>
+                </div>
+            </div>
+          )}
+
+          {/* Grid Header */}
+          <div className="grid grid-cols-[3.5rem_1fr_1fr_4rem] border-b border-slate-800 bg-slate-900/60 sticky top-0 z-10 shadow-sm">
+              <div className="p-3 text-[10px] font-black text-slate-600 text-center border-r border-slate-800">#</div>
+              <div className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pl-6 border-r border-slate-800">Source Fragment (Original Code)</div>
+              <div className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pl-6 border-r border-slate-800">Target Segment (Review/Revision)</div>
+              <div className="p-3 text-[10px] font-black text-slate-600 text-center uppercase">Status</div>
+          </div>
+
+          {/* Scrollable Grid Body */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {segments.map((seg, idx) => (
+              <div 
+                key={seg.id}
+                onClick={() => setActiveSegmentId(seg.id)}
+                className={`grid grid-cols-[3.5rem_1fr_1fr_4rem] min-h-[48px] border-b border-slate-800 group transition-all ${
+                    activeSegmentId === seg.id ? 'bg-indigo-600/[0.03] ring-1 ring-inset ring-indigo-500/20' : 'hover:bg-slate-900/40'
+                }`}
+              >
+                {/* ID Column */}
+                <div className={`flex items-center justify-center border-r border-slate-800/50 text-[10px] font-mono ${activeSegmentId === seg.id ? 'text-indigo-400 font-bold' : 'text-slate-600'}`}>
+                    {idx + 1}
+                </div>
+                
+                {/* Source Fragment */}
+                <div className="p-4 border-r border-slate-800/50 font-mono text-[12px] leading-relaxed text-slate-200 whitespace-pre overflow-hidden group-hover:text-slate-100 transition-colors text-wrap break-all">
+                    {seg.source}
+                </div>
+
+                {/* Target Fragment */}
+                <div className="p-0 border-r border-slate-800/50">
+                    <textarea 
+                        className="w-full h-full p-4 bg-transparent font-mono text-[12px] leading-relaxed text-indigo-300 placeholder:text-slate-800 focus:outline-none focus:bg-indigo-500/5 transition-all resize-none overflow-hidden"
+                        placeholder="..."
+                        defaultValue={seg.target}
+                        onBlur={(e) => handleUpdateContent(seg.id, e.target.value)}
+                    />
+                </div>
+
+                {/* Status Indicator */}
+                <div className="flex items-center justify-center gap-1.5">
+                    {activeSegmentId === seg.id ? (
+                        <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] animate-pulse" />
+                    ) : (
+                        <div className={`w-1.5 h-1.5 rounded-full ${seg.status === 'confirmed' ? 'bg-green-500/50' : seg.status === 'synced' ? 'bg-indigo-500/50' : 'bg-slate-800'}`} />
+                    )}
                 </div>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Right Column: Review Tools & Execution */}
-        <div className="w-[400px] flex flex-col bg-slate-900/40 shrink-0">
-          
-          {/* Finding Details */}
-          <div className="h-1/2 border-b border-slate-800 flex flex-col">
-            <div className="h-12 border-b border-slate-800 flex items-center px-4 bg-slate-900/50 shrink-0">
-              <h2 className="text-sm font-medium text-slate-200 flex items-center gap-2">
-                <MessageSquareDiff size={16} className="text-indigo-400" />
-                Review Finding
-              </h2>
-            </div>
-            <div className="p-6 flex-1 overflow-y-auto">
-              {activeSegment === 's1' && (
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-xs border border-red-500/20 font-medium">
-                    <AlertCircle size={14} /> Critical Security Flaw
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-200 leading-tight">
-                    Unverified JWT Decode
-                  </h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    The code decoded a JWT without verifying its signature. This allows an attacker to forge tokens and bypass authentication. 
-                    Always use <code>jwt.verify()</code> with the correct secret key instead of <code>jwt.decode()</code>.
-                  </p>
-                  
-                  <div className="mt-8 pt-4 border-t border-slate-800">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">Auditor Notes</label>
-                    <textarea 
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 resize-none h-24"
-                      placeholder="Add resolution notes..."
-                    />
-                    <div className="flex justify-end mt-3 gap-2">
-                      <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-colors">Discard</button>
-                      <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-                        <CheckCircle2 size={16} /> Mark Resolved
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Footer Bar */}
+          <footer className="h-10 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between px-6 shrink-0 z-20">
+             <div className="flex items-center gap-5">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Project: <span className="text-slate-300">{workspaceId || 'None'}</span></span>
+                <div className="h-3 w-px bg-slate-800" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Segs: <span className="text-slate-300">{segments.length}</span></span>
+             </div>
+             <div className="flex items-center gap-4">
+                <span className="text-[9px] font-mono text-slate-600 uppercase">Auto-saved to Local SQLite</span>
+                <button 
+                  onClick={handleSync}
+                  disabled={isSyncing || !workspaceId}
+                  className="flex items-center gap-2 px-4 py-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-md text-[10px] font-black uppercase tracking-widest transition-all">
+                    {isSyncing ? <Loader2 size={10} className="animate-spin" /> : 'Apply Sync'}
+                </button>
+             </div>
+          </footer>
+        </main>
+
+        {/* Right: AI Intelligence Panel */}
+        <aside className="w-[420px] border-l border-slate-800 bg-slate-950 flex flex-col shrink-0">
+          <div className="h-14 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/20">
+             <div className="flex items-center gap-2">
+                <Bot size={18} className="text-indigo-400" />
+                <h3 className="text-[11px] font-black text-slate-200 uppercase tracking-[0.2em]">Agent Audit</h3>
+             </div>
+             <button 
+                onClick={handleAgentReview}
+                disabled={!activeSegmentId || isAgentRunning}
+                className="px-4 py-1.5 bg-indigo-600/10 border border-indigo-500/30 rounded-lg text-[10px] font-black text-indigo-400 uppercase tracking-[0.1em] hover:bg-indigo-500/20 transition-all disabled:opacity-20 flex items-center gap-2"
+            >
+                {isAgentRunning ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} fill="currentColor" />}
+                Analyze Segment
+            </button>
           </div>
 
-          {/* Mock Execution Terminal */}
-          <div className="h-1/2 flex flex-col bg-slate-950">
-            <div className="h-12 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/50 shrink-0">
-              <h2 className="text-sm font-medium text-slate-200 flex items-center gap-2">
-                <Terminal size={16} className="text-green-400" />
-                Execution Sandbox & Agent
-              </h2>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={handleAgentReview}
-                  disabled={isExecuting || isAgentRunning}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-medium rounded border border-indigo-500/20 transition-all disabled:opacity-50"
-                >
-                  {isAgentRunning ? <span className="animate-pulse">Thinking...</span> : <><Bot size={12} fill="currentColor" /> AI Agent Review</>}
-                </button>
-                <button 
-                  onClick={handleMockExecute}
-                  disabled={isExecuting || isAgentRunning}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs font-medium rounded border border-green-500/20 transition-all disabled:opacity-50"
-                >
-                  {isExecuting ? <span className="animate-pulse">Running...</span> : <><Play size={12} fill="currentColor" /> Run Segment</>}
-                </button>
-              </div>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto font-mono text-xs leading-relaxed">
-              {execLogs.length === 0 ? (
-                <div className="text-slate-600 italic h-full flex items-center justify-center">
-                  Sandbox ready. Click &quot;Run Segment&quot; to trace finding execution.
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <div className="text-slate-500">$ npx codecat-runner sandbox</div>
-                  {execLogs.map((log, i) => (
-                    <div key={i} className={`${log.includes('[ERROR]') ? 'text-red-400 font-bold' : log.includes('►') ? 'text-indigo-400' : 'text-slate-400'}`}>
-                      {log}
+          <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+            {!activeSegmentId ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="p-8 rounded-full bg-slate-900 animate-pulse">
+                        <Bot size={48} className="text-slate-800" />
                     </div>
-                  ))}
-                  {isExecuting && <div className="text-slate-500 animate-pulse">_</div>}
+                    <p className="text-[10px] uppercase font-bold text-slate-600 tracking-[0.3em]">Auditor Standby</p>
                 </div>
-              )}
-            </div>
-          </div>
+            ) : (
+                <>
+                    {/* Focus Info */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Fragment</label>
+                            <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 text-[9px] font-bold border border-indigo-500/20">L{activeSegment?.lineInfo}</span>
+                        </div>
+                        <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-5 font-mono text-[11px] text-slate-400 leading-relaxed shadow-inner">
+                            {activeSegment?.source}
+                        </div>
+                    </div>
 
-        </div>
+                    {/* AI Insights & Reasoning */}
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <Monitor size={14} className="text-slate-600" /> Real-time Audit Log
+                        </label>
+                        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 font-mono text-[10px] h-[320px] overflow-y-auto space-y-3 shadow-xl">
+                            {execLogs.length === 0 ? (
+                                <div className="text-slate-700 italic border-l-2 border-slate-800 pl-3">Ready for segment analysis...</div>
+                            ) : (
+                                execLogs.map((log, i) => (
+                                    <div key={i} className={`flex gap-3 ${log.includes('[ERROR]') ? 'text-red-400' : log.includes('---') ? 'text-indigo-500' : 'text-slate-500'}`}>
+                                        <span className="text-slate-800 opacity-30 select-none">[{i+1}]</span>
+                                        <div className="flex-1 whitespace-pre-wrap">{log}</div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="grid grid-cols-2 gap-3 pt-4">
+                        <button className="flex items-center justify-center gap-2 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition-all group">
+                            <Plus size={14} className="text-slate-500 group-hover:text-indigo-400" />
+                            <span className="text-[10px] font-black uppercase text-slate-400 group-hover:text-slate-200">Add Test</span>
+                        </button>
+                        <button className="flex items-center justify-center gap-2 py-3 bg-indigo-600/5 hover:bg-indigo-600/10 border border-indigo-500/20 rounded-xl transition-all group">
+                             <CheckCircle2 size={14} className="text-indigo-400" />
+                             <span className="text-[10px] font-black uppercase text-indigo-400">Approve</span>
+                        </button>
+                    </div>
+                </>
+            )}
+          </div>
+        </aside>
+
       </div>
     </div>
   );
