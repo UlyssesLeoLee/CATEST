@@ -1,0 +1,87 @@
+    Checking catest-ingestion v0.1.0 (E:\CATEST\crates\ingestion)
+    Checking catest-gateway v0.1.0 (E:\CATEST\crates\gateway)
+    Checking catest-parser v0.1.0 (E:\CATEST\crates\parser)
+    Checking catest-review v0.1.0 (E:\CATEST\crates\review)
+error: redundant closure
+  --> crates\ingestion\src\main.rs:55:22
+   |
+55 |             .map_err(|e| std::io::Error::other(e))
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `std::io::Error::other`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+   = note: `-D clippy::redundant-closure` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::redundant_closure)]`
+
+error: could not compile `catest-ingestion` (bin "catest-ingestion" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: called `Iterator::last` on a `DoubleEndedIterator`; this will needlessly iterate the entire iterator
+  --> crates\parser\src\main.rs:46:25
+   |
+46 |         let extension = file.path.split('.').last().unwrap_or("");
+   |                         ^^^^^^^^^^^^^^^^^^^^^------
+   |                                              |
+   |                                              help: try: `next_back()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#double_ended_iterator_last
+   = note: `-D clippy::double-ended-iterator-last` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::double_ended_iterator_last)]`
+
+error: redundant closure
+  --> crates\review\src\main.rs:65:18
+   |
+65 |         .map_err(|e| std::io::Error::other(e))?;
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `std::io::Error::other`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+   = note: `-D clippy::redundant-closure` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::redundant_closure)]`
+
+error: redundant closure
+  --> crates\review\src\main.rs:71:18
+   |
+71 |         .map_err(|e| std::io::Error::other(e))?;
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `std::io::Error::other`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+error: could not compile `catest-ingestion` (bin "catest-ingestion") due to 1 previous error
+error: could not compile `catest-parser` (bin "catest-parser" test) due to 1 previous error
+error: could not compile `catest-parser` (bin "catest-parser") due to 1 previous error
+error: could not compile `catest-review` (bin "catest-review") due to 2 previous errors
+error: could not compile `catest-review` (bin "catest-review" test) due to 2 previous errors
+error: redundant closure
+   --> crates\gateway\src\main.rs:250:18
+    |
+250 |         .map_err(|e| std::io::Error::other(e))?;
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `std::io::Error::other`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+    = note: `-D clippy::redundant-closure` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::redundant_closure)]`
+
+error: redundant closure
+   --> crates\gateway\src\main.rs:256:18
+    |
+256 |         .map_err(|e| std::io::Error::other(e))?;
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `std::io::Error::other`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+error: redundant closure
+   --> crates\gateway\src\main.rs:264:18
+    |
+264 |         .map_err(|e| std::io::Error::other(e))?;
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `std::io::Error::other`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+error: redundant closure
+   --> crates\gateway\src\main.rs:273:18
+    |
+273 |         .map_err(|e| std::io::Error::other(e))?;
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: `std::io::Error::other`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+error: could not compile `catest-gateway` (bin "catest-gateway") due to 4 previous errors
+error: could not compile `catest-gateway` (bin "catest-gateway" test) due to 4 previous errors

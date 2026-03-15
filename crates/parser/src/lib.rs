@@ -1,11 +1,9 @@
-use anyhow::{Result, Context};
-use tree_sitter::{Parser, Language};
-use uuid::Uuid;
-use sqlx::PgPool;
+use anyhow::{Context, Result};
+use tree_sitter::{Language, Parser};
 
 pub struct Segmenter {
     parser: Parser,
-    language: String,
+    _language: String,
 }
 
 impl Segmenter {
@@ -16,32 +14,38 @@ impl Segmenter {
             "java" => tree_sitter_java::language(),
             _ => anyhow::bail!("Unsupported language: {}", language),
         };
-        parser.set_language(&lang).context("Failed to set language")?;
+        parser
+            .set_language(&lang)
+            .context("Failed to set language")?;
         Ok(Self {
             parser,
-            language: language.to_string(),
+            _language: language.to_string(),
         })
     }
 
     pub fn segment_code(&mut self, code: &str) -> Result<Vec<CodeSegment>> {
-        let tree = self.parser.parse(code, None).context("Failed to parse code")?;
+        let tree = self
+            .parser
+            .parse(code, None)
+            .context("Failed to parse code")?;
         let root_node = tree.root_node();
-        
+
         let mut segments = Vec::new();
         // Simplified: walk tree and find function/method definitions
         // In a real implementation, this would use Tree-sitter Queries
         self.walk_node(root_node, code, &mut segments);
-        
+
         Ok(segments)
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn walk_node(&self, node: tree_sitter::Node, code: &str, segments: &mut Vec<CodeSegment>) {
         let kind = node.kind();
         if kind == "function_item" || kind == "method_declaration" {
             let start = node.start_position();
             let end = node.end_position();
             let text = &code[node.byte_range()];
-            
+
             segments.push(CodeSegment {
                 kind: kind.to_string(),
                 symbol_name: None, // Could extract symbol name from child nodes
@@ -50,7 +54,7 @@ impl Segmenter {
                 end_line: end.row as i32,
             });
         }
-        
+
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             self.walk_node(child, code, segments);
@@ -91,11 +95,11 @@ mod tests {
         let segments = segmenter.segment_code(code).unwrap();
 
         assert_eq!(segments.len(), 2);
-        
+
         let add_fn = &segments[0];
         assert_eq!(add_fn.kind, "function_item");
         assert!(add_fn.code_text.contains("pub fn add"));
-        
+
         let get_name_fn = &segments[1];
         assert_eq!(get_name_fn.kind, "function_item");
         assert!(get_name_fn.code_text.contains("fn get_name"));

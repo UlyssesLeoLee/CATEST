@@ -1,9 +1,9 @@
 use anyhow::{Context, Result};
-use rdkafka::ClientConfig;
-use rdkafka::consumer::{StreamConsumer, Consumer};
-use rdkafka::message::Message;
-use serde::de::DeserializeOwned;
 use futures::StreamExt;
+use rdkafka::consumer::{Consumer, StreamConsumer};
+use rdkafka::message::Message;
+use rdkafka::ClientConfig;
+use serde::de::DeserializeOwned;
 
 /// A thin async Kafka consumer using rdkafka.
 pub struct KafkaConsumer {
@@ -47,7 +47,9 @@ impl KafkaConsumer {
                                     tracing::error!("Event handler error: {:?}", e);
                                 }
                             }
-                            Err(e) => tracing::warn!("Failed to deserialize Kafka message: {:?}", e),
+                            Err(e) => {
+                                tracing::warn!("Failed to deserialize Kafka message: {:?}", e)
+                            }
                         }
                     }
                 }

@@ -1,10 +1,10 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use git2::Repository;
 use sha2::{Digest, Sha256};
+use sqlx::PgPool;
 use std::path::Path;
 use uuid::Uuid;
 use walkdir::WalkDir;
-use sqlx::PgPool;
 
 pub async fn clone_repo(url: &str, target_dir: &Path) -> Result<Repository> {
     tracing::info!("Cloning repo {} to {:?}", url, target_dir);
@@ -28,14 +28,17 @@ pub async fn scan_and_index_files(
         }
 
         let relative_path = path.strip_prefix(repo_path)?.to_string_lossy().to_string();
-        let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("unknown");
+        let extension = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("unknown");
         let content = std::fs::read(path)?;
         let sha256 = format!("{:x}", Sha256::digest(&content));
 
         sqlx::query(
             "INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
              VALUES ($1, $2, $3, $4, $5, $6)
-             ON CONFLICT (snapshot_id, path) DO NOTHING"
+             ON CONFLICT (snapshot_id, path) DO NOTHING",
         )
         .bind(snapshot_id)
         .bind(relative_path)
@@ -72,7 +75,9 @@ mod tests {
         fs::create_dir(&nested_dir).unwrap();
         let file2_path = nested_dir.join("lib.rs");
         let mut file2 = fs::File::create(&file2_path).unwrap();
-        file2.write_all(b"pub fn add(a: i32, b: i32) -> i32 { a + b }").unwrap();
+        file2
+            .write_all(b"pub fn add(a: i32, b: i32) -> i32 { a + b }")
+            .unwrap();
 
         // Create a fake .git directory (should be ignored)
         let git_dir = repo_path.join(".git");
@@ -84,7 +89,7 @@ mod tests {
         // Test the filtering logic (without DB connection for unit test simplicity)
         let mut count = 0;
         let mut found_files = Vec::new();
-        
+
         for entry in WalkDir::new(repo_path)
             .into_iter()
             .filter_map(|e| e.ok())
@@ -95,7 +100,11 @@ mod tests {
                 continue;
             }
 
-            let relative_path = path.strip_prefix(repo_path).unwrap().to_string_lossy().to_string();
+            let relative_path = path
+                .strip_prefix(repo_path)
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
             found_files.push(relative_path);
             count += 1;
         }

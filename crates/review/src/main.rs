@@ -14,9 +14,7 @@ struct ReviewTask {
 }
 
 #[post("/review-tasks")]
-async fn create_review_task(
-    producer: web::Data<stream_events::KafkaProducer>
-) -> impl Responder {
+async fn create_review_task(producer: web::Data<stream_events::KafkaProducer>) -> impl Responder {
     let task_id = Uuid::new_v4();
     let task = ReviewTask {
         id: task_id,
@@ -33,7 +31,14 @@ async fn create_review_task(
         occurred_at: chrono::Utc::now(),
     };
 
-    if let Err(e) = producer.publish(stream_events::topics::REVIEW_FINDINGS, &task_id.to_string(), &event).await {
+    if let Err(e) = producer
+        .publish(
+            stream_events::topics::REVIEW_FINDINGS,
+            &task_id.to_string(),
+            &event,
+        )
+        .await
+    {
         tracing::error!("Failed to publish ReviewFindingEvent: {:?}", e);
     }
 
@@ -48,19 +53,22 @@ async fn main() -> std::io::Result<()> {
     tracing::info!("Starting Review Service on port {}", port);
 
     let postgres_port = common::utils::get_env_default("POSTGRES_PORT", "35432");
-    let default_db_url = format!("postgres://catest:password@localhost:{}/catest_review", postgres_port);
+    let default_db_url = format!(
+        "postgres://catest:password@localhost:{}/catest_review",
+        postgres_port
+    );
     let db_url = common::utils::get_env_default("DATABASE_URL", &default_db_url);
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
         .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        .map_err(std::io::Error::other)?;
 
     let kafka_port = common::utils::get_env_default("KAFKA_PORT", "39092");
     let default_kafka = format!("localhost:{}", kafka_port);
     let kafka_broker = common::utils::get_env_default("KAFKA_BROKER", &default_kafka);
     let producer = stream_events::KafkaProducer::new(&kafka_broker)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        .map_err(std::io::Error::other)?;
     let producer_data = web::Data::new(producer);
 
     HttpServer::new(move || {
@@ -93,8 +101,9 @@ mod tests {
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(producer))
-                .service(create_review_task)
-        ).await;
+                .service(create_review_task),
+        )
+        .await;
         let req = test::TestRequest::post().uri("/review-tasks").to_request();
         let resp = test::call_service(&app, req).await;
         // The service will attempt to publish but might fail internally if localhost:0 doesn't exist.

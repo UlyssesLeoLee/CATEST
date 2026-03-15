@@ -1,8 +1,8 @@
 use actix_web::{get, post, web, HttpResponse, HttpServer, Responder};
+use neo4rs::Graph;
+use qdrant_client::{qdrant::SearchPointsBuilder, Qdrant};
 use serde::Deserialize;
 use uuid::Uuid;
-use qdrant_client::{Qdrant, qdrant::SearchPointsBuilder};
-use neo4rs::Graph;
 
 #[get("/healthz")]
 async fn healthz() -> impl Responder {
@@ -49,7 +49,7 @@ async fn ingest_rag(
     producer: web::Data<stream_events::KafkaProducer>,
 ) -> impl Responder {
     tracing::info!("Received {} items for RAG ingestion", req.items.len());
-    
+
     for item in &req.items {
         let payload = serde_json::json!({
             "id": item.id,
@@ -60,7 +60,14 @@ async fn ingest_rag(
             "timestamp": chrono::Utc::now().to_rfc3339()
         });
 
-        if let Err(e) = producer.publish(stream_events::topics::RAG_INGEST, &item.id.to_string(), &payload.to_string()).await {
+        if let Err(e) = producer
+            .publish(
+                stream_events::topics::RAG_INGEST,
+                &item.id.to_string(),
+                &payload.to_string(),
+            )
+            .await
+        {
             tracing::error!("Failed to publish RAG item {} to Kafka: {:?}", item.id, e);
         }
     }
@@ -69,35 +76,37 @@ async fn ingest_rag(
 }
 
 #[get("/api/rag/terms")]
-async fn get_terms(
-    pool: web::Data<sqlx::PgPool>,
-) -> impl Responder {
-    let result = sqlx::query_as::<_, common::rag_models::TermBaseEntry>("SELECT * FROM term_base WHERE is_forbidden = false OR is_forbidden IS NULL")
-        .fetch_all(pool.get_ref())
-        .await;
+async fn get_terms(pool: web::Data<sqlx::PgPool>) -> impl Responder {
+    let result = sqlx::query_as::<_, common::rag_models::TermBaseEntry>(
+        "SELECT * FROM term_base WHERE is_forbidden = false OR is_forbidden IS NULL",
+    )
+    .fetch_all(pool.get_ref())
+    .await;
 
     match result {
         Ok(terms) => HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": terms })),
         Err(e) => {
             tracing::error!("Failed to fetch terms: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({ "success": false, "error": e.to_string() }))
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
     }
 }
 
 #[get("/api/rag/rules")]
-async fn get_rules(
-    pool: web::Data<sqlx::PgPool>,
-) -> impl Responder {
-    let result = sqlx::query_as::<_, common::rag_models::RuleBaseEntry>("SELECT * FROM rule_base WHERE is_enabled = true OR is_enabled IS NULL")
-        .fetch_all(pool.get_ref())
-        .await;
+async fn get_rules(pool: web::Data<sqlx::PgPool>) -> impl Responder {
+    let result = sqlx::query_as::<_, common::rag_models::RuleBaseEntry>(
+        "SELECT * FROM rule_base WHERE is_enabled = true OR is_enabled IS NULL",
+    )
+    .fetch_all(pool.get_ref())
+    .await;
 
     match result {
         Ok(rules) => HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": rules })),
         Err(e) => {
             tracing::error!("Failed to fetch rules: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({ "success": false, "error": e.to_string() }))
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
     }
 }
@@ -108,50 +117,54 @@ async fn get_memory(
     qdrant: web::Data<Qdrant>,
 ) -> impl Responder {
     tracing::info!("Received memory search query: {}", req.query);
-    
+
     // In a full implementation, Gateway would call an Inference service to get the vector for `req.query`.
     // For this module MVP, we use the provided vector or a mock.
     let search_vector = req.vector.clone().unwrap_or_else(|| vec![0.1f32; 384]);
     let limit = req.limit.unwrap_or(3);
 
-    let search_result = qdrant.search_points(
-        SearchPointsBuilder::new("catest_rag", search_vector, limit)
-            .with_payload(true)
-    ).await;
+    let search_result = qdrant
+        .search_points(
+            SearchPointsBuilder::new("catest_rag", search_vector, limit).with_payload(true),
+        )
+        .await;
 
     match search_result {
         Ok(response) => {
-            let results: Vec<serde_json::Value> = response.result.into_iter().map(|scored_point| {
-                let id_str = scored_point.id
-                    .and_then(|pid| pid.point_id_options)
-                    .map(|opt| format!("{:?}", opt))
-                    .unwrap_or_default();
-                serde_json::json!({
-                    "id": id_str,
-                    "score": scored_point.score,
-                    "payload": scored_point.payload
+            let results: Vec<serde_json::Value> = response
+                .result
+                .into_iter()
+                .map(|scored_point| {
+                    let id_str = scored_point
+                        .id
+                        .and_then(|pid| pid.point_id_options)
+                        .map(|opt| format!("{:?}", opt))
+                        .unwrap_or_default();
+                    serde_json::json!({
+                        "id": id_str,
+                        "score": scored_point.score,
+                        "payload": scored_point.payload
+                    })
                 })
-            }).collect();
+                .collect();
             HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": results }))
-        },
+        }
         Err(e) => {
             tracing::error!("Qdrant search failed: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({ "success": false, "error": e.to_string() }))
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
     }
 }
 
 #[post("/api/rag/graph")]
-async fn get_graph(
-    req: web::Json<GraphQueryRequest>,
-    graph: web::Data<Graph>,
-) -> impl Responder {
+async fn get_graph(req: web::Json<GraphQueryRequest>, graph: web::Data<Graph>) -> impl Responder {
     tracing::info!("Received graph search query: {}", req.query);
-    
+
     // For MVP, look for TranslationSegments tagged with a matching tag
     let q = neo4rs::query("MATCH (s:TranslationSegment)-[:TAGGED_WITH]->(t:Tag) WHERE toLower(t.name) CONTAINS toLower($query) RETURN s.id as id, s.source as source, s.target as target LIMIT 5")
         .param("query", req.query.clone());
-        
+
     let execute_result = graph.execute(q).await;
     match execute_result {
         Ok(mut result_stream) => {
@@ -167,53 +180,55 @@ async fn get_graph(
                 }));
             }
             HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": results }))
-        },
+        }
         Err(e) => {
             tracing::error!("Neo4j search failed: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({ "success": false, "error": e.to_string() }))
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
     }
 }
 
 #[post("/api/rag/docs")]
-async fn get_docs(
-    req: web::Json<DocQueryRequest>,
-    qdrant: web::Data<Qdrant>,
-) -> impl Responder {
+async fn get_docs(req: web::Json<DocQueryRequest>, qdrant: web::Data<Qdrant>) -> impl Responder {
     tracing::info!("Received docs search query: {}", req.query);
-    
+
     let search_vector = req.vector.clone().unwrap_or_else(|| vec![0.1f32; 384]);
     let limit = req.limit.unwrap_or(2);
 
-    let search_result = qdrant.search_points(
-        SearchPointsBuilder::new("catest_docs", search_vector, limit)
-            .with_payload(true)
-    ).await;
+    let search_result = qdrant
+        .search_points(
+            SearchPointsBuilder::new("catest_docs", search_vector, limit).with_payload(true),
+        )
+        .await;
 
     match search_result {
         Ok(response) => {
-            let results: Vec<serde_json::Value> = response.result.into_iter().map(|scored_point| {
-                let id_str = scored_point.id
-                    .and_then(|pid| pid.point_id_options)
-                    .map(|opt| format!("{:?}", opt))
-                    .unwrap_or_default();
-                serde_json::json!({
-                    "id": id_str,
-                    "score": scored_point.score,
-                    "payload": scored_point.payload
+            let results: Vec<serde_json::Value> = response
+                .result
+                .into_iter()
+                .map(|scored_point| {
+                    let id_str = scored_point
+                        .id
+                        .and_then(|pid| pid.point_id_options)
+                        .map(|opt| format!("{:?}", opt))
+                        .unwrap_or_default();
+                    serde_json::json!({
+                        "id": id_str,
+                        "score": scored_point.score,
+                        "payload": scored_point.payload
+                    })
                 })
-            }).collect();
+                .collect();
             HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": results }))
-        },
+        }
         Err(e) => {
             tracing::error!("Qdrant docs search failed: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({ "success": false, "error": e.to_string() }))
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
     }
 }
-
-
-
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -223,26 +238,30 @@ async fn main() -> std::io::Result<()> {
     tracing::info!("Starting Gateway on port {}", port);
 
     let postgres_port = common::utils::get_env_default("POSTGRES_PORT", "35432");
-    let default_db_url = format!("postgres://catest:password@localhost:{}/catest_gateway", postgres_port);
+    let default_db_url = format!(
+        "postgres://catest:password@localhost:{}/catest_gateway",
+        postgres_port
+    );
     let db_url = common::utils::get_env_default("DATABASE_URL", &default_db_url);
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
         .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        .map_err(std::io::Error::other)?;
 
     let kafka_port = common::utils::get_env_default("KAFKA_PORT", "39092");
     let default_kafka = format!("localhost:{}", kafka_port);
     let kafka_broker = common::utils::get_env_default("KAFKA_BROKER", &default_kafka);
     let producer = stream_events::KafkaProducer::new(&kafka_broker)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        .map_err(std::io::Error::other)?;
     let producer_data = web::Data::new(producer);
 
     let qdrant_port = common::utils::get_env_default("QDRANT_HTTP_PORT", "36334");
     let default_qdrant = format!("http://localhost:{}", qdrant_port);
     let qdrant_url = common::utils::get_env_default("QDRANT_URL", &default_qdrant);
-    let qdrant_client = Qdrant::from_url(&qdrant_url).build()
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let qdrant_client = Qdrant::from_url(&qdrant_url)
+        .build()
+        .map_err(std::io::Error::other)?;
 
     let neo4j_port = common::utils::get_env_default("NEO4J_BOLT_PORT", "37687");
     let neo4j_uri = format!("bolt://localhost:{}", neo4j_port);
@@ -251,7 +270,7 @@ async fn main() -> std::io::Result<()> {
     let neo4j_pass = common::utils::get_env_default("NEO4J_PASSWORD", "password");
     let graph = Graph::new(&neo4j_uri_env, &neo4j_user, &neo4j_pass)
         .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        .map_err(std::io::Error::other)?;
 
     HttpServer::new(move || {
         actix_web::App::new()

@@ -1,0 +1,146 @@
+    Checking catest-parser v0.1.0 (E:\CATEST\crates\parser)
+    Checking catest-gateway v0.1.0 (E:\CATEST\crates\gateway)
+    Checking catest-ingestion v0.1.0 (E:\CATEST\crates\ingestion)
+    Checking catest-review v0.1.0 (E:\CATEST\crates\review)
+error: unused import: `sqlx::PgPool`
+ --> crates\parser\src\lib.rs:2:5
+  |
+2 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused import: `uuid::Uuid`
+ --> crates\parser\src\lib.rs:4:5
+  |
+4 | use uuid::Uuid;
+  |     ^^^^^^^^^^
+
+error: field `language` is never read
+ --> crates\parser\src\lib.rs:8:5
+  |
+6 | pub struct Segmenter {
+  |            --------- field in this struct
+7 |     parser: Parser,
+8 |     language: String,
+  |     ^^^^^^^^
+  |
+  = note: `-D dead-code` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(dead_code)]`
+
+error: parameter is only used in recursion
+  --> crates\parser\src\lib.rs:43:19
+   |
+43 |     fn walk_node(&self, node: tree_sitter::Node, code: &str, segments: &mut Vec<CodeSegment>) {
+   |                   ^^^^
+   |
+note: parameter used here
+  --> crates\parser\src\lib.rs:61:13
+   |
+61 |             self.walk_node(child, code, segments);
+   |             ^^^^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#only_used_in_recursion
+   = note: `-D clippy::only-used-in-recursion` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::only_used_in_recursion)]`
+
+error: could not compile `catest-parser` (lib) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `catest-parser` (lib test) due to 4 previous errors
+error: unused import: `std::path::Path`
+ --> crates\ingestion\src\main.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: this can be `std::io::Error::other(_)`
+  --> crates\review\src\main.rs:65:22
+   |
+65 |         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#io_other_error
+   = note: `-D clippy::io-other-error` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::io_other_error)]`
+help: use `std::io::Error::other`
+   |
+65 -         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+65 +         .map_err(|e| std::io::Error::other(e))?;
+   |
+
+error: this can be `std::io::Error::other(_)`
+  --> crates\review\src\main.rs:71:22
+   |
+71 |         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#io_other_error
+help: use `std::io::Error::other`
+   |
+71 -         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+71 +         .map_err(|e| std::io::Error::other(e))?;
+   |
+
+error: could not compile `catest-ingestion` (bin "catest-ingestion" test) due to 1 previous error
+error: could not compile `catest-ingestion` (bin "catest-ingestion") due to 1 previous error
+error: could not compile `catest-review` (bin "catest-review" test) due to 2 previous errors
+error: could not compile `catest-review` (bin "catest-review") due to 2 previous errors
+error: this can be `std::io::Error::other(_)`
+   --> crates\gateway\src\main.rs:250:22
+    |
+250 |         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#io_other_error
+    = note: `-D clippy::io-other-error` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::io_other_error)]`
+help: use `std::io::Error::other`
+    |
+250 -         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+250 +         .map_err(|e| std::io::Error::other(e))?;
+    |
+
+error: this can be `std::io::Error::other(_)`
+   --> crates\gateway\src\main.rs:256:22
+    |
+256 |         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#io_other_error
+help: use `std::io::Error::other`
+    |
+256 -         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+256 +         .map_err(|e| std::io::Error::other(e))?;
+    |
+
+error: this can be `std::io::Error::other(_)`
+   --> crates\gateway\src\main.rs:264:22
+    |
+264 |         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#io_other_error
+help: use `std::io::Error::other`
+    |
+264 -         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+264 +         .map_err(|e| std::io::Error::other(e))?;
+    |
+
+error: this can be `std::io::Error::other(_)`
+   --> crates\gateway\src\main.rs:273:22
+    |
+273 |         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#io_other_error
+help: use `std::io::Error::other`
+    |
+273 -         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+273 +         .map_err(|e| std::io::Error::other(e))?;
+    |
+
+error: could not compile `catest-gateway` (bin "catest-gateway") due to 4 previous errors
+error: could not compile `catest-gateway` (bin "catest-gateway" test) due to 4 previous errors

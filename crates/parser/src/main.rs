@@ -9,12 +9,19 @@ async fn main() -> Result<()> {
     tracing::info!("Starting Parser Worker");
 
     let postgres_port = common::utils::get_env_default("POSTGRES_PORT", "35432");
-    let default_parser_db = format!("postgres://catest:password@localhost:{}/catest_parser", postgres_port);
-    let default_ingestion_db = format!("postgres://catest:password@localhost:{}/catest_ingestion", postgres_port);
-    
+    let default_parser_db = format!(
+        "postgres://catest:password@localhost:{}/catest_parser",
+        postgres_port
+    );
+    let default_ingestion_db = format!(
+        "postgres://catest:password@localhost:{}/catest_ingestion",
+        postgres_port
+    );
+
     let parser_db_url = common::utils::get_env_default("DATABASE_URL", &default_parser_db);
-    let ingestion_db_url = common::utils::get_env_default("INGESTION_DATABASE_URL", &default_ingestion_db);
-    
+    let ingestion_db_url =
+        common::utils::get_env_default("INGESTION_DATABASE_URL", &default_ingestion_db);
+
     let parser_pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&parser_db_url)
@@ -36,15 +43,15 @@ async fn main() -> Result<()> {
         .await?;
 
     for file in files {
-        let extension = file.path.split('.').last().unwrap_or("");
+        let extension = file.path.split('.').next_back().unwrap_or("");
         if let Ok(mut segmenter) = Segmenter::new(extension) {
             tracing::info!("Parsing file: {}", file.path);
-            
+
             let segments = segmenter.segment_code(&file.content_text)?;
             for seg in &segments {
                 sqlx::query(
                     "INSERT INTO segments (snapshot_id, symbol_name, code_text, normalized_hash)
-                     VALUES ($1, $2, $3, $4)"
+                     VALUES ($1, $2, $3, $4)",
                 )
                 .bind(file.snapshot_id)
                 .bind(seg.symbol_name.clone())
@@ -63,7 +70,13 @@ async fn main() -> Result<()> {
                 language: extension.to_string(),
                 occurred_at: chrono::Utc::now(),
             };
-            producer.publish(stream_events::topics::SEGMENTS_PARSED, &file.id.to_string(), &event).await?;
+            producer
+                .publish(
+                    stream_events::topics::SEGMENTS_PARSED,
+                    &file.id.to_string(),
+                    &event,
+                )
+                .await?;
             tracing::info!("Published SegmentParsedEvent for file {}", file.path);
         }
     }

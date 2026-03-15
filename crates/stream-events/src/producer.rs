@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use rdkafka::ClientConfig;
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::ClientConfig;
 use serde::Serialize;
 use std::time::Duration;
 
@@ -23,8 +23,7 @@ impl KafkaProducer {
 
     /// Publish a serializable event to a Kafka `topic` keyed by `key`.
     pub async fn publish<E: Serialize>(&self, topic: &str, key: &str, event: &E) -> Result<()> {
-        let payload = serde_json::to_string(event)
-            .context("Failed to serialize Kafka event")?;
+        let payload = serde_json::to_string(event).context("Failed to serialize Kafka event")?;
 
         self.inner
             .send(

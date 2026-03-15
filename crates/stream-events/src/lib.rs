@@ -1,19 +1,19 @@
+pub mod consumer;
 pub mod events;
 pub mod producer;
-pub mod consumer;
 
+pub use consumer::KafkaConsumer;
 pub use events::{DomainEvent, ReviewFindingEvent, SegmentParsedEvent, SnapshotCreatedEvent};
 pub use producer::KafkaProducer;
-pub use consumer::KafkaConsumer;
 
 /// Kafka topic names — centralized to avoid magic strings across services.
 pub mod topics {
     pub const SNAPSHOTS_CREATED: &str = "catest.snapshots.created";
     pub const SEGMENTS_PARSED: &str = "catest.segments.parsed";
     pub const REVIEW_FINDINGS: &str = "catest.review.findings";
-    pub const RAG_INGEST: &str = "catest.rag.ingest";           // Gateway -> Arroyo
-    pub const RAG_CLEANED: &str = "catest.rag.cleaned";         // Arroyo -> Rust Consumer
-    pub const STATS_SEGMENTS: &str = "catest.stats.segments";       // Arroyo output
+    pub const RAG_INGEST: &str = "catest.rag.ingest"; // Gateway -> Arroyo
+    pub const RAG_CLEANED: &str = "catest.rag.cleaned"; // Arroyo -> Rust Consumer
+    pub const STATS_SEGMENTS: &str = "catest.stats.segments"; // Arroyo output
     pub const STATS_REVIEW_ROLLUP: &str = "catest.stats.review-rollup"; // Arroyo output
 }
 

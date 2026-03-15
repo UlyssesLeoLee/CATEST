@@ -1,7 +1,6 @@
 use anyhow::Result;
 use catest_ingestion::{clone_repo, scan_and_index_files};
 use sqlx::postgres::PgPoolOptions;
-use std::path::Path;
 use uuid::Uuid;
 
 #[tokio::main]
@@ -10,7 +9,10 @@ async fn main() -> Result<()> {
     tracing::info!("Starting Ingestion Worker");
 
     let postgres_port = common::utils::get_env_default("POSTGRES_PORT", "35432");
-    let default_db_url = format!("postgres://catest:password@localhost:{}/catest_ingestion", postgres_port);
+    let default_db_url = format!(
+        "postgres://catest:password@localhost:{}/catest_ingestion",
+        postgres_port
+    );
     let db_url = common::utils::get_env_default("DATABASE_URL", &default_db_url);
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -19,8 +21,11 @@ async fn main() -> Result<()> {
 
     // Hardcoded for MVP demonstration
     let project_id_str = common::utils::get_env_default("DEMO_PROJECT_ID", "");
-    let repo_url = common::utils::get_env_default("DEMO_REPO_URL", "https://github.com/UlyssesLeoLee/CATEST.git");
-    
+    let repo_url = common::utils::get_env_default(
+        "DEMO_REPO_URL",
+        "https://github.com/UlyssesLeoLee/CATEST.git",
+    );
+
     if project_id_str.is_empty() {
         tracing::warn!("DEMO_PROJECT_ID not set, ingestion might fail");
     }
@@ -28,11 +33,15 @@ async fn main() -> Result<()> {
     // In a real scenario, this would be triggered by a Kafka event
     let snapshot_id = Uuid::new_v4();
     let temp_dir = std::env::temp_dir().join(format!("catest-{}", snapshot_id));
-    
+
     clone_repo(&repo_url, &temp_dir).await?;
     let count = scan_and_index_files(&pool, snapshot_id, &temp_dir).await?;
-    
-    tracing::info!("Successfully indexed {} files for snapshot {}", count, snapshot_id);
+
+    tracing::info!(
+        "Successfully indexed {} files for snapshot {}",
+        count,
+        snapshot_id
+    );
 
     // Publish event to Kafka for Arroyo/Downstream processing
     let kafka_port = common::utils::get_env_default("KAFKA_PORT", "39092");
@@ -42,13 +51,24 @@ async fn main() -> Result<()> {
     let event = stream_events::SnapshotCreatedEvent {
         event_id: Uuid::new_v4(),
         snapshot_id,
-        project_id: Uuid::parse_str(&project_id_str).unwrap_or_default(),
+        project_id: Uuid::parse_str(&project_id_str)
+            .map_err(std::io::Error::other)
+            .unwrap_or_default(), // Keep unwrap_or_default for now to maintain type, as the struct field is Uuid, not Result
         file_count: count,
         repo_url,
         occurred_at: chrono::Utc::now(),
     };
-    producer.publish(stream_events::topics::SNAPSHOTS_CREATED, &snapshot_id.to_string(), &event).await?;
-    tracing::info!("Published SnapshotCreatedEvent for snapshot {}", snapshot_id);
+    producer
+        .publish(
+            stream_events::topics::SNAPSHOTS_CREATED,
+            &snapshot_id.to_string(),
+            &event,
+        )
+        .await?;
+    tracing::info!(
+        "Published SnapshotCreatedEvent for snapshot {}",
+        snapshot_id
+    );
 
     Ok(())
 }
