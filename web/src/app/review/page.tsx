@@ -18,6 +18,7 @@ import {
 import { logout } from '../actions/auth';
 import { runAgentReview } from '../actions/agent';
 import { createWorkspace, getWorkspaceData, updateSegmentTranslation, confirmAndSyncWorkspace } from '../actions/workspace';
+import Image from 'next/image';
 
 type FileItem = {
   id: string;
@@ -53,7 +54,7 @@ type RawSegment = {
 
 export default function ReviewDashboard() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState(() => {
+  const [userEmail] = useState(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user');
       if (userData) {
@@ -251,7 +252,7 @@ export default function ReviewDashboard() {
           title="Back to Workspace"
         >
           <div className="relative">
-            <img src="/icon.png" alt="CATEST Logo" className="w-8 h-8 object-contain group-hover:scale-110 transition-transform relative z-10" />
+            <Image src="/icon.png" alt="CATEST Logo" width={32} height={32} className="object-contain group-hover:scale-110 transition-transform relative z-10" />
             {/* Functional Integration: Pulse when background processes are active */}
             {(isSyncing || isAgentRunning) && (
               <div className="absolute inset-0 bg-indigo-500/60 blur-md rounded-full animate-ping z-0" />

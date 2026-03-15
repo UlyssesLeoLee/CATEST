@@ -13,6 +13,7 @@ import {
 } from '../actions/account';
 import { logout } from '../actions/auth';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   User, ShieldCheck, Key, LogOut, Plus, Trash2,
   Loader2, Copy, Check, Monitor, Zap, Crown
@@ -102,7 +103,7 @@ export default function AccountPage() {
       {/* Top Bar */}
       <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur border-b border-slate-800 px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2 font-semibold text-lg">
-          <img src="/icon.png" alt="CATEST" className="w-6 h-6 object-contain" />
+          <Image src="/icon.png" alt="CATEST" width={24} height={24} className="object-contain" />
           CATEST
         </div>
         <div className="flex items-center gap-6 text-sm">

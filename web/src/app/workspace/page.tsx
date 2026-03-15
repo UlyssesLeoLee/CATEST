@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { createWorkspace, getWorkspaceData, updateSegmentTranslation, confirmAndSyncWorkspace } from '../actions/workspace';
 import { Upload, CheckCircle2, FolderOpen, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 type Segment = { id: string; source_text: string; target_text: string | null; status: string };
 
@@ -77,7 +78,7 @@ export default function WorkspacePage() {
       {/* CATEST Header */}
       <header className="h-16 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/icon.png" alt="CATEST" className="w-8 h-8 object-contain" />
+          <Image src="/icon.png" alt="CATEST" width={32} height={32} className="object-contain" />
           <span className="font-semibold tracking-wide">CATEST Workspace</span>
         </div>
         

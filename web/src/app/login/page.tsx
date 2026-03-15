@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginUser, startRegistration, completeRegistration, requestPasswordReset, resetPassword } from '../actions/auth';
-import { Mail, KeyRound, Loader2, Code2, ArrowLeft, Lock } from 'lucide-react';
+import { Mail, KeyRound, Loader2, ArrowLeft, Lock } from 'lucide-react';
+import Image from 'next/image';
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset' | 'verify_register';
 
@@ -80,10 +81,12 @@ export default function LoginPage() {
           )}
           <div className="relative inline-flex items-center justify-center w-20 h-20 mb-6 group">
             <div className="absolute inset-0 bg-indigo-500/20 rounded-3xl blur-xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
-            <img 
+            <Image 
               src="/icon.png" 
               alt="CATEST" 
-              className="relative w-16 h-16 object-contain filter drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+              width={64}
+              height={64}
+              className="relative object-contain filter drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
             />
           </div>
           <h1 className="text-2xl font-bold text-slate-100 mb-2">CATEST</h1>

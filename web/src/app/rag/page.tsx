@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { getConfirmedTranslations, triggerRagIngestion } from '../actions/rag';
-import { Database, FastForward, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { FastForward, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 
 type TranslationItem = {
   id: string;
@@ -65,7 +66,7 @@ export default function RagDashboard() {
       <header className="max-w-6xl mx-auto mb-8 flex justify-between items-end border-b border-slate-800 pb-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <img src="/icon.png" alt="CATEST" className="w-8 h-8 object-contain" />
+            <Image src="/icon.png" alt="CATEST" width={32} height={32} className="object-contain" />
             CATEST RAG Ingestion Pipeline
           </h1>
           <p className="text-slate-400 mt-2">
