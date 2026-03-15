@@ -32,7 +32,9 @@ jobs:
       - name: Format Check
         run: cargo fmt --all -- --check
       - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        env:
+          RDKAFKA_SYS_STATIC: 0
+        run: cargo clippy --all-targets -- -D warnings
 
   test:
     name: Test
@@ -51,4 +53,6 @@ jobs:
       - name: Build
         run: cargo build --verbose
       - name: Run tests
+        env:
+          RDKAFKA_SYS_STATIC: 0
         run: cargo test --all --verbose

@@ -27,6 +27,7 @@ COPY . .
 # Build the specified service
 ARG SERVICE_NAME
 ENV RUST_BACKTRACE=1
+ENV RDKAFKA_SYS_STATIC=0
 RUN cargo build --release -p ${SERVICE_NAME} --verbose
 
 # Runtime stage
