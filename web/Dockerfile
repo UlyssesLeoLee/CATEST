@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ WORKDIR /app/web
 RUN npm run build
 
 # Runtime stage
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app/web
 ENV NODE_ENV=production

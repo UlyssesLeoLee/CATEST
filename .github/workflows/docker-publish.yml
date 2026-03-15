@@ -30,8 +30,6 @@ jobs:
             package: catest-parser
           - service: review
             package: catest-review
-          - service: stream-events
-            package: stream-events
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

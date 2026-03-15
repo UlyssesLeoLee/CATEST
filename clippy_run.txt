@@ -1,0 +1,21 @@
+    Checking rustls-webpki v0.103.9
+   Compiling rdkafka-sys v4.8.0+2.3.0
+    Checking zstd-safe v7.2.4
+    Checking libgit2-sys v0.17.0+1.8.1
+    Checking tree-sitter-rust v0.20.4
+    Checking tree-sitter-java v0.20.2
+error: failed to run custom build command for `rdkafka-sys v4.8.0+2.3.0`
+
+Caused by:
+  process didn't exit successfully: `E:\DevCache\cargo\target\debug\build\rdkafka-sys-908f1d380bd0d6d2\build-script-build` (exit code: 101)
+  --- stdout
+  Cloning librdkafka
+
+  --- stderr
+  Building and linking librdkafka statically
+  Running command: "cp -a librdkafka/. E:\DevCache\cargo\target\debug\build\rdkafka-sys-200b63afa9d35aa8\out" in dir: .
+
+  thread 'main' panicked at E:\DevCache\cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rdkafka-sys-4.8.0+2.3.0\build.rs:38:19:
+  Command failed with error: program not found
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+warning: build failed, waiting for other jobs to finish...

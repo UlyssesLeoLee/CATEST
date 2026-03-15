@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -15,13 +16,13 @@ env:
 jobs:
   check:
     name: Check & Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libssl-dev librdkafka-dev
+          sudo apt-get install -y pkg-config libssl-dev librdkafka-dev protobuf-compiler
       - name: Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -42,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libssl-dev librdkafka-dev
+          sudo apt-get install -y pkg-config libssl-dev librdkafka-dev protobuf-compiler
       - name: Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Rust Cache
