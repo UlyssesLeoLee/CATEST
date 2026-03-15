@@ -28,6 +28,8 @@ COPY . .
 ARG SERVICE_NAME
 ENV RUST_BACKTRACE=1
 ENV RDKAFKA_SYS_STATIC=0
+RUN pkg-config --list-all | grep rdkafka || true
+RUN cmake --version && git --version && python3 --version
 RUN cargo build --release -p ${SERVICE_NAME} --verbose
 
 # Runtime stage

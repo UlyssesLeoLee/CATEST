@@ -35,6 +35,15 @@ jobs:
         env:
           RDKAFKA_SYS_STATIC: 0
         run: cargo clippy --all-targets -- -D warnings
+      - name: Upload Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clippy-logs
+          path: |
+            target/debug/build/*/out/*.log
+            target/debug/build/*/stderr
+            target/debug/build/*/stdout
 
   test:
     name: Test
