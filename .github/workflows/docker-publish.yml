@@ -51,6 +51,8 @@ jobs:
           context: .
           file: ./rust.Dockerfile
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             SERVICE_NAME=${{ matrix.package }}
           tags: |
@@ -83,6 +85,8 @@ jobs:
           context: .
           file: ./web/Dockerfile
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-web:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-web:${{ github.sha }}
