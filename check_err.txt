@@ -1,0 +1,53 @@
+    Checking ring v0.17.9
+   Compiling rustls v0.23.37
+   Compiling rdkafka-sys v4.8.0+2.3.0
+    Checking zstd-sys v2.0.16+zstd.1.5.7
+   Compiling zstd-safe v7.2.4
+   Compiling libgit2-sys v0.17.0+1.8.1
+    Checking tree-sitter v0.20.10
+    Checking libssh2-sys v0.3.1
+error: failed to run custom build command for `rdkafka-sys v4.8.0+2.3.0`
+
+Caused by:
+  process didn't exit successfully: `E:\DevCache\cargo\target\debug\build\rdkafka-sys-ebf4eb4fb210d06c\build-script-build` (exit code: 101)
+  --- stdout
+  Configuring and compiling librdkafka
+  CMAKE_TOOLCHAIN_FILE_x86_64-pc-windows-msvc = None
+  CMAKE_TOOLCHAIN_FILE_x86_64_pc_windows_msvc = None
+  HOST_CMAKE_TOOLCHAIN_FILE = None
+  CMAKE_TOOLCHAIN_FILE = None
+  CMAKE_GENERATOR_x86_64-pc-windows-msvc = None
+  CMAKE_GENERATOR_x86_64_pc_windows_msvc = None
+  HOST_CMAKE_GENERATOR = None
+  CMAKE_GENERATOR = None
+  CMAKE_PREFIX_PATH_x86_64-pc-windows-msvc = None
+  CMAKE_PREFIX_PATH_x86_64_pc_windows_msvc = None
+  HOST_CMAKE_PREFIX_PATH = None
+  CMAKE_PREFIX_PATH = None
+  CMAKE_x86_64-pc-windows-msvc = None
+  CMAKE_x86_64_pc_windows_msvc = None
+  HOST_CMAKE = None
+  CMAKE = None
+  running: "cmake" "E:\\DevCache\\cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\rdkafka-sys-4.8.0+2.3.0\\librdkafka" "-G" "Visual Studio 17 2022" "-Thost=x64" "-Ax64" "-DRDKAFKA_BUILD_STATIC=1" "-DRDKAFKA_BUILD_TESTS=0" "-DRDKAFKA_BUILD_EXAMPLES=0" "-DCMAKE_INSTALL_LIBDIR=lib" "-DWITH_ZLIB=1" "-DWITH_CURL=0" "-DWITH_SSL=0" "-DWITH_SASL=0" "-DWITH_ZSTD=0" "-DENABLE_LZ4_EXT=0" "-DCMAKE_INSTALL_PREFIX=E:\\DevCache\\cargo\\target\\debug\\build\\rdkafka-sys-cf6581994f40c741\\out" "-DCMAKE_C_FLAGS= -nologo -MD -Brepro" "-DCMAKE_C_FLAGS_DEBUG= -nologo -MD -Brepro" "-DCMAKE_CXX_FLAGS= -nologo -MD -Brepro" "-DCMAKE_CXX_FLAGS_DEBUG= -nologo -MD -Brepro" "-DCMAKE_ASM_FLAGS= -nologo -MD -Brepro" "-DCMAKE_ASM_FLAGS_DEBUG= -nologo -MD -Brepro" "-DCMAKE_BUILD_TYPE=Debug"
+  -- Configuring incomplete, errors occurred!
+
+  --- stderr
+  Building and linking librdkafka statically
+  CMake Error at CMakeLists.txt:1 (cmake_minimum_required):
+    Compatibility with CMake < 3.5 has been removed from CMake.
+
+    Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+    to tell CMake that the project requires at least <min> but has been updated
+    to work with policies introduced by <max> or earlier.
+
+    Or, add -DCMAKE_POLICY_VERSION_MINIMUM=3.5 to try configuring anyway.
+
+
+
+  thread 'main' panicked at E:\DevCache\cargo\registry\src\index.crates.io-1949cf8c6b5b557f\cmake-0.1.53\src\lib.rs:1121:5:
+
+  command did not execute successfully, got: exit code: 1
+
+  build script failed, must exit now
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+warning: build failed, waiting for other jobs to finish...

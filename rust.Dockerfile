@@ -5,9 +5,10 @@ FROM rust:1.85-slim-bookworm AS builder
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
-    cmake \
     git \
     build-essential \
+    zlib1g-dev \
+    librdkafka-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -26,6 +27,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
+    librdkafka1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
