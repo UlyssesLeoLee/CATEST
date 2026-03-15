@@ -610,3 +610,13 @@ You're importing a component that needs `useState`. This React Hook only works i
  POST /review 200 in 19ms (compile: 5ms, proxy.ts: 4ms, render: 10ms)
  GET /review 200 in 33ms (compile: 2ms, proxy.ts: 2ms, render: 28ms)
  POST /review 200 in 21ms (compile: 5ms, proxy.ts: 6ms, render: 9ms)
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:33000
+- Network:       http://192.168.1.10:33000
+- Environments: .env
+
+✓ Starting...
+○ Compiling middleware ...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 22.9s

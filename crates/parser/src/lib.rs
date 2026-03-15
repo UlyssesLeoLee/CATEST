@@ -15,7 +15,7 @@ impl Segmenter {
             _ => anyhow::bail!("Unsupported language: {}", language),
         };
         parser
-            .set_language(&lang)
+            .set_language(lang)
             .context("Failed to set language")?;
         Ok(Self {
             parser,

@@ -1,0 +1,292 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from rust.Dockerfile
+#1 transferring dockerfile: 1.15kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/debian:bookworm-slim
+#2 ...
+
+#3 [auth] library/debian:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [auth] library/rust:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/rust:1.85-slim-bookworm
+#5 DONE 1.2s
+
+#2 [internal] load metadata for docker.io/library/debian:bookworm-slim
+#2 DONE 1.3s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 109B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 DONE 0.0s
+
+#8 [stage-1 1/4] FROM docker.io/library/debian:bookworm-slim@sha256:74d56e3931e0d5a1dd51f8c8a2466d21de84a271cd3b5a733b803aa91abf4421
+#8 resolve docker.io/library/debian:bookworm-slim@sha256:74d56e3931e0d5a1dd51f8c8a2466d21de84a271cd3b5a733b803aa91abf4421 0.1s done
+#8 DONE 0.1s
+
+#9 [stage-1 2/4] RUN apt-get update && apt-get install -y     ca-certificates     libssl3     librdkafka1     && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [stage-1 3/4] WORKDIR /app
+#10 CACHED
+
+#11 [builder 1/7] FROM docker.io/library/rust:1.85-slim-bookworm@sha256:9f841bbe9e7d8e37ceb96ed907265a3a0df7f44e3737d0b100e7907a679acb36
+#11 resolve docker.io/library/rust:1.85-slim-bookworm@sha256:9f841bbe9e7d8e37ceb96ed907265a3a0df7f44e3737d0b100e7907a679acb36 0.1s done
+#11 DONE 0.1s
+
+#7 [internal] load build context
+#7 transferring context: 595.91kB 0.2s done
+#7 DONE 0.2s
+
+#12 [builder 2/7] RUN apt-get update && apt-get install -y     pkg-config     libssl-dev     cmake     git     build-essential     zlib1g-dev     librdkafka-dev     protobuf-compiler     libsasl2-dev     libzstd-dev     liblz4-dev     curl     python3     libclang-dev     && rm -rf /var/lib/apt/lists/*
+#12 CACHED
+
+#13 [builder 3/7] WORKDIR /app
+#13 CACHED
+
+#14 [builder 4/7] COPY . .
+#14 DONE 6.7s
+
+#15 [builder 5/7] RUN pkg-config --list-all | grep rdkafka || true
+#15 0.688 rdkafka                        librdkafka - The Apache Kafka C/C++ library
+#15 0.688 rdkafka++                      librdkafka++ - The Apache Kafka C/C++ library
+#15 DONE 0.9s
+
+#16 [builder 6/7] RUN cmake --version && git --version && python3 --version
+#16 0.620 cmake version 3.25.1
+#16 0.620 
+#16 0.620 CMake suite maintained and supported by Kitware (kitware.com/cmake).
+#16 0.622 git version 2.39.5
+#16 0.623 Python 3.11.2
+#16 DONE 0.7s
+
+#17 [builder 7/7] RUN cargo build --release -p catest-parser --verbose
+#17 0.588     Updating crates.io index
+#17 3.668  Downloading crates ...
+#17 3.801   Downloaded errno v0.3.14
+#17 3.805   Downloaded anyhow v1.0.102
+#17 3.809   Downloaded allocator-api2 v0.2.21
+#17 3.815   Downloaded crossbeam-queue v0.3.12
+#17 3.817   Downloaded equivalent v1.0.2
+#17 3.828   Downloaded crypto-common v0.1.7
+#17 3.834   Downloaded rand_chacha v0.3.1
+#17 3.841   Downloaded dotenvy v0.15.7
+#17 3.844   Downloaded num-iter v0.1.45
+#17 3.848   Downloaded displaydoc v0.2.5
+#17 3.852   Downloaded crossbeam-utils v0.8.21
+#17 3.854   Downloaded futures-core v0.3.32
+#17 3.856   Downloaded cfg-if v1.0.4
+#17 3.857   Downloaded digest v0.10.7
+#17 3.860   Downloaded percent-encoding v2.3.2
+#17 3.862   Downloaded futures-io v0.3.32
+#17 3.871   Downloaded base64 v0.22.1
+#17 3.876   Downloaded either v1.15.0
+#17 3.877   Downloaded icu_properties v2.1.2
+#17 3.880   Downloaded concurrent-queue v2.5.0
+#17 3.882   Downloaded generic-array v0.14.7
+#17 3.886   Downloaded futures-sink v0.3.32
+#17 3.889   Downloaded proc-macro-crate v3.5.0
+#17 3.890   Downloaded block-buffer v0.10.4
+#17 3.894   Downloaded futures-task v0.3.32
+#17 3.905   Downloaded heck v0.5.0
+#17 3.907   Downloaded utf8_iter v1.0.4
+#17 3.914   Downloaded cpufeatures v0.2.17
+#17 3.917   Downloaded untrusted v0.9.0
+#17 4.070   Downloaded zerofrom-derive v0.1.6
+#17 4.074   Downloaded webpki-roots v0.26.11
+#17 4.078   Downloaded ppv-lite86 v0.2.21
+#17 4.079   Downloaded version_check v0.9.5
+#17 4.081   Downloaded num_enum v0.7.5
+#17 4.086   Downloaded quote v1.0.45
+#17 4.088   Downloaded pin-project-lite v0.2.17
+#17 4.094   Downloaded pkcs1 v0.7.5
+#17 4.097   Downloaded pem-rfc7468 v0.7.0
+#17 4.099   Downloaded hashlink v0.10.0
+#17 4.101   Downloaded serde_urlencoded v0.7.1
+#17 4.103   Downloaded parking_lot v0.12.5
+#17 4.105   Downloaded tinyvec_macros v0.1.1
+#17 4.106   Downloaded num-traits v0.2.19
+#17 4.109   Downloaded futures-channel v0.3.32
+#17 4.110   Downloaded icu_provider v2.1.1
+#17 4.113   Downloaded const-oid v0.9.6
+#17 4.116   Downloaded getrandom v0.2.17
+#17 4.119   Downloaded futures v0.3.32
+#17 4.123   Downloaded getrandom v0.4.2
+#17 4.127   Downloaded proc-macro2 v1.0.106
+#17 4.130   Downloaded litemap v0.8.1
+#17 4.133   Downloaded event-listener v5.4.1
+#17 4.135   Downloaded der v0.7.10
+#17 4.140   Downloaded icu_normalizer_data v2.1.1
+#17 4.143   Downloaded bitflags v2.11.0
+#17 4.146   Downloaded parking_lot_core v0.9.12
+#17 4.149   Downloaded yoke-derive v0.8.1
+#17 4.152   Downloaded log v0.4.29
+#17 4.155   Downloaded icu_normalizer v2.1.1
+#17 4.158   Downloaded flume v0.11.1
+#17 4.162   Downloaded bytes v1.11.1
+#17 4.167   Downloaded cc v1.0.106
+#17 4.170   Downloaded icu_locale_core v2.1.1
+#17 4.177   Downloaded openssl-sys v0.9.112
+#17 4.182   Downloaded once_cell v1.21.4
+#17 4.184   Downloaded futures-intrusive v0.5.0
+#17 4.189   Downloaded iana-time-zone v0.1.65
+#17 4.191   Downloaded hmac v0.12.1
+#17 4.193   Downloaded num_enum_derive v0.7.5
+#17 4.194   Downloaded byteorder v1.5.0
+#17 4.198   Downloaded autocfg v1.5.0
+#17 4.201   Downloaded potential_utf v0.1.4
+#17 4.202   Downloaded pkg-config v0.3.32
+#17 4.203   Downloaded num-integer v0.1.46
+#17 4.205   Downloaded nu-ansi-term v0.50.3
+#17 4.208   Downloaded memchr v2.8.0
+#17 4.215   Downloaded stable_deref_trait v1.2.1
+#17 4.216   Downloaded mio v1.1.1
+#17 4.221   Downloaded subtle v2.6.1
+#17 4.223   Downloaded sqlx-macros v0.8.6
+#17 4.224   Downloaded signature v2.2.0
+#17 4.225   Downloaded indexmap v2.13.0
+#17 4.230   Downloaded icu_collections v2.1.1
+#17 4.237   Downloaded futures-executor v0.3.32
+#17 4.239   Downloaded lazy_static v1.5.0
+#17 4.241   Downloaded base64ct v1.8.3
+#17 4.244   Downloaded form_urlencoded v1.2.2
+#17 4.245   Downloaded foldhash v0.1.5
+#17 4.246   Downloaded aho-corasick v1.1.4
+#17 4.252   Downloaded num-bigint-dig v0.8.6
+#17 4.365   Downloaded whoami v1.6.1
+#17 4.367   Downloaded rand_core v0.6.4
+#17 4.369   Downloaded libm v0.2.16
+#17 4.381   Downloaded stringprep v0.1.5
+#17 4.383   Downloaded chrono v0.4.44
+#17 4.391   Downloaded hkdf v0.12.4
+#17 4.393   Downloaded icu_properties_data v2.1.2
+#17 4.402   Downloaded hashbrown v0.16.1
+#17 4.407   Downloaded zmij v1.0.21
+#17 4.409   Downloaded writeable v0.6.2
+#17 4.411   Downloaded tracing-log v0.2.0
+#17 4.413   Downloaded futures-util v0.3.32
+#17 4.426   Downloaded zerovec-derive v0.11.2
+#17 4.428   Downloaded thread_local v1.1.9
+#17 4.430   Downloaded thiserror-impl v2.0.18
+#17 4.433   Downloaded sha1 v0.10.6
+#17 4.436   Downloaded zeroize v1.8.2
+#17 4.437   Downloaded scopeguard v1.2.0
+#17 4.439   Downloaded idna v1.1.0
+#17 4.443   Downloaded hashbrown v0.15.5
+#17 4.449   Downloaded zerofrom v0.1.6
+#17 4.451   Downloaded pkcs8 v0.10.2
+#17 4.458   Downloaded spki v0.7.3
+#17 4.460   Downloaded parking v2.2.1
+#17 4.461   Downloaded md-5 v0.10.6
+#17 4.463   Downloaded lock_api v0.4.14
+#17 4.465   Downloaded signal-hook-registry v1.4.8
+#17 4.468   Downloaded itoa v1.0.17
+#17 4.471   Downloaded idna_adapter v1.2.1
+#17 4.473   Downloaded home v0.5.12
+#17 4.476   Downloaded hex v0.4.3
+#17 4.479   Downloaded futures-macro v0.3.32
+#17 4.481   Downloaded crc-catalog v2.4.0
+#17 4.485   Downloaded thiserror v2.0.18
+#17 4.491   Downloaded slab v0.4.12
+#17 4.493   Downloaded crc v3.4.0
+#17 4.494   Downloaded libc v0.2.183
+#17 4.545   Downloaded toml_datetime v1.0.0+spec-1.1.0
+#17 4.547   Downloaded libz-sys v1.1.25
+#17 4.786   Downloaded yoke v0.8.1
+#17 4.789   Downloaded tracing-attributes v0.1.31
+#17 4.868   Downloaded unicode-properties v0.1.4
+#17 4.870   Downloaded toml_parser v1.0.9+spec-1.1.0
+#17 4.872   Downloaded unicode-ident v1.0.24
+#17 4.875   Downloaded serde_core v1.0.228
+#17 4.878   Downloaded uuid v1.22.0
+#17 4.883   Downloaded tinyvec v1.10.0
+#17 4.886   Downloaded rustversion v1.0.22
+#17 4.888   Downloaded unicode-bidi v0.3.18
+#17 4.891   Downloaded smallvec v1.15.1
+#17 4.893   Downloaded socket2 v0.6.3
+#17 4.896   Downloaded ryu v1.0.23
+#17 4.900   Downloaded tokio-macros v2.6.1
+#17 4.902   Downloaded spin v0.9.8
+#17 4.904   Downloaded tokio-stream v0.1.18
+#17 4.910   Downloaded sharded-slab v0.1.7
+#17 4.913   Downloaded rustls-pki-types v1.14.0
+#17 4.915   Downloaded zerotrie v0.2.3
+#17 4.921   Downloaded rand v0.8.5
+#17 4.926   Downloaded toml_edit v0.25.4+spec-1.1.0
+#17 4.930   Downloaded sqlx-mysql v0.8.6
+#17 4.937   Downloaded tracing-core v0.1.36
+#17 4.939   Downloaded tinystr v0.8.2
+#17 4.941   Downloaded synstructure v0.13.2
+#17 4.943   Downloaded sha2 v0.10.9
+#17 4.950   Downloaded sqlx-macros-core v0.8.6
+#17 4.956   Downloaded url v2.5.8
+#17 4.959   Downloaded sqlx-sqlite v0.8.6
+#17 4.965   Downloaded atoi v2.0.0
+#17 4.971   Downloaded typenum v1.19.0
+#17 4.975   Downloaded serde_derive v1.0.228
+#17 4.978   Downloaded serde v1.0.228
+#17 4.983   Downloaded rsa v0.9.10
+#17 5.002   Downloaded rustls-webpki v0.103.9
+#17 5.041   Downloaded rdkafka v0.36.2
+#17 5.051   Downloaded libsqlite3-sys v0.30.1
+#17 5.191   Downloaded unicode-normalization v0.1.25
+#17 5.196   Downloaded zerovec v0.11.5
+#17 5.203   Downloaded sqlx-postgres v0.8.6
+#17 5.214   Downloaded tree-sitter-java v0.20.2
+#17 5.221   Downloaded winnow v0.7.15
+#17 5.234   Downloaded tracing-subscriber v0.3.23
+#17 5.268   Downloaded sqlx v0.8.6
+#17 5.304   Downloaded webpki-roots v1.0.6
+#17 5.354   Downloaded vcpkg v0.2.15
+#17 5.468   Downloaded tree-sitter-rust v0.20.4
+#17 5.511   Downloaded zerocopy v0.8.42
+#17 5.550   Downloaded syn v2.0.117
+#17 5.580   Downloaded regex v1.12.3
+#17 5.595   Downloaded serde_json v1.0.149
+#17 5.610   Downloaded rustls v0.23.37
+#17 5.635   Downloaded regex-syntax v0.8.10
+#17 5.657   Downloaded tree-sitter v0.20.10
+#17 5.674   Downloaded sqlx-core v0.8.6
+#17 5.704   Downloaded tracing v0.1.44
+#17 5.763   Downloaded regex-automata v0.4.14
+#17 5.783   Downloaded tokio v1.50.0
+#17 5.843   Downloaded ring v0.17.9
+#17 5.952   Downloaded rdkafka-sys v4.8.0+2.3.0
+#17 13.92 error: rustc 1.85.1 is not supported by the following packages:
+#17 13.92   home@0.5.12 requires rustc 1.88
+#17 13.92   home@0.5.12 requires rustc 1.88
+#17 13.92 Either upgrade rustc or select compatible dependency versions with
+#17 13.92 `cargo update <name>@<current-ver> --precise <compatible-ver>`
+#17 13.92 where `<compatible-ver>` is the latest version supporting rustc 1.85.1
+#17 13.92 
+#17 ERROR: process "/bin/sh -c cargo build --release -p ${SERVICE_NAME} --verbose" did not complete successfully: exit code: 101
+------
+ > [builder 7/7] RUN cargo build --release -p catest-parser --verbose:
+5.783   Downloaded tokio v1.50.0
+5.843   Downloaded ring v0.17.9
+5.952   Downloaded rdkafka-sys v4.8.0+2.3.0
+13.92 error: rustc 1.85.1 is not supported by the following packages:
+13.92   home@0.5.12 requires rustc 1.88
+13.92   home@0.5.12 requires rustc 1.88
+13.92 Either upgrade rustc or select compatible dependency versions with
+13.92 `cargo update <name>@<current-ver> --precise <compatible-ver>`
+13.92 where `<compatible-ver>` is the latest version supporting rustc 1.85.1
+13.92 
+------
+rust.Dockerfile:33
+--------------------
+  31 |     RUN pkg-config --list-all | grep rdkafka || true
+  32 |     RUN cmake --version && git --version && python3 --version
+  33 | >>> RUN cargo build --release -p ${SERVICE_NAME} --verbose
+  34 |     
+  35 |     # Runtime stage
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c cargo build --release -p ${SERVICE_NAME} --verbose" did not complete successfully: exit code: 101
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/yp4m8v7csdres4aatsij3myzw
