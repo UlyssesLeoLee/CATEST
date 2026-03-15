@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     librdkafka-dev \
     protobuf-compiler \
+    libsasl2-dev \
+    libzstd-dev \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

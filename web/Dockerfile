@@ -6,6 +6,14 @@ WORKDIR /app
 # Copy package files
 COPY web/package*.json ./web/
 WORKDIR /app/web
+
+# Install build dependencies for native modules (like better-sqlite3)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN npm ci
 
 # Copy source
