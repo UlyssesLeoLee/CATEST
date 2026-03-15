@@ -13,7 +13,10 @@ RUN apt-get update && apt-get install -y \
     protobuf-compiler \
     libsasl2-dev \
     libzstd-dev \
+    liblz4-dev \
+    curl \
     python3 \
+    libclang-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -23,7 +26,8 @@ COPY . .
 
 # Build the specified service
 ARG SERVICE_NAME
-RUN cargo build --release -p ${SERVICE_NAME}
+ENV RUST_BACKTRACE=1
+RUN cargo build --release -p ${SERVICE_NAME} --verbose
 
 # Runtime stage
 FROM debian:bookworm-slim
