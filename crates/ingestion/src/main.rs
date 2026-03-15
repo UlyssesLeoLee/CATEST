@@ -51,9 +51,7 @@ async fn main() -> Result<()> {
     let event = stream_events::SnapshotCreatedEvent {
         event_id: Uuid::new_v4(),
         snapshot_id,
-        project_id: Uuid::parse_str(&project_id_str)
-            .map_err(std::io::Error::other)
-            .unwrap_or_default(), // Keep unwrap_or_default for now to maintain type, as the struct field is Uuid, not Result
+        project_id: Uuid::parse_str(&project_id_str).unwrap_or_else(|_| Uuid::nil()),
         file_count: count,
         repo_url,
         occurred_at: chrono::Utc::now(),
