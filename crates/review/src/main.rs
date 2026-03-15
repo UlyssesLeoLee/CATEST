@@ -67,8 +67,8 @@ async fn main() -> std::io::Result<()> {
     let kafka_port = common::utils::get_env_default("KAFKA_PORT", "39092");
     let default_kafka = format!("localhost:{}", kafka_port);
     let kafka_broker = common::utils::get_env_default("KAFKA_BROKER", &default_kafka);
-    let producer = stream_events::KafkaProducer::new(&kafka_broker)
-        .map_err(std::io::Error::other)?;
+    let producer =
+        stream_events::KafkaProducer::new(&kafka_broker).map_err(std::io::Error::other)?;
     let producer_data = web::Data::new(producer);
 
     HttpServer::new(move || {

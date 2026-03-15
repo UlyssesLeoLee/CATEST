@@ -70,9 +70,9 @@ export async function startRegistration(email: string, password: string) {
 
     await sendVerificationEmail(email, code);
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('REGISTRATION SMTP ERROR:', err);
-    return { error: 'Internal server error during registration: ' + (err.message || 'Unknown error') };
+    return { error: 'Internal server error during registration: ' + (err instanceof Error ? err.message : 'Unknown error') };
   }
 }
 
@@ -125,9 +125,9 @@ export async function requestPasswordReset(email: string) {
 
     await sendVerificationEmail(email, code);
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('SMTP ERROR during email dispatch:', err);
-    return { error: 'Failed to send reset code: ' + (err.message || 'Unknown error') };
+    return { error: 'Failed to send reset code: ' + (err instanceof Error ? err.message : 'Unknown error') };
   }
 }
 

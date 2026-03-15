@@ -30,9 +30,9 @@ describe('SQLite Workspace Logic', () => {
   })
 
   it('should list workspaces correctly', () => {
-    // @ts-ignore
+    // @ts-expect-error - mocked function
     fs.existsSync.mockReturnValue(true)
-    // @ts-ignore
+    // @ts-expect-error - mocked function
     fs.readdirSync.mockReturnValue(['test-ws.db', 'another.db', 'not-a-db.txt'])
 
     const workspaces = listWorkspaces()
@@ -40,7 +40,7 @@ describe('SQLite Workspace Logic', () => {
   })
 
   it('should initialize a workspace database', () => {
-    const db = getWorkspaceDb('test-id')
+    getWorkspaceDb('test-id')
     expect(Database).toHaveBeenCalledWith(expect.stringContaining('test-id.db'))
   })
 })

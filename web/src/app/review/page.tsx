@@ -3,22 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Code2,
-  Play,
   CheckCircle2,
-  AlertCircle,
   FileCode2,
-  Terminal,
   LogOut,
-  ChevronRight,
-  MessageSquareDiff,
   Bot,
   Plus,
   FolderOpen,
   FilePlus,
   Loader2,
   Upload,
-  ArrowRight,
   Zap,
   Monitor
 } from 'lucide-react';
@@ -44,16 +37,40 @@ type CodeSegment = {
   severity?: 'error' | 'warning' | 'info';
 };
 
+type RawFile = {
+  id: string;
+  path: string;
+  status: string;
+};
+
+type RawSegment = {
+  id: string;
+  file_id: string;
+  source_text: string;
+  target_text?: string;
+  status: string;
+};
+
 export default function ReviewDashboard() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState('');
+  const [userEmail, setUserEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData) as { email?: string };
+          return parsed.email || '';
+        } catch { return ''; }
+      }
+    }
+    return '';
+  });
   const [files, setFiles] = useState<FileItem[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [segments, setSegments] = useState<CodeSegment[]>([]);
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-  const [isExecuting, setIsExecuting] = useState(false);
   const [isAgentRunning, setIsAgentRunning] = useState(false);
   const [execLogs, setExecLogs] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -61,29 +78,13 @@ export default function ReviewDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      router.push('/login');
-      return;
-    }
-    const parsed = JSON.parse(userData) as { email?: string };
-    if (parsed.email) setUserEmail(parsed.email);
-
-    // Try to load existing workspace from localStorage
-    const savedWsId = localStorage.getItem('active_workspace_id');
-    if (savedWsId) {
-      void loadWorkspace(savedWsId);
-    }
-  }, [router]);
-
   const loadWorkspace = async (wsId: string) => {
-    const data = await getWorkspaceData(wsId);
+    const data = (await getWorkspaceData(wsId)) as { files: RawFile[]; segments: RawSegment[] };
     if (data && data.files) {
       setWorkspaceId(wsId);
       localStorage.setItem('active_workspace_id', wsId);
       
-      const mappedFiles: FileItem[] = data.files.map((f: any) => ({
+      const mappedFiles: FileItem[] = data.files.map((f: RawFile) => ({
         id: f.id,
         name: f.path,
         status: f.status
@@ -95,8 +96,8 @@ export default function ReviewDashboard() {
         const firstFileId = mappedFiles[0].id;
         setActiveFileId(firstFileId);
         const fileSegments = data.segments
-          .filter((s: any) => s.file_id === firstFileId)
-          .map((s: any) => ({
+          .filter((s: RawSegment) => s.file_id === firstFileId)
+          .map((s: RawSegment) => ({
             id: s.id,
             file_id: s.file_id,
             source: s.source_text,
@@ -118,6 +119,23 @@ export default function ReviewDashboard() {
     }
   };
 
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      router.push('/login');
+      return;
+    }
+
+    // Try to load existing workspace from localStorage
+    const savedWsId = localStorage.getItem('active_workspace_id');
+    if (savedWsId) {
+      // Use microtask to avoid "setState in effect" warning in strict configs
+      queueMicrotask(() => {
+        void loadWorkspace(savedWsId);
+      });
+    }
+  }, [router]);
+
   const handleFiles = async (selectedFiles: FileList | null) => {
     if (!selectedFiles) return;
     
@@ -126,8 +144,10 @@ export default function ReviewDashboard() {
         const f = selectedFiles[i];
         if (f.size > 2 * 1024 * 1024) continue; // Skip large files
         const content = await f.text();
+        const webkitPath = (f as { webkitRelativePath?: string }).webkitRelativePath;
+        const path = webkitPath || f.name;
         filesToCreate.push({
-            path: (f as any).webkitRelativePath || f.name,
+            path,
             content
         });
     }
@@ -144,10 +164,10 @@ export default function ReviewDashboard() {
     if (!workspaceId) return;
     setActiveFileId(fileId);
     
-    const data = await getWorkspaceData(workspaceId);
+    const data = (await getWorkspaceData(workspaceId)) as { segments: RawSegment[] };
     const fileSegments = data.segments
-      .filter((s: any) => s.file_id === fileId)
-      .map((s: any) => ({
+      .filter((s: RawSegment) => s.file_id === fileId)
+      .map((s: RawSegment) => ({
         id: s.id,
         file_id: s.file_id,
         source: s.source_text,
