@@ -45,8 +45,10 @@ mod tests {
             project_id: Uuid::new_v4(),
             file_count: 42,
             repo_url: "https://github.com/test/repo.git".to_string(),
+            manifest_s3_key: Some("manifest.json".to_string()),
             occurred_at: Utc::now(),
         };
+
         let json = serde_json::to_string(&event).unwrap();
         let decoded: SnapshotCreatedEvent = serde_json::from_str(&json).unwrap();
         assert_eq!(event.event_id, decoded.event_id);
@@ -93,8 +95,10 @@ mod tests {
             project_id: Uuid::new_v4(),
             file_count: 5,
             repo_url: "https://example.com/repo".to_string(),
+            manifest_s3_key: Some("manifest.json".to_string()),
             occurred_at: Utc::now(),
         });
+
         let json = serde_json::to_string(&event).unwrap();
         // The tagged enum should have event_type field
         assert!(json.contains("\"event_type\":\"SnapshotCreated\""));

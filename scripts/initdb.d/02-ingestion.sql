@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS files (
   language      text NOT NULL,
   size_bytes    bigint NOT NULL DEFAULT 0,
   sha256        text NOT NULL,
-  content_text  text NOT NULL,
+  content_text  text, -- Made optional, now using s3_key
+  s3_key        text,
   is_binary     boolean NOT NULL DEFAULT false,
   created_at    timestamptz NOT NULL DEFAULT now()
 );

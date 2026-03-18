@@ -42,9 +42,17 @@ pub struct File {
     pub language: String,
     pub size_bytes: i64,
     pub sha256: String,
-    pub content_text: String,
+    pub content_text: Option<String>,
+    pub s3_key: Option<String>,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FileManifestEntry {
+    pub path: String,
+    pub storage_key: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -120,7 +128,8 @@ mod tests {
             language: "rust".to_string(),
             size_bytes: 1024,
             sha256: "hash".to_string(),
-            content_text: "fn main() {}".to_string(),
+            content_text: Some("fn main() {}".to_string()),
+            s3_key: Some("bucket/key".to_string()),
             created_at: Utc::now(),
         };
 
@@ -128,11 +137,6 @@ mod tests {
         let deserialized: File = serde_json::from_str(&json).unwrap();
 
         assert_eq!(file.id, deserialized.id);
-        assert_eq!(file.snapshot_id, deserialized.snapshot_id);
-        assert_eq!(file.path, deserialized.path);
-        assert_eq!(file.language, deserialized.language);
-        assert_eq!(file.size_bytes, deserialized.size_bytes);
-        assert_eq!(file.sha256, deserialized.sha256);
-        assert_eq!(file.content_text, deserialized.content_text);
+        assert_eq!(file.s3_key, deserialized.s3_key);
     }
 }

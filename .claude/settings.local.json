@@ -11,7 +11,29 @@
       "Bash(kubectl get:*)",
       "Bash(curl -sI \"https://github.com/kedacore/keda/releases/latest\")",
       "Bash(kubectl describe:*)",
-      "Bash(kubectl logs:*)"
+      "Bash(kubectl logs:*)",
+      "Bash(docker images:*)",
+      "Bash(ls -d E:/CATEST/web/apps/web-*/)",
+      "Bash(for d:*)",
+      "Bash(do echo:*)",
+      "Read(//e/CATEST/web/apps/$d/**)",
+      "Bash(done)",
+      "Bash(docker build:*)",
+      "Bash(grep -l \"files\" E:/CATEST/scripts/initdb.d/*.sql)",
+      "Bash(kubectl delete:*)",
+      "Bash(kubectl api-versions:*)",
+      "Bash(kubectl create:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl rollout:*)",
+      "Bash(kubectl exec:*)",
+      "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- ls -la /docker-entrypoint-initdb.d/\")",
+      "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- cat /docker-entrypoint-initdb.d/00-create_databases.sh\")",
+      "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- pg_isready\")",
+      "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- ps aux\")",
+      "Bash(powershell.exe -Command \"kubectl delete statefulset postgres -n catest --wait; kubectl delete pvc pgdata-postgres-0 -n catest\")",
+      "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- psql -U catest -d postgres -c ''\\\\l''\")",
+      "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- psql -U catest -d catest_ingestion -c ''\\\\dt''\")",
+      "Bash(grep -rn \"port:\" E:/CATEST/k8s/infra/*/service.yaml E:/CATEST/k8s/services/*/service.yaml E:/CATEST/k8s/services/workspace-svc.yaml E:/CATEST/k8s/services/*/manifest.yaml)"
     ]
   }
 }

@@ -7,7 +7,7 @@ spec:
   type: LoadBalancer
   ports:
     - port: 34321
-      targetPort: 34321
+      targetPort: 5432
   selector:
     app: postgres
 ---
@@ -19,11 +19,11 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 36334
-      targetPort: 36334
-      name: http
     - port: 36333
-      targetPort: 36333
+      targetPort: 6333
+      name: http
+    - port: 36334
+      targetPort: 6334
       name: grpc
   selector:
     app: qdrant
@@ -37,10 +37,10 @@ spec:
   type: LoadBalancer
   ports:
     - port: 37474
-      targetPort: 37474
+      targetPort: 7474
       name: http
     - port: 37687
-      targetPort: 37687
+      targetPort: 7687
       name: bolt
   selector:
     app: neo4j
@@ -67,6 +67,6 @@ spec:
   type: LoadBalancer
   ports:
     - port: 35115
-      targetPort: 35115
+      targetPort: 5115
   selector:
     app: arroyo

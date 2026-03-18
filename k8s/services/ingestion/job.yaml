@@ -19,9 +19,9 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
-              value: "postgres://catest:password@postgres:34321/catest_workspace"
+              value: "postgres://catest:password@postgres:34321/catest_ingestion"
             - name: KAFKA_BROKER
-              value: "kafka:9092"
+              value: "kafka:39092"
             - name: DEMO_PROJECT_ID
               value: "00000000-0000-0000-0000-000000000000"
             - name: DEMO_REPO_URL

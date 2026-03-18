@@ -114,43 +114,17 @@ async fn get_rules(pool: web::Data<sqlx::PgPool>) -> impl Responder {
 #[post("/api/rag/memory")]
 async fn get_memory(
     req: web::Json<MemoryQueryRequest>,
-    qdrant: web::Data<Qdrant>,
+    search: web::Data<search_domain::SearchService>,
 ) -> impl Responder {
     tracing::info!("Received memory search query: {}", req.query);
-
-    // In a full implementation, Gateway would call an Inference service to get the vector for `req.query`.
-    // For this module MVP, we use the provided vector or a mock.
-    let search_vector = req.vector.clone().unwrap_or_else(|| vec![0.1f32; 384]);
     let limit = req.limit.unwrap_or(3);
 
-    let search_result = qdrant
-        .search_points(
-            SearchPointsBuilder::new("catest_rag", search_vector, limit).with_payload(true),
-        )
-        .await;
+    let result = search.search_memory(&req.query, req.vector.clone(), limit).await;
 
-    match search_result {
-        Ok(response) => {
-            let results: Vec<serde_json::Value> = response
-                .result
-                .into_iter()
-                .map(|scored_point| {
-                    let id_str = scored_point
-                        .id
-                        .and_then(|pid| pid.point_id_options)
-                        .map(|opt| format!("{:?}", opt))
-                        .unwrap_or_default();
-                    serde_json::json!({
-                        "id": id_str,
-                        "score": scored_point.score,
-                        "payload": scored_point.payload
-                    })
-                })
-                .collect();
-            HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": results }))
-        }
+    match result {
+        Ok(data) => HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": data })),
         Err(e) => {
-            tracing::error!("Qdrant search failed: {:?}", e);
+            tracing::error!("Memory search failed: {:?}", e);
             HttpResponse::InternalServerError()
                 .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
@@ -158,31 +132,17 @@ async fn get_memory(
 }
 
 #[post("/api/rag/graph")]
-async fn get_graph(req: web::Json<GraphQueryRequest>, graph: web::Data<Graph>) -> impl Responder {
+async fn get_graph(
+    req: web::Json<GraphQueryRequest>, 
+    search: web::Data<search_domain::SearchService>
+) -> impl Responder {
     tracing::info!("Received graph search query: {}", req.query);
 
-    // For MVP, look for TranslationSegments tagged with a matching tag
-    let q = neo4rs::query("MATCH (s:TranslationSegment)-[:TAGGED_WITH]->(t:Tag) WHERE toLower(t.name) CONTAINS toLower($query) RETURN s.id as id, s.source as source, s.target as target LIMIT 5")
-        .param("query", req.query.clone());
-
-    let execute_result = graph.execute(q).await;
-    match execute_result {
-        Ok(mut result_stream) => {
-            let mut results = Vec::new();
-            while let Ok(Some(row)) = result_stream.next().await {
-                let id: String = row.get("id").unwrap_or_default();
-                let source: String = row.get("source").unwrap_or_default();
-                let target: String = row.get("target").unwrap_or_default();
-                results.push(serde_json::json!({
-                    "id": id,
-                    "source": source,
-                    "target": target
-                }));
-            }
-            HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": results }))
-        }
+    let result = search.search_graph(&req.query).await;
+    match result {
+        Ok(data) => HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": data })),
         Err(e) => {
-            tracing::error!("Neo4j search failed: {:?}", e);
+            tracing::error!("Graph search failed: {:?}", e);
             HttpResponse::InternalServerError()
                 .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
@@ -190,45 +150,25 @@ async fn get_graph(req: web::Json<GraphQueryRequest>, graph: web::Data<Graph>) -
 }
 
 #[post("/api/rag/docs")]
-async fn get_docs(req: web::Json<DocQueryRequest>, qdrant: web::Data<Qdrant>) -> impl Responder {
+async fn get_docs(
+    req: web::Json<DocQueryRequest>, 
+    search: web::Data<search_domain::SearchService>
+) -> impl Responder {
     tracing::info!("Received docs search query: {}", req.query);
-
-    let search_vector = req.vector.clone().unwrap_or_else(|| vec![0.1f32; 384]);
     let limit = req.limit.unwrap_or(2);
 
-    let search_result = qdrant
-        .search_points(
-            SearchPointsBuilder::new("catest_docs", search_vector, limit).with_payload(true),
-        )
-        .await;
+    let result = search.search_docs(&req.query, req.vector.clone(), limit).await;
 
-    match search_result {
-        Ok(response) => {
-            let results: Vec<serde_json::Value> = response
-                .result
-                .into_iter()
-                .map(|scored_point| {
-                    let id_str = scored_point
-                        .id
-                        .and_then(|pid| pid.point_id_options)
-                        .map(|opt| format!("{:?}", opt))
-                        .unwrap_or_default();
-                    serde_json::json!({
-                        "id": id_str,
-                        "score": scored_point.score,
-                        "payload": scored_point.payload
-                    })
-                })
-                .collect();
-            HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": results }))
-        }
+    match result {
+        Ok(data) => HttpResponse::Ok().json(serde_json::json!({ "success": true, "data": data })),
         Err(e) => {
-            tracing::error!("Qdrant docs search failed: {:?}", e);
+            tracing::error!("Docs search failed: {:?}", e);
             HttpResponse::InternalServerError()
                 .json(serde_json::json!({ "success": false, "error": e.to_string() }))
         }
     }
 }
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -272,12 +212,20 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(std::io::Error::other)?;
 
+    // --- Search Domain Initialization ---
+    let inference_url = common::utils::get_env_default("INFERENCE_URL", "http://localhost:38080");
+    let search_service = search_domain::SearchService::new(
+        qdrant_client,
+        graph,
+        search_domain::InferenceClient::new(&inference_url)
+    );
+    let search_data = web::Data::new(search_service);
+
     HttpServer::new(move || {
         actix_web::App::new()
-            .app_data(actix_web::web::Data::new(pool.clone()))
+            .app_data(web::Data::new(pool.clone()))
             .app_data(producer_data.clone())
-            .app_data(actix_web::web::Data::new(qdrant_client.clone()))
-            .app_data(actix_web::web::Data::new(graph.clone()))
+            .app_data(search_data.clone())
             .service(healthz)
             .service(ingest_rag)
             .service(get_terms)
@@ -289,6 +237,7 @@ async fn main() -> std::io::Result<()> {
     .bind(("0.0.0.0", port))?
     .run()
     .await
+
 }
 #[cfg(test)]
 mod tests {

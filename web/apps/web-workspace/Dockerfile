@@ -9,6 +9,7 @@ RUN corepack enable
 FROM base AS deps
 WORKDIR /app
 COPY pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml ./
 COPY package.json ./
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/config/package.json ./packages/config/

@@ -31,7 +31,7 @@ spec:
             - name: DATABASE_URL
               value: "postgres://catest:password@postgres:34321/catest_hub"
             - name: KAFKA_BROKER
-              value: "kafka:9092"
+              value: "kafka:39092"
             - name: QDRANT_URL
               value: "http://qdrant:36333"
             - name: NEO4J_URI

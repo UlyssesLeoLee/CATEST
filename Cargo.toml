@@ -6,7 +6,7 @@ members = [
     "crates/parser",
     "crates/embedding",
     "crates/review",
-    "crates/stream-events",
+    "crates/stream-events", "crates/search-domain",
 ]
 resolver = "2"
 
@@ -16,7 +16,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 futures = "0.3"
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "macros"] }
-rdkafka = { version = "0.36", features = ["ssl", "cmake-build"] }
+rdkafka = { version = "0.36", features = ["ssl-vendored", "cmake-build"] }
 
 
 

@@ -21,9 +21,9 @@ spec:
             - name: DATABASE_URL
               value: "postgres://catest:password@postgres:34321/catest_workspace"
             - name: INGESTION_DATABASE_URL
-              value: "postgres://catest:password@postgres:34321/catest_workspace"
+              value: "postgres://catest:password@postgres:34321/catest_ingestion"
             - name: KAFKA_BROKER
-              value: "kafka:9092"
+              value: "kafka:39092"
             - name: RUST_LOG
               value: "debug"
             - name: RUST_BACKTRACE

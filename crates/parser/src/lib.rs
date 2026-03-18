@@ -5,29 +5,63 @@ use uuid::Uuid;
 #[cfg_attr(test, mockall::automock)]
 #[async_trait::async_trait]
 pub trait SegmentDao: Send + Sync {
-    async fn fetch_files(&self, snapshot_id: Uuid) -> Result<Vec<common::models::File>>;
-    async fn insert_segments(&self, snapshot_id: Uuid, symbol_name: Option<String>, code_text: String) -> Result<()>;
+    async fn insert_segments(
+        &self,
+        snapshot_id: Uuid,
+        symbol_name: Option<String>,
+        code_text: String,
+        normalized_hash: String,
+    ) -> Result<()>;
 }
+
 
 pub async fn process_snapshot(
     dao: &dyn SegmentDao,
+    storage_root: &std::path::Path,
+    manifest_rel_path: &str,
     snapshot_id: Uuid,
 ) -> Result<usize> {
-    let files = dao.fetch_files(snapshot_id).await?;
-    let mut total_segments = 0;
+    // Read manifest from shared storage (NAS)
+    let manifest_path = storage_root.join(manifest_rel_path);
+    let manifest_bytes = tokio::fs::read(&manifest_path).await
+        .with_context(|| format!("Failed to read manifest at {:?}", manifest_path))?;
+    
+    let manifest: Vec<common::models::FileManifestEntry> = serde_json::from_slice(&manifest_bytes)
+        .context("Failed to parse manifest JSON")?;
 
-    for file in files {
-        let extension = file.path.split('.').next_back().unwrap_or("");
+    let mut total_segments = 0;
+    let snapshot_dir = storage_root.join(snapshot_id.to_string());
+
+    for entry in manifest {
+        // Read file content from NAS
+        let file_path = snapshot_dir.join(&entry.storage_key);
+        let content_bytes = tokio::fs::read(&file_path).await
+            .with_context(|| format!("Failed to read file from storage: {:?}", file_path))?;
+        let content = String::from_utf8_lossy(&content_bytes).to_string();
+
+        let extension = entry.path.split('.').next_back().unwrap_or("");
+        
         if let Ok(mut segmenter) = Segmenter::new(extension) {
-            let segments = segmenter.segment_code(&file.content_text)?;
+            let segments = segmenter.segment_code(&content)?;
             for seg in &segments {
-                dao.insert_segments(snapshot_id, seg.symbol_name.clone(), seg.code_text.clone()).await?;
+                use sha2::{Digest, Sha256};
+                let hash = format!("{:x}", Sha256::digest(seg.code_text.as_bytes()));
+                
+                dao.insert_segments(
+                    snapshot_id, 
+                    seg.symbol_name.clone(), 
+                    seg.code_text.clone(),
+                    hash
+                ).await?;
                 total_segments += 1;
             }
         }
     }
     Ok(total_segments)
 }
+
+
+
 
 pub struct Segmenter {
     parser: Parser,
@@ -141,28 +175,43 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_process_snapshot_mock() {
-        let mut mock_dao = MockSegmentDao::new();
+    async fn test_process_snapshot_async() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let storage_root = temp_dir.path();
         let snapshot_id = Uuid::new_v4();
+        let snapshot_dir = storage_root.join(snapshot_id.to_string());
+        tokio::fs::create_dir_all(&snapshot_dir).await.unwrap();
 
-        mock_dao.expect_fetch_files()
-            .times(1)
-            .returning(|_| Ok(vec![common::models::File {
-                id: Uuid::new_v4(),
-                snapshot_id: Uuid::new_v4(),
-                path: "test.rs".to_string(),
-                language: "rust".to_string(),
-                size_bytes: 100,
-                sha256: "abc".to_string(),
-                content_text: "fn main() {}".to_string(),
-                created_at: chrono::Utc::now(),
-            }]));
+        // 1. Prepare mock file on NAS
+        let file_rel_path = "src/lib.rs";
+        let file_content = "pub fn add(a: i32, b: i32) -> i32 { a + b }";
+        let storage_key = "src_lib_rs_key";
+        let file_full_path = snapshot_dir.join(storage_key);
+        tokio::fs::write(&file_full_path, file_content).await.unwrap();
 
+        // 2. Prepare mock manifest
+        let manifest_entry = common::models::FileManifestEntry {
+            path: file_rel_path.to_string(),
+            storage_key: storage_key.to_string(),
+        };
+        let manifest_json = serde_json::to_vec(&vec![manifest_entry]).unwrap();
+        let manifest_rel_path = "manifest.json";
+        tokio::fs::write(storage_root.join(manifest_rel_path), manifest_json).await.unwrap();
+
+        // 3. Setup Mock DAO
+        let mut mock_dao = MockSegmentDao::new();
         mock_dao.expect_insert_segments()
+            .withf(move |sid, symbol, text, _hash| {
+                *sid == snapshot_id && symbol.as_deref() == Some("add") && text.contains("pub fn add")
+            })
             .times(1)
-            .returning(|_, _, _| Ok(()));
+            .returning(|_, _, _, _| Ok(()));
 
-        let count = process_snapshot(&mock_dao, snapshot_id).await.unwrap();
-        assert_eq!(count, 1);
+        // 4. Run process_snapshot
+        let result = process_snapshot(&mock_dao, storage_root, manifest_rel_path, snapshot_id).await;
+        
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 1); // 1 segment processed
     }
 }
+

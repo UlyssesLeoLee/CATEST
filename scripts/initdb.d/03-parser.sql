@@ -14,3 +14,7 @@ CREATE TABLE IF NOT EXISTS segments (
   metadata        jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at      timestamptz NOT NULL DEFAULT now()
 );
+
+-- Index for ON CONFLICT (normalized_hash)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_segments_hash ON segments (normalized_hash);
+

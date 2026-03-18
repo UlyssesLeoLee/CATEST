@@ -21,7 +21,7 @@ pub trait FileDao: Send + Sync {
         language: String,
         size_bytes: i64,
         sha256: String,
-        content: String,
+        s3_key: Option<String>,
     ) -> Result<()>;
 }
 
@@ -34,31 +34,41 @@ impl FileDao for sqlx::PgPool {
         language: String,
         size_bytes: i64,
         sha256: String,
-        content: String,
+        s3_key: Option<String>,
     ) -> Result<()> {
         sqlx::query(
-            "INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+            "INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, s3_key)
              VALUES ($1, $2, $3, $4, $5, $6)
-             ON CONFLICT (snapshot_id, path) DO NOTHING",
+             ON CONFLICT (snapshot_id, path) DO UPDATE SET s3_key = $6",
         )
         .bind(snapshot_id)
         .bind(path)
         .bind(language)
         .bind(size_bytes)
         .bind(sha256)
-        .bind(content)
+        .bind(s3_key)
         .execute(self)
         .await?;
         Ok(())
     }
 }
 
+use common::models::{File, FileManifestEntry};
+
+
 pub async fn scan_and_index_files(
     dao: &dyn FileDao,
+    storage_root: &Path,
     snapshot_id: Uuid,
     repo_path: &Path,
-) -> Result<usize> {
-    let mut count = 0;
+) -> Result<Vec<FileManifestEntry>> {
+    let mut manifest = Vec::new();
+    let snapshot_dir = storage_root.join(snapshot_id.to_string());
+    
+    // Create snapshot directory on the NAS
+    tokio::fs::create_dir_all(&snapshot_dir).await
+        .with_context(|| format!("Failed to create snapshot directory at {:?}", snapshot_dir))?;
+
     for entry in WalkDir::new(repo_path)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -68,30 +78,48 @@ pub async fn scan_and_index_files(
         if path.components().any(|c| c.as_os_str() == ".git") {
             continue;
         }
+ 
+        let relative_path_os = path.strip_prefix(repo_path)?;
+        let relative_path = relative_path_os.to_string_lossy().to_string();
+        
+        // Normalize path for cross-platform (use forward slashes in DB/Manifest)
+        let normalized_path = relative_path.replace('\\', "/");
 
-        let relative_path = path.strip_prefix(repo_path)?.to_string_lossy().to_string();
         let extension = path
             .extension()
             .and_then(|e| e.to_str())
             .unwrap_or("unknown");
-        let content = std::fs::read(path)?;
+        let content = tokio::fs::read(path).await?;
         let sha256 = format!("{:x}", Sha256::digest(&content));
-        let content_str = String::from_utf8_lossy(&content).into_owned();
+        
+        // Write to shared storage (NAS)
+        let target_path = snapshot_dir.join(relative_path_os);
+        if let Some(parent) = target_path.parent() {
+            tokio::fs::create_dir_all(parent).await?;
+        }
+        tokio::fs::write(&target_path, &content).await?;
 
+        // DB indexing
         dao.insert_file(
             snapshot_id,
-            relative_path,
+            normalized_path.clone(),
             extension.to_string(),
             content.len() as i64,
             sha256,
-            content_str,
+            Some(normalized_path.clone()), // The "key" is now just the relative path
         )
         .await?;
 
-        count += 1;
+        manifest.push(FileManifestEntry {
+            path: normalized_path.clone(),
+            storage_key: normalized_path,
+        });
     }
-    Ok(count)
+    Ok(manifest)
 }
+
+
+
 
 #[cfg(test)]
 mod tests {
@@ -110,8 +138,11 @@ mod tests {
             .times(2)
             .returning(|_, _, _, _, _, _| Ok(()));
 
-        let dir = tempdir().unwrap();
-        let repo_path = dir.path();
+        let repo_dir = tempdir().unwrap();
+        let repo_path = repo_dir.path();
+
+        let storage_dir = tempdir().unwrap();
+        let storage_root = storage_dir.path();
 
         let file1_path = repo_path.join("test.rs");
         fs::write(file1_path, "fn main() {}").unwrap();
@@ -119,9 +150,10 @@ mod tests {
         let file2_path = repo_path.join("other.txt");
         fs::write(file2_path, "hello").unwrap();
 
-        let count = scan_and_index_files(&mock_dao, snapshot_id, repo_path).await.unwrap();
-        assert_eq!(count, 2);
+        let manifest = scan_and_index_files(&mock_dao, storage_root, snapshot_id, repo_path).await.unwrap();
+        assert_eq!(manifest.len(), 2);
     }
+
 
     #[tokio::test]
     async fn test_scan_and_index_files_logic() {

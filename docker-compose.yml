@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: catest
       POSTGRES_USER: ${POSTGRES_USER:-catest}
@@ -11,30 +12,40 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./scripts/create_databases.sh:/docker-entrypoint-initdb.d/00-create_databases.sh
       - ./scripts/initdb.d:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-catest} -d catest"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - catest-net
 
   adminer:
     image: adminer:latest
-    restart: always
+    restart: unless-stopped
     ports:
       - "${ADMINER_PORT:-38080}:8080"
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - catest-net
 
   kafka:
     image: apache/kafka:latest
+    restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: INTERNAL://:9092,EXTERNAL://:39092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:39092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://kafka:39092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -42,9 +53,18 @@ services:
       KAFKA_NUM_PARTITIONS: 1
     ports:
       - "${KAFKA_PORT:-39092}:39092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    networks:
+      - catest-net
 
   neo4j:
     image: neo4j:community
+    restart: unless-stopped
     environment:
       NEO4J_AUTH: neo4j/password
     ports:
@@ -52,9 +72,18 @@ services:
       - "${NEO4J_BOLT_PORT:-37687}:7687"
     volumes:
       - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - catest-net
 
   qdrant:
     image: qdrant/qdrant
+    restart: unless-stopped
     environment:
       - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:-password}
     ports:
@@ -62,17 +91,67 @@ services:
       - "${QDRANT_GRPC_PORT:-36333}:6334" # gRPC
     volumes:
       - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - catest-net
 
   arroyo:
     image: ghcr.io/arroyosystems/arroyo:latest
+    restart: unless-stopped
     ports:
       - "${ARROYO_UI_PORT:-35115}:5115"
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER:-catest}:${POSTGRES_PASSWORD:-password}@postgres:5432/arroyo
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - catest-net
+
+  # Ingestion Service
+  ingestion:
+    image: catest-ingestion
+    build:
+      context: .
+      dockerfile: Dockerfile.ingestion
+    environment:
+      - DATABASE_URL=postgres://catest:password@postgres:5432/catest_ingestion
+      - KAFKA_BROKER=kafka:9092
+      - STORAGE_ROOT=/data/catest
+    volumes:
+      - "${HOST_STORAGE_PATH:-//LS220D088/webaxs/Ceph}:/data/catest"
+    depends_on:
       - postgres
       - kafka
+    networks:
+      - catest-net
+
+  # Parser Service
+  parser:
+    image: catest-parser
+    build:
+      context: .
+      dockerfile: Dockerfile.parser
+    environment:
+      - DATABASE_URL=postgres://catest:password@postgres:5432/catest_parser
+      - KAFKA_BROKER=kafka:9092
+      - STORAGE_ROOT=/data/catest
+    volumes:
+      - "//LS220D088/webaxs/Ceph:/data/catest"
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - catest-net
+
 
 volumes:
   pgdata:

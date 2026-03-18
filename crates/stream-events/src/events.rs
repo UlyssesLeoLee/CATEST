@@ -10,8 +10,10 @@ pub struct SnapshotCreatedEvent {
     pub project_id: Uuid,
     pub file_count: usize,
     pub repo_url: String,
+    pub manifest_s3_key: Option<String>,
     pub occurred_at: DateTime<Utc>,
 }
+
 
 /// Emitted by the parser service after code segments are extracted from a file.
 #[derive(Debug, Clone, Serialize, Deserialize)]

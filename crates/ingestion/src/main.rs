@@ -1,12 +1,12 @@
-use anyhow::Result;
-use catest_ingestion::{clone_repo, scan_and_index_files};
+use anyhow::{Result, Context};
+use catest_ingestion::{clone_repo, scan_and_index_files, FileDao};
 use sqlx::postgres::PgPoolOptions;
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     common::init_tracing();
-    tracing::info!("Starting Ingestion Worker");
+    tracing::info!("Starting Ingestion Worker (with Ceph Storage & RAII)");
 
     let postgres_port = common::utils::get_env_default("POSTGRES_PORT", "35432");
     let default_db_url = format!(
@@ -19,6 +19,11 @@ async fn main() -> Result<()> {
         .connect(&db_url)
         .await?;
 
+    // --- Storage Configuration (NAS Mount) ---
+    let storage_root_str = common::utils::get_env_default("STORAGE_ROOT", "/data/catest");
+    let storage_root = std::path::Path::new(&storage_root_str);
+    tracing::info!("Using NAS Storage Root: {}", storage_root_str);
+
     // Hardcoded for MVP demonstration
     let project_id_str = common::utils::get_env_default("DEMO_PROJECT_ID", "");
     let repo_url = common::utils::get_env_default(
@@ -30,13 +35,12 @@ async fn main() -> Result<()> {
         tracing::warn!("DEMO_PROJECT_ID not set, ingestion might fail");
     }
 
-    // In a real scenario, this would be triggered by a Kafka event
+    // --- Ingestion Flow (RAII) ---
     let snapshot_id = Uuid::new_v4();
-    let repository_id = Uuid::nil(); // Using Nil as placeholder for demo
-    let commit_sha = "HEAD"; // Placeholder for demonstration
+    let repository_id = Uuid::nil(); 
+    let commit_sha = "HEAD";
 
-    // Insert snapshot record first to satisfy foreign key constraint in 'files' table
-    tracing::info!("Attempting to insert snapshot {} for project {}", snapshot_id, project_id_str);
+    tracing::info!("Creating snapshot {} for project {}", snapshot_id, project_id_str);
     sqlx::query(
         "INSERT INTO snapshots (id, repository_id, commit_sha, status)
          VALUES ($1, $2, $3, 'running')"
@@ -46,16 +50,37 @@ async fn main() -> Result<()> {
     .bind(commit_sha)
     .execute(&pool)
     .await?;
-    tracing::info!("DATABASE_CONFIRMED: Inserted snapshot {} into database", snapshot_id);
 
-    let temp_dir = std::env::temp_dir().join(format!("catest-{}", snapshot_id));
+    // Use tempfile for RAII automatic cleanup of the clone
+    let temp_dir = tempfile::tempdir().context("Failed to create RAII temp directory")?;
+    let repo_path = temp_dir.path();
 
-    clone_repo(&repo_url, &temp_dir).await?;
-    let count = scan_and_index_files(&pool, snapshot_id, &temp_dir).await?;
+    clone_repo(&repo_url, repo_path).await?;
+    
+    // Scan, Index (DB) and Write to NAS
+    let manifest = catest_ingestion::scan_and_index_files(
+        &pool as &dyn catest_ingestion::FileDao, 
+        storage_root, 
+        snapshot_id, 
+        repo_path
+    ).await?;
 
+
+    let file_count = manifest.len();
+
+    // --- Write Manifest to NAS ---
+    let manifest_json = serde_json::to_vec(&manifest)?;
+    let manifest_rel_path = format!("{}/manifest.json", snapshot_id);
+    let manifest_full_path = storage_root.join(&manifest_rel_path);
+    
+    if let Some(parent) = manifest_full_path.parent() {
+        tokio::fs::create_dir_all(parent).await?;
+    }
+    tokio::fs::write(&manifest_full_path, manifest_json).await?;
+    
     tracing::info!(
-        "Successfully indexed {} files for snapshot {}",
-        count,
+        "Successfully indexed and stored {} files + manifest for snapshot {} on NAS",
+        file_count,
         snapshot_id
     );
 
@@ -67,7 +92,7 @@ async fn main() -> Result<()> {
     .execute(&pool)
     .await?;
 
-    // Publish event to Kafka for Arroyo/Downstream processing
+    // Publish event to Kafka
     let kafka_port = common::utils::get_env_default("KAFKA_PORT", "39092");
     let default_kafka = format!("localhost:{}", kafka_port);
     let kafka_broker = common::utils::get_env_default("KAFKA_BROKER", &default_kafka);
@@ -76,8 +101,9 @@ async fn main() -> Result<()> {
         event_id: Uuid::new_v4(),
         snapshot_id,
         project_id: Uuid::parse_str(&project_id_str).unwrap_or_else(|_| Uuid::nil()),
-        file_count: count,
+        file_count,
         repo_url,
+        manifest_s3_key: Some(manifest_rel_path),
         occurred_at: chrono::Utc::now(),
     };
     producer
@@ -87,10 +113,11 @@ async fn main() -> Result<()> {
             &event,
         )
         .await?;
-    tracing::info!(
-        "Published SnapshotCreatedEvent for snapshot {}",
-        snapshot_id
-    );
+
+
+    
+    tracing::info!("Published SnapshotCreatedEvent for snapshot {}. RAII directory will be cleaned up now.", snapshot_id);
 
     Ok(())
 }
+

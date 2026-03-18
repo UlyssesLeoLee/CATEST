@@ -11,6 +11,7 @@ FROM base AS deps
 WORKDIR /app
 # Copy workspace manifests
 COPY pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml ./
 COPY package.json ./
 # Copy only the package manifests of the apps we need (avoid copying all source)
 COPY packages/ui/package.json ./packages/ui/

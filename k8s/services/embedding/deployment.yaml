@@ -38,4 +38,4 @@ spec:
                   name: neo4j-secrets
                   key: neo4j-password
             - name: KAFKA_BROKER
-              value: "kafka:9092"
+              value: "kafka:39092"
