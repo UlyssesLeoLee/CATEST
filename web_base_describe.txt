@@ -1,0 +1,49 @@
+Name:             catest-web-base-6cbb9776d6-bfn62
+Namespace:        catest
+Priority:         0
+Service Account:  default
+Node:             docker-desktop/192.168.65.3
+Start Time:       Mon, 16 Mar 2026 19:57:51 +0800
+Labels:           app=catest-web
+                  pod-template-hash=6cbb9776d6
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-03-16T19:57:51+08:00
+Status:           Running
+IP:               10.1.4.149
+IPs:
+  IP:           10.1.4.149
+Controlled By:  ReplicaSet/catest-web-base-6cbb9776d6
+Containers:
+  web:
+    Container ID:   docker://9dfc0b42eccc7222917bb4512287cb8ee5c01faa6a83fe6d8b3884375e9cb33f
+    Image:          ghcr.io/ulyssesleolee/catest-web:latest
+    Image ID:       docker-pullable://ghcr.io/ulyssesleolee/catest-web@sha256:94a3736339ba0f9a5d1de98c8b860b863d416783353c64701992913e51b0d0dd
+    Port:           3000/TCP (http)
+    Host Port:      0/TCP (http)
+    State:          Running
+      Started:      Mon, 16 Mar 2026 19:58:25 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment Variables from:
+      catest-app-secrets  Secret  Optional: false
+    Environment:          <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-md7l5 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-md7l5:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:                      <none>

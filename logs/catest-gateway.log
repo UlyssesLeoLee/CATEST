@@ -1,11 +1,31 @@
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on package cache
-    Blocking waiting for file lock on build directory
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.12s
+    Blocking waiting for file lock on package cache
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:1:7
+  |
+1 | #[cfg(feature = "mock")]
+  |       ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:5:12
+  |
+5 | #[cfg_attr(feature = "mock", automock)]
+  |            ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: `stream-events` (lib) generated 2 warnings
+   Compiling catest-gateway v0.1.0 (E:\CATEST\crates\gateway)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 52.71s
      Running `E:\DevCache\cargo\target\debug\catest-gateway.exe`
-[2m2026-03-14T19:21:41.594038Z[0m [32m INFO[0m [2mcatest_gateway[0m[2m:[0m Starting Gateway on port 33080
-Failed to obtain server version. Unable to check client-server compatibility. Set check_compatibility=false to skip version check.
-[2m2026-03-14T19:21:41.638882Z[0m [32m INFO[0m [2mneo4rs::pool[0m[2m:[0m creating connection pool with max size 16
-[2m2026-03-14T19:21:41.639209Z[0m [32m INFO[0m [2mactix_server::builder[0m[2m:[0m starting 24 workers
-[2m2026-03-14T19:21:41.639257Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m Actix runtime found; starting in Actix runtime
-[2m2026-03-14T19:21:41.639280Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m starting service: "actix-web-service-0.0.0.0:33080", workers: 24, listening on: 0.0.0.0:33080
+[2m2026-03-17T19:29:12.075903Z[0m [32m INFO[0m [2mcatest_gateway[0m[2m:[0m Starting Gateway on port 33080
+Error: Custom { kind: Other, error: Configuration(InvalidPort) }
+error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-gateway.exe` (exit code: 1)

@@ -1,0 +1,200 @@
+CREATE TABLE
+CREATE TABLE
+
+
+waiting for server to shut down...2026-03-15 13:26:28.075 UTC [42] LOG:  received fast shutdown request
+.2026-03-15 13:26:28.129 UTC [42] LOG:  aborting any active transactions
+2026-03-15 13:26:28.131 UTC [42] LOG:  background worker "logical replication launcher" (PID 48) exited with exit code 1
+2026-03-15 13:26:28.134 UTC [43] LOG:  shutting down
+2026-03-15 13:26:28.206 UTC [43] LOG:  checkpoint starting: shutdown immediate
+...................2026-03-15 13:26:47.785 UTC [43] LOG:  checkpoint complete: wrote 4676 buffers (28.5%); 0 WAL file(s) added, 0 removed, 1 recycled; write=7.929 s, sync=10.270 s, total=19.651 s; sync files=1553, longest=6.356 s, average=0.007 s; distance=21918 kB, estimate=21918 kB; lsn=0/2A59E78, redo lsn=0/2A59E78
+2026-03-15 13:26:47.812 UTC [42] LOG:  database system is shut down
+ done
+server stopped
+
+PostgreSQL init process complete; ready for start up.
+
+2026-03-15 13:26:50.388 UTC [1] LOG:  starting PostgreSQL 16.12 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-03-15 13:26:50.389 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-03-15 13:26:50.389 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-03-15 13:26:52.122 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-03-15 13:26:53.587 UTC [75] LOG:  database system was shut down at 2026-03-15 13:26:46 UTC
+2026-03-15 13:26:53.929 UTC [1] LOG:  database system is ready to accept connections
+2026-03-15 13:27:41.761 UTC [86] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 13:27:41.761 UTC [86] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 13:27:41.762 UTC [86] LOG:  could not send data to client: Broken pipe
+2026-03-15 13:27:41.762 UTC [86] FATAL:  connection to client lost
+2026-03-15 13:30:10.768 UTC [107] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 13:30:10.768 UTC [107] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 13:30:54.068 UTC [116] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 13:30:54.068 UTC [116] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 13:31:53.729 UTC [73] LOG:  checkpoint starting: time
+2026-03-15 13:31:58.187 UTC [126] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 13:31:58.187 UTC [126] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 13:32:13.106 UTC [73] LOG:  checkpoint complete: wrote 68 buffers (0.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=13.496 s, sync=0.013 s, total=19.378 s; sync files=27, longest=0.010 s, average=0.001 s; distance=265 kB, estimate=265 kB; lsn=0/2A9C408, redo lsn=0/2A9C3D0
+2026-03-15 13:33:38.791 UTC [141] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 13:33:38.791 UTC [141] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 13:36:34.105 UTC [164] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 13:36:34.105 UTC [164] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 13:42:21.001 UTC [210] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 13:42:21.001 UTC [210] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 13:42:21.002 UTC [210] LOG:  could not receive data from client: Connection reset by peer
+2026-03-15 19:37:05.268 UTC [2829] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:37:05.268 UTC [2829] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:37:40.764 UTC [2838] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:37:40.764 UTC [2838] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:38:11.679 UTC [2844] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:38:11.679 UTC [2844] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:39:03.616 UTC [2853] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:39:03.616 UTC [2853] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:39:52.364 UTC [2863] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:39:52.364 UTC [2863] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:40:27.010 UTC [2871] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:40:27.010 UTC [2871] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:41:32.539 UTC [2882] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:41:32.539 UTC [2882] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:42:30.765 UTC [2891] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:42:30.765 UTC [2891] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:43:59.974 UTC [2905] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:43:59.974 UTC [2905] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:47:09.719 UTC [2929] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:47:09.719 UTC [2929] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-15 19:52:51.373 UTC [2973] ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
+2026-03-15 19:52:51.373 UTC [2973] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 11:32:14.693 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 11:32:18.439 UTC [73] LOG:  checkpoint complete: wrote 35 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=3.493 s, sync=0.054 s, total=3.747 s; sync files=33, longest=0.026 s, average=0.002 s; distance=170 kB, estimate=255 kB; lsn=0/2AC6F70, redo lsn=0/2AC6F38
+2026-03-16 11:42:14.725 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 11:42:16.442 UTC [73] LOG:  checkpoint complete: wrote 16 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.519 s, sync=0.151 s, total=1.717 s; sync files=17, longest=0.095 s, average=0.009 s; distance=67 kB, estimate=237 kB; lsn=0/2AD7C70, redo lsn=0/2AD7C38
+2026-03-16 11:52:14.701 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 11:52:15.552 UTC [73] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.803 s, sync=0.006 s, total=0.852 s; sync files=6, longest=0.005 s, average=0.001 s; distance=15 kB, estimate=214 kB; lsn=0/2ADBB50, redo lsn=0/2ADBB18
+2026-03-16 11:57:14.905 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 11:57:18.713 UTC [73] LOG:  checkpoint complete: wrote 25 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=3.146 s, sync=0.018 s, total=3.809 s; sync files=23, longest=0.014 s, average=0.001 s; distance=88 kB, estimate=202 kB; lsn=0/2AF1D78, redo lsn=0/2AF1D40
+2026-03-16 11:58:12.172 UTC [10091] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 11:58:12.172 UTC [10091] DETAIL:  Key (snapshot_id)=(4b7ef011-f96c-40ee-8af2-a39ed6723c83) is not present in table "snapshots".
+2026-03-16 11:58:12.172 UTC [10091] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 11:58:12.173 UTC [10091] LOG:  could not send data to client: Broken pipe
+2026-03-16 11:58:12.173 UTC [10091] FATAL:  connection to client lost
+2026-03-16 11:58:43.201 UTC [10096] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 11:58:43.201 UTC [10096] DETAIL:  Key (snapshot_id)=(cb201cdf-d44c-45cb-a9f1-3d44fdec177a) is not present in table "snapshots".
+2026-03-16 11:58:43.201 UTC [10096] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 11:58:43.202 UTC [10096] LOG:  could not receive data from client: Connection reset by peer
+2026-03-16 11:59:15.198 UTC [10102] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 11:59:15.198 UTC [10102] DETAIL:  Key (snapshot_id)=(41a4aece-6fbc-4bfc-a33e-9bf42c2f9881) is not present in table "snapshots".
+2026-03-16 11:59:15.198 UTC [10102] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 12:00:25.719 UTC [10111] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 12:00:25.719 UTC [10111] DETAIL:  Key (snapshot_id)=(2b8399f8-5028-40b7-8768-58a49bf9f41b) is not present in table "snapshots".
+2026-03-16 12:00:25.719 UTC [10111] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 12:02:14.753 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 12:03:07.771 UTC [73] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=17.443 s, sync=6.419 s, total=53.018 s; sync files=7, longest=6.419 s, average=0.917 s; distance=4 kB, estimate=182 kB; lsn=0/2AF2EF0, redo lsn=0/2AF2EB8
+2026-03-16 12:05:42.809 UTC [10151] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 12:05:42.809 UTC [10151] DETAIL:  Key (snapshot_id)=(d7f2cb94-072a-423f-b9c0-aec9ba9e9371) is not present in table "snapshots".
+2026-03-16 12:05:42.809 UTC [10151] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 12:07:14.904 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 12:08:11.716 UTC [73] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=21.149 s, sync=14.667 s, total=56.813 s; sync files=4, longest=10.407 s, average=3.666 s; distance=4 kB, estimate=164 kB; lsn=0/2AF3FD0, redo lsn=0/2AF3F98
+2026-03-16 12:09:17.364 UTC [10177] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 12:09:17.364 UTC [10177] DETAIL:  Key (snapshot_id)=(7d53e09c-7dc6-43fa-abe1-f79ab8d369dc) is not present in table "snapshots".
+2026-03-16 12:09:17.364 UTC [10177] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 12:12:14.846 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 12:12:15.236 UTC [73] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.304 s, sync=0.045 s, total=0.391 s; sync files=4, longest=0.044 s, average=0.012 s; distance=4 kB, estimate=148 kB; lsn=0/2AF5398, redo lsn=0/2AF5360
+2026-03-16 12:14:52.309 UTC [10219] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 12:14:52.309 UTC [10219] DETAIL:  Key (snapshot_id)=(1d3951e4-2286-457c-9c1c-25bf06b32995) is not present in table "snapshots".
+2026-03-16 12:14:52.309 UTC [10219] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 12:17:14.498 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 12:17:14.860 UTC [73] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.303 s, sync=0.009 s, total=0.363 s; sync files=4, longest=0.006 s, average=0.003 s; distance=5 kB, estimate=134 kB; lsn=0/2AF6A48, redo lsn=0/2AF6A10
+2026-03-16 12:57:21.588 UTC [10585] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 12:57:21.588 UTC [10585] DETAIL:  Key (snapshot_id)=(673ac414-e964-498e-8e5f-c2422ddaa378) is not present in table "snapshots".
+2026-03-16 12:57:21.588 UTC [10585] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 12:57:21.589 UTC [10585] LOG:  could not receive data from client: Connection reset by peer
+2026-03-16 12:59:43.685 UTC [10606] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 12:59:43.685 UTC [10606] DETAIL:  Key (snapshot_id)=(29983396-3b76-4382-9f4a-186acee3bfde) is not present in table "snapshots".
+2026-03-16 12:59:43.685 UTC [10606] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 13:01:31.025 UTC [10619] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 13:01:31.025 UTC [10619] DETAIL:  Key (snapshot_id)=(cf3ea112-257e-454e-bf50-80719bec4e4f) is not present in table "snapshots".
+2026-03-16 13:01:31.025 UTC [10619] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 13:01:31.025 UTC [10619] LOG:  could not receive data from client: Connection reset by peer
+2026-03-16 13:02:16.733 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 13:02:24.767 UTC [73] LOG:  checkpoint complete: wrote 5 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=3.170 s, sync=0.979 s, total=8.035 s; sync files=5, longest=0.640 s, average=0.196 s; distance=8 kB, estimate=121 kB; lsn=0/2AF8B88, redo lsn=0/2AF8B50
+2026-03-16 13:05:04.713 UTC [10647] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 13:05:04.713 UTC [10647] DETAIL:  Key (snapshot_id)=(fdb0c458-5d19-4891-b642-3082c5b1e4b4) is not present in table "snapshots".
+2026-03-16 13:05:04.713 UTC [10647] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 13:07:16.851 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 13:07:39.605 UTC [73] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=13.549 s, sync=2.009 s, total=22.754 s; sync files=4, longest=1.925 s, average=0.503 s; distance=8 kB, estimate=110 kB; lsn=0/2AFADA8, redo lsn=0/2AFAD70
+2026-03-16 13:11:14.234 UTC [10690] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 13:11:14.234 UTC [10690] DETAIL:  Key (snapshot_id)=(420eefa1-a80d-4a21-b07e-e1a2666ffab1) is not present in table "snapshots".
+2026-03-16 13:11:14.234 UTC [10690] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 13:12:16.764 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 13:12:52.691 UTC [73] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=3.481 s, sync=1.362 s, total=35.928 s; sync files=4, longest=1.292 s, average=0.341 s; distance=9 kB, estimate=100 kB; lsn=0/2AFD298, redo lsn=0/2AFD260
+2026-03-16 13:15:36.426 UTC [10728] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 13:15:36.426 UTC [10728] DETAIL:  Key (snapshot_id)=(0d69ab7a-dbdc-41cd-9b22-088b515a5576) is not present in table "snapshots".
+2026-03-16 13:15:36.426 UTC [10728] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 13:17:16.784 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 13:17:21.695 UTC [73] LOG:  checkpoint complete: wrote 6 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=2.207 s, sync=0.812 s, total=4.911 s; sync files=5, longest=0.459 s, average=0.163 s; distance=2 kB, estimate=90 kB; lsn=0/2AFDBF0, redo lsn=0/2AFDBB8
+2026-03-16 13:22:14.987 UTC [10804] ERROR:  insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+2026-03-16 13:22:14.987 UTC [10804] DETAIL:  Key (snapshot_id)=(65f5a90a-534a-47f4-b03c-1fd4c84cd043) is not present in table "snapshots".
+2026-03-16 13:22:14.987 UTC [10804] STATEMENT:  INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+	             VALUES ($1, $2, $3, $4, $5, $6)
+	             ON CONFLICT (snapshot_id, path) DO NOTHING
+2026-03-16 13:22:16.780 UTC [73] LOG:  checkpoint starting: time
+2026-03-16 13:22:43.618 UTC [73] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=3.996 s, sync=0.868 s, total=26.839 s; sync files=4, longest=0.528 s, average=0.217 s; distance=3 kB, estimate=81 kB; lsn=0/2AFE868, redo lsn=0/2AFE7F8

@@ -1,0 +1,18 @@
+                                Table "public.files"
+    Column    |           Type           | Collation | Nullable |      Default      
+--------------+--------------------------+-----------+----------+-------------------
+ id           | uuid                     |           | not null | gen_random_uuid()
+ snapshot_id  | uuid                     |           | not null | 
+ path         | text                     |           | not null | 
+ language     | text                     |           | not null | 
+ size_bytes   | bigint                   |           | not null | 0
+ sha256       | text                     |           | not null | 
+ content_text | text                     |           | not null | 
+ is_binary    | boolean                  |           | not null | false
+ created_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "files_pkey" PRIMARY KEY, btree (id)
+    "ux_files_snapshot_path" UNIQUE, btree (snapshot_id, path)
+Foreign-key constraints:
+    "files_snapshot_id_fkey" FOREIGN KEY (snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
+

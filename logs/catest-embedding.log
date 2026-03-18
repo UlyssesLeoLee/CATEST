@@ -3,10 +3,54 @@
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on build directory
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.87s
-     Running `E:\DevCache\cargo\target\debug\catest-embedding.exe`
-[2m2026-03-14T19:21:41.004614Z[0m [32m INFO[0m [2mcatest_embedding[0m[2m:[0m Starting AI Ingestion Worker (Qdrant + Neo4j)
-[2m2026-03-14T19:21:41.004757Z[0m [32m INFO[0m [2mcatest_embedding[0m[2m:[0m Embedding model: intfloat/multilingual-e5-small (dim=384), Reranker: BAAI/bge-reranker-v2-m3
-Failed to obtain server version. Unable to check client-server compatibility. Set check_compatibility=false to skip version check.
-Error: Error in the response: Unknown error h2 protocol error: http2 error MetadataMap { headers: {} }
-error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-embedding.exe` (exit code: 1)
+   Compiling tokio-rustls v0.26.4
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:1:7
+  |
+1 | #[cfg(feature = "mock")]
+  |       ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:5:12
+  |
+5 | #[cfg_attr(feature = "mock", automock)]
+  |            ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: `stream-events` (lib) generated 2 warnings
+   Compiling hyper-rustls v0.27.7
+   Compiling tonic v0.12.3
+   Compiling neo4rs v0.7.3
+   Compiling reqwest v0.12.28
+   Compiling qdrant-client v1.17.0
+   Compiling catest-embedding v0.1.0 (E:\CATEST\crates\embedding)
+error[E0599]: no method named `run` found for struct `KafkaConsumer` in the current scope
+  --> crates\embedding\src\main.rs:68:10
+   |
+67 | /     consumer
+68 | |         .run(|item: CleanedRagItem| {
+   | |         -^^^ method not found in `KafkaConsumer`
+   | |_________|
+   |
+   |
+  ::: E:\CATEST\crates\stream-events\src\lib.rs:8:14
+   |
+8  |       async fn run<E, F, Fut>(&self, handler: F) -> anyhow::Result<()>
+   |                --- the method is available for `KafkaConsumer` here
+   |
+   = help: items from traits can only be used if the trait is in scope
+help: trait `EventConsumer` which provides `run` is implemented but not in scope; perhaps you want to import it
+   |
+1  + use stream_events::EventConsumer;
+   |
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `catest-embedding` (bin "catest-embedding") due to 1 previous error

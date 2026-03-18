@@ -1,0 +1,20 @@
+
+> web-rag@0.1.0 dev E:\CATEST\web\apps\web-rag
+> next dev -p 33002
+
+鈻?Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:33002
+- Network:       http://192.168.1.10:33002
+- Environments: .env.local
+
+鉁?Starting...
+鉁?Ready in 216.2s
+鈼?Compiling /rag ...
+ GET /rag 200 in 75s (compile: 75s, render: 126ms)
+鈼?Compiling /_not-found/page ...
+ GET /rag 404 in 72s (compile: 70s, render: 1979ms)
+ GET /rag 404 in 37.5s (compile: 35.8s, render: 1713ms)
+ GET /rag 404 in 37.5s (compile: 35.7s, render: 1746ms)
+ GET /rag 404 in 37.5s (compile: 35.7s, render: 1763ms)
+ GET /rag 404 in 37.5s (compile: 35.8s, render: 1730ms)
+ GET /rag 404 in 1692ms (compile: 4ms, render: 1688ms)

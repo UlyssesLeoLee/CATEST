@@ -35,7 +35,8 @@ async fn main() -> Result<()> {
         embed_dim,
         reranker_model
     );
-    let manager = EmbeddingManager::new(&qdrant_url)?;
+    let qdrant_api_key = common::utils::get_env_default("QDRANT_API_KEY", "password");
+    let manager = EmbeddingManager::new(&qdrant_url, Some(&qdrant_api_key))?;
     manager.ensure_collection("catest_rag", embed_dim).await?;
 
     // Neo4j Setup — credentials from env

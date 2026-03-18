@@ -1,0 +1,18 @@
+
+> web-base@0.1.0 dev E:\CATEST\web\apps\web-base
+> next dev -p 33000
+
+猕?Failed to start server
+Error: listen EADDRINUSE: address already in use :::33000
+    at <unknown> (Error: listen EADDRINUSE: address already in use :::33000)
+    at new Promise (<anonymous>) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 33000
+}
+[?25h
+E:\CATEST\web\apps\web-base:
+鈥塃RR_PNPM_RECURSIVE_RUN_FIRST_FAIL鈥?web-base@0.1.0 dev: `next dev -p 33000`
+Exit status 1

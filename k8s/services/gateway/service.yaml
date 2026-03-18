@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-hub
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 33080
+      targetPort: 33080
+      name: http
+  selector:
+    app: catest-hub

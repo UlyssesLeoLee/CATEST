@@ -1,34 +1,53 @@
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on package cache
-    Blocking waiting for file lock on package cache
     Blocking waiting for file lock on build directory
-warning: unused import: `uuid::Uuid`
- --> crates\parser\src\lib.rs:3:5
+   Compiling tree-sitter v0.20.10
+   Compiling tree-sitter-java v0.20.2
+   Compiling tree-sitter-rust v0.20.4
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:1:7
   |
-3 | use uuid::Uuid;
-  |     ^^^^^^^^^^
+1 | #[cfg(feature = "mock")]
+  |       ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:5:12
+  |
+5 | #[cfg_attr(feature = "mock", automock)]
+  |            ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: `stream-events` (lib) generated 2 warnings
+   Compiling catest-parser v0.1.0 (E:\CATEST\crates\parser)
+warning: unused imports: `Segmenter` and `process_snapshot`
+ --> crates\parser\src\main.rs:2:21
+  |
+2 | use catest_parser::{Segmenter, SegmentDao, process_snapshot};
+  |                     ^^^^^^^^^              ^^^^^^^^^^^^^^^^
   |
   = note: `#[warn(unused_imports)]` on by default
 
-warning: unused import: `sqlx::PgPool`
- --> crates\parser\src\lib.rs:4:5
+warning: unused import: `stream_events::EventConsumer`
+ --> crates\parser\src\main.rs:3:5
   |
-4 | use sqlx::PgPool;
-  |     ^^^^^^^^^^^^
+3 | use stream_events::EventConsumer;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: field `language` is never read
- --> crates\parser\src\lib.rs:8:5
-  |
-6 | pub struct Segmenter {
-  |            --------- field in this struct
-7 |     parser: Parser,
-8 |     language: String,
-  |     ^^^^^^^^
-  |
-  = note: `#[warn(dead_code)]` on by default
-
-warning: `catest-parser` (lib) generated 3 warnings (run `cargo fix --lib -p catest-parser` to apply 2 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.05s
+warning: `catest-parser` (bin "catest-parser") generated 2 warnings (run `cargo fix --bin "catest-parser"` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 48s
      Running `E:\DevCache\cargo\target\debug\catest-parser.exe`
-[2m2026-03-14T19:21:41.213026Z[0m [32m INFO[0m [2mcatest_parser[0m[2m:[0m Starting Parser Worker
+[2m2026-03-17T19:31:07.701457Z[0m [32m INFO[0m [2mcatest_parser[0m[2m:[0m Starting Parser Worker
+Error: error with configuration: invalid port number
+
+Caused by:
+    invalid port number
+error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-parser.exe` (exit code: 1)

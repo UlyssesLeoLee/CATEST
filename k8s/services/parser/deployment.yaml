@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-workspace
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-workspace
+  template:
+    metadata:
+      labels:
+        app: catest-workspace
+    spec:
+      containers:
+        - name: parser
+          image: ghcr.io/ulyssesleolee/catest-parser:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_workspace"
+            - name: INGESTION_DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_workspace"
+            - name: KAFKA_BROKER
+              value: "kafka:9092"
+            - name: RUST_LOG
+              value: "debug"
+            - name: RUST_BACKTRACE
+              value: "1"

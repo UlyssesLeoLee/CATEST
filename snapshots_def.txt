@@ -1,0 +1,14 @@
+                                   Table "public.snapshots"
+    Column     |           Type           | Collation | Nullable |          Default           
+---------------+--------------------------+-----------+----------+----------------------------
+ id            | uuid                     |           | not null | gen_random_uuid()
+ repository_id | uuid                     |           | not null | 
+ commit_sha    | text                     |           | not null | 
+ status        | snapshot_status          |           | not null | 'pending'::snapshot_status
+ created_at    | timestamp with time zone |           | not null | now()
+ finished_at   | timestamp with time zone |           |          | 
+Indexes:
+    "snapshots_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "files" CONSTRAINT "files_snapshot_id_fkey" FOREIGN KEY (snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
+

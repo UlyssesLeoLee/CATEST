@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-web-base
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-web
+  template:
+    metadata:
+      labels:
+        app: catest-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/ulyssesleolee/catest-web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: NEXT_PUBLIC_SAAS_MODE
+              value: "true"
+            - name: NEXT_PUBLIC_GATEWAY_URL
+              value: "http://catest-hub:33080"
+          envFrom:
+            - secretRef:
+                name: catest-app-secrets

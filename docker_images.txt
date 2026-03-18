@@ -1,0 +1,13 @@
+
+ghcr.io/ulyssesleolee/catest-gateway:latest
+ghcr.io/ulyssesleolee/catest-embedding:latest
+ghcr.io/ulyssesleolee/catest-review:latest
+ghcr.io/ulyssesleolee/catest-ingestion:latest
+ghcr.io/ulyssesleolee/catest-parser:latest
+ghcr.io/ulyssesleolee/catest-web:latest
+catest-review:latest
+catest-embedding:latest
+catest-ingestion:latest
+catest-gateway:latest
+catest-parser:latest
+

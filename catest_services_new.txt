@@ -1,0 +1,17 @@
+NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                           AGE
+arroyo                 ClusterIP      10.103.71.193    <none>        35115/TCP                         30h
+arroyo-ext             LoadBalancer   10.107.198.245   <pending>     35115:31729/TCP                   29h
+catest-gateway         LoadBalancer   10.102.56.219    localhost     33080:30924/TCP                   30h
+catest-review          LoadBalancer   10.106.236.220   localhost     33081:31694/TCP                   30h
+catest-web-base        LoadBalancer   10.105.160.110   <pending>     33000:31986/TCP                   13h
+catest-web-rag         LoadBalancer   10.97.92.18      <pending>     33002:31229/TCP                   14h
+catest-web-review      LoadBalancer   10.103.34.107    <pending>     33003:31323/TCP                   14h
+catest-web-workspace   LoadBalancer   10.108.196.232   <pending>     33001:32469/TCP                   14h
+kafka                  ClusterIP      10.103.206.241   <none>        9092/TCP,39092/TCP                12h
+kafka-ext              LoadBalancer   10.110.12.116    <pending>     39092:32324/TCP                   29h
+neo4j                  ClusterIP      10.111.232.217   <none>        37474/TCP,37687/TCP               30h
+neo4j-ext              LoadBalancer   10.98.232.50     <pending>     37474:32363/TCP,37687:30218/TCP   29h
+postgres               ClusterIP      10.101.182.107   <none>        34321/TCP                         30h
+postgres-ext           LoadBalancer   10.110.226.225   localhost     34321:32621/TCP                   29h
+qdrant                 ClusterIP      10.100.18.164    <none>        36334/TCP,36333/TCP               30h
+qdrant-ext             LoadBalancer   10.97.41.196     <pending>     36334:32697/TCP,36333:32486/TCP   29h

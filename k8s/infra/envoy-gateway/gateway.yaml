@@ -1,0 +1,14 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: catest-envoy-gateway
+  namespace: catest
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 33088
+      allowedRoutes:
+        namespaces:
+          from: Same

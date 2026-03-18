@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-intelligence
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-intelligence
+  template:
+    metadata:
+      labels:
+        app: catest-intelligence
+    spec:
+      containers:
+        - name: embedding
+          image: ghcr.io/ulyssesleolee/catest-embedding:latest
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_intelligence"
+            - name: QDRANT_URL
+              value: "http://qdrant:36333"
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catest-app-secrets
+                  key: QDRANT_API_KEY
+
+            - name: NEO4J_URI
+              value: "bolt://neo4j:37687"
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: neo4j-secrets
+                  key: neo4j-password
+            - name: KAFKA_BROKER
+              value: "kafka:9092"

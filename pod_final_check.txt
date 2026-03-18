@@ -1,0 +1,24 @@
+﻿NAME                                    READY   STATUS             RESTARTS        AGE
+arroyo-7d54669d74-bnb4v                 1/1     Running            0               19h
+catest-embedding-596b6c48b9-bjk4b       1/1     Running            0               165m
+catest-gateway-96c7968c6-pv4ph          1/1     Running            0               60m
+catest-ingestion-2j68p                  0/1     Error              0               6m30s
+catest-ingestion-5q9jh                  0/1     Error              0               17m
+catest-ingestion-66gl8                  0/1     Error              0               17m
+catest-ingestion-8zw2l                  0/1     Error              0               12m
+catest-ingestion-nc7p4                  0/1     Error              0               16m
+catest-ingestion-nfqkn                  0/1     Error              0               17m
+catest-ingestion-xb4rt                  0/1     Error              0               14m
+catest-parser-6669db6fcd-mcths          0/1     CrashLoopBackOff   8 (3m58s ago)   20m
+catest-review-78cd559b9c-s2qns          1/1     Running            0               19h
+catest-web-base-6cbb9776d6-bfn62        1/1     Running            0               3h40m
+catest-web-rag-579c96d97d-5fq87         0/1     ImagePullBackOff   0               78m
+catest-web-rag-69f67475cb-6v7c8         0/1     ImagePullBackOff   0               3h40m
+catest-web-review-55ccbd5c59-t2ln5      0/1     ImagePullBackOff   0               78m
+catest-web-review-78c48f9d8f-jrzlg      0/1     ImagePullBackOff   0               3h40m
+catest-web-workspace-764656b758-nbh8d   0/1     ImagePullBackOff   0               3h40m
+catest-web-workspace-7f877445b8-k4x47   0/1     ErrImagePull       0               78m
+kafka-0                                 1/1     Running            0               26h
+neo4j-0                                 1/1     Running            0               3h7m
+postgres-0                              1/1     Running            0               26h
+qdrant-0                                1/1     Running            0               26h

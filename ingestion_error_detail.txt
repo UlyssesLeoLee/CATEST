@@ -1,0 +1,132 @@
+[2m2026-03-16T15:23:49.191750Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-16T15:23:49.197898Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "/tmp/catest-88b7040a-62e2-4c50-96eb-392fdafdc618"
+[2m2026-03-16T15:23:52.331208Z[0m [34mDEBUG[0m [2msqlx::query[0m[2m:[0m [3msummary[0m[2m=[0m"INSERT INTO files (snapshot_id, …" [3mdb.statement[0m[2m=[0m"\n\nINSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (snapshot_id, path) DO NOTHING\n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m1.827708ms [3melapsed_secs[0m[2m=[0m0.001827708
+Error: error returned from database: insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Caused by:
+    insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Stack backtrace:
+   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
+   1: catest_ingestion::main::{{closure}}
+   2: tokio::runtime::park::CachedParkThread::block_on
+   3: tokio::runtime::context::runtime::enter_runtime
+   4: tokio::runtime::runtime::Runtime::block_on
+   5: catest_ingestion::main
+   6: std::sys::backtrace::__rust_begin_short_backtrace
+   7: std::rt::lang_start::{{closure}}
+   8: std::rt::lang_start_internal
+   9: main
+  10: <unknown>
+  11: __libc_start_main
+  12: _start
+[2m2026-03-16T15:21:35.739630Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-16T15:21:35.744585Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "/tmp/catest-7b8e7207-155e-4ed6-90b6-10063c9d581b"
+[2m2026-03-16T15:21:39.649539Z[0m [34mDEBUG[0m [2msqlx::query[0m[2m:[0m [3msummary[0m[2m=[0m"INSERT INTO files (snapshot_id, …" [3mdb.statement[0m[2m=[0m"\n\nINSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (snapshot_id, path) DO NOTHING\n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m2.37528ms [3melapsed_secs[0m[2m=[0m0.00237528
+Error: error returned from database: insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Caused by:
+    insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Stack backtrace:
+   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
+   1: catest_ingestion::main::{{closure}}
+   2: tokio::runtime::park::CachedParkThread::block_on
+   3: tokio::runtime::context::runtime::enter_runtime
+   4: tokio::runtime::runtime::Runtime::block_on
+   5: catest_ingestion::main
+   6: std::sys::backtrace::__rust_begin_short_backtrace
+   7: std::rt::lang_start::{{closure}}
+   8: std::rt::lang_start_internal
+   9: main
+  10: <unknown>
+  11: __libc_start_main
+  12: _start
+[2m2026-03-16T15:21:10.495430Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-16T15:21:10.500176Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "/tmp/catest-b2758fa5-6287-4a42-a147-4f11867c4662"
+[2m2026-03-16T15:21:14.192932Z[0m [34mDEBUG[0m [2msqlx::query[0m[2m:[0m [3msummary[0m[2m=[0m"INSERT INTO files (snapshot_id, …" [3mdb.statement[0m[2m=[0m"\n\nINSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (snapshot_id, path) DO NOTHING\n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m2.150632ms [3melapsed_secs[0m[2m=[0m0.002150632
+Error: error returned from database: insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Caused by:
+    insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Stack backtrace:
+   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
+   1: catest_ingestion::main::{{closure}}
+   2: tokio::runtime::park::CachedParkThread::block_on
+   3: tokio::runtime::context::runtime::enter_runtime
+   4: tokio::runtime::runtime::Runtime::block_on
+   5: catest_ingestion::main
+   6: std::sys::backtrace::__rust_begin_short_backtrace
+   7: std::rt::lang_start::{{closure}}
+   8: std::rt::lang_start_internal
+   9: main
+  10: <unknown>
+  11: __libc_start_main
+  12: _start
+[2m2026-03-16T15:26:36.740757Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-16T15:26:36.744395Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "/tmp/catest-4ed60ad2-1d99-42b7-b5a6-6affcca4f381"
+[2m2026-03-16T15:26:40.245400Z[0m [34mDEBUG[0m [2msqlx::query[0m[2m:[0m [3msummary[0m[2m=[0m"INSERT INTO files (snapshot_id, …" [3mdb.statement[0m[2m=[0m"\n\nINSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (snapshot_id, path) DO NOTHING\n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m1.93409ms [3melapsed_secs[0m[2m=[0m0.00193409
+Error: error returned from database: insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Caused by:
+    insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Stack backtrace:
+   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
+   1: catest_ingestion::main::{{closure}}
+   2: tokio::runtime::park::CachedParkThread::block_on
+   3: tokio::runtime::context::runtime::enter_runtime
+   4: tokio::runtime::runtime::Runtime::block_on
+   5: catest_ingestion::main
+   6: std::sys::backtrace::__rust_begin_short_backtrace
+   7: std::rt::lang_start::{{closure}}
+   8: std::rt::lang_start_internal
+   9: main
+  10: <unknown>
+  11: __libc_start_main
+  12: _start
+[2m2026-03-16T15:22:21.952292Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-16T15:22:21.956781Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "/tmp/catest-8af0d1c1-6e3e-4e6a-8352-aa24b2e685b6"
+[2m2026-03-16T15:22:27.183753Z[0m [34mDEBUG[0m [2msqlx::query[0m[2m:[0m [3msummary[0m[2m=[0m"INSERT INTO files (snapshot_id, …" [3mdb.statement[0m[2m=[0m"\n\nINSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (snapshot_id, path) DO NOTHING\n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m2.294112ms [3melapsed_secs[0m[2m=[0m0.002294112
+Error: error returned from database: insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Caused by:
+    insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Stack backtrace:
+   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
+   1: catest_ingestion::main::{{closure}}
+   2: tokio::runtime::park::CachedParkThread::block_on
+   3: tokio::runtime::context::runtime::enter_runtime
+   4: tokio::runtime::runtime::Runtime::block_on
+   5: catest_ingestion::main
+   6: std::sys::backtrace::__rust_begin_short_backtrace
+   7: std::rt::lang_start::{{closure}}
+   8: std::rt::lang_start_internal
+   9: main
+  10: <unknown>
+  11: __libc_start_main
+  12: _start
+[2m2026-03-16T15:20:55.003458Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-16T15:20:55.010414Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "/tmp/catest-8fbcf3c4-c7c2-47c9-b11e-552cbfe3f037"
+[2m2026-03-16T15:20:58.067690Z[0m [34mDEBUG[0m [2msqlx::query[0m[2m:[0m [3msummary[0m[2m=[0m"INSERT INTO files (snapshot_id, …" [3mdb.statement[0m[2m=[0m"\n\nINSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (snapshot_id, path) DO NOTHING\n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m1.794479ms [3melapsed_secs[0m[2m=[0m0.001794479
+Error: error returned from database: insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Caused by:
+    insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Stack backtrace:
+   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
+   1: catest_ingestion::main::{{closure}}
+   2: tokio::runtime::park::CachedParkThread::block_on
+   3: tokio::runtime::context::runtime::enter_runtime
+   4: tokio::runtime::runtime::Runtime::block_on
+   5: catest_ingestion::main
+   6: std::sys::backtrace::__rust_begin_short_backtrace
+   7: std::rt::lang_start::{{closure}}
+   8: std::rt::lang_start_internal
+   9: main
+  10: <unknown>
+  11: __libc_start_main
+  12: _start

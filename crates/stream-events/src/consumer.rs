@@ -5,9 +5,12 @@ use rdkafka::message::Message;
 use rdkafka::ClientConfig;
 use serde::de::DeserializeOwned;
 
+use std::sync::Arc;
+
 /// A thin async Kafka consumer using rdkafka.
+#[derive(Clone)]
 pub struct KafkaConsumer {
-    inner: StreamConsumer,
+    inner: Arc<StreamConsumer>,
 }
 
 impl KafkaConsumer {
@@ -25,15 +28,17 @@ impl KafkaConsumer {
             .subscribe(topics)
             .context("Failed to subscribe to Kafka topics")?;
 
-        Ok(Self { inner: consumer })
+        Ok(Self { inner: Arc::new(consumer) })
     }
+}
 
-    /// Process messages in an async loop, calling `handler` for each deserialized event.
-    pub async fn run<E, F, Fut>(&self, mut handler: F) -> Result<()>
+#[async_trait::async_trait]
+impl crate::EventConsumer for KafkaConsumer {
+    async fn run<E, F, Fut>(&self, mut handler: F) -> Result<()>
     where
-        E: DeserializeOwned,
-        F: FnMut(E) -> Fut,
-        Fut: std::future::Future<Output = Result<()>>,
+        E: DeserializeOwned + Send + 'static,
+        F: FnMut(E) -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
     {
         let mut stream = self.inner.stream();
         while let Some(message) = stream.next().await {

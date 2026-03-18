@@ -1,0 +1,14 @@
+
+> web-review@0.1.0 dev E:\CATEST\web\apps\web-review
+> next dev -p 33003
+
+鈻?Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:33003
+- Network:       http://192.168.1.10:33003
+- Environments: .env.local
+
+鉁?Starting...
+鉁?Ready in 110.4s
+鈼?Compiling /_not-found/page ...
+鉁?Finished writing to filesystem cache in 12.1s
+ GET /review 404 in 64s (compile: 64s, render: 481ms)

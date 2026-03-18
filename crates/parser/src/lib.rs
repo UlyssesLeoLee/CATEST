@@ -1,5 +1,33 @@
 use anyhow::{Context, Result};
 use tree_sitter::{Language, Parser};
+use uuid::Uuid;
+
+#[cfg_attr(test, mockall::automock)]
+#[async_trait::async_trait]
+pub trait SegmentDao: Send + Sync {
+    async fn fetch_files(&self, snapshot_id: Uuid) -> Result<Vec<common::models::File>>;
+    async fn insert_segments(&self, snapshot_id: Uuid, symbol_name: Option<String>, code_text: String) -> Result<()>;
+}
+
+pub async fn process_snapshot(
+    dao: &dyn SegmentDao,
+    snapshot_id: Uuid,
+) -> Result<usize> {
+    let files = dao.fetch_files(snapshot_id).await?;
+    let mut total_segments = 0;
+
+    for file in files {
+        let extension = file.path.split('.').next_back().unwrap_or("");
+        if let Ok(mut segmenter) = Segmenter::new(extension) {
+            let segments = segmenter.segment_code(&file.content_text)?;
+            for seg in &segments {
+                dao.insert_segments(snapshot_id, seg.symbol_name.clone(), seg.code_text.clone()).await?;
+                total_segments += 1;
+            }
+        }
+    }
+    Ok(total_segments)
+}
 
 pub struct Segmenter {
     parser: Parser,
@@ -69,6 +97,7 @@ pub struct CodeSegment {
     pub start_line: i32,
     pub end_line: i32,
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,5 +138,31 @@ mod tests {
     fn test_segmenter_unsupported_language() {
         let result = Segmenter::new("python");
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_process_snapshot_mock() {
+        let mut mock_dao = MockSegmentDao::new();
+        let snapshot_id = Uuid::new_v4();
+
+        mock_dao.expect_fetch_files()
+            .times(1)
+            .returning(|_| Ok(vec![common::models::File {
+                id: Uuid::new_v4(),
+                snapshot_id: Uuid::new_v4(),
+                path: "test.rs".to_string(),
+                language: "rust".to_string(),
+                size_bytes: 100,
+                sha256: "abc".to_string(),
+                content_text: "fn main() {}".to_string(),
+                created_at: chrono::Utc::now(),
+            }]));
+
+        mock_dao.expect_insert_segments()
+            .times(1)
+            .returning(|_, _, _| Ok(()));
+
+        let count = process_snapshot(&mock_dao, snapshot_id).await.unwrap();
+        assert_eq!(count, 1);
     }
 }

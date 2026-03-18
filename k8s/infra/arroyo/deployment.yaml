@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arroyo
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arroyo
+  template:
+    metadata:
+      labels:
+        app: arroyo
+    spec:
+      containers:
+        - name: arroyo
+          image: ghcr.io/arroyosystems/arroyo:latest
+          env:
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/arroyo"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+          ports:
+            - containerPort: 5115
+              name: ui

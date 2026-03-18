@@ -1,0 +1,1 @@
+error: cannot add key "00-create_databases.sh", another key by that name already exists in Data for ConfigMap "postgres-init-scripts"

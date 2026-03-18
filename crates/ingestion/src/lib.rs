@@ -11,8 +11,50 @@ pub async fn clone_repo(url: &str, target_dir: &Path) -> Result<Repository> {
     Repository::clone(url, target_dir).context("Failed to clone repository")
 }
 
+#[cfg_attr(test, mockall::automock)]
+#[async_trait::async_trait]
+pub trait FileDao: Send + Sync {
+    async fn insert_file(
+        &self,
+        snapshot_id: Uuid,
+        path: String,
+        language: String,
+        size_bytes: i64,
+        sha256: String,
+        content: String,
+    ) -> Result<()>;
+}
+
+#[async_trait::async_trait]
+impl FileDao for sqlx::PgPool {
+    async fn insert_file(
+        &self,
+        snapshot_id: Uuid,
+        path: String,
+        language: String,
+        size_bytes: i64,
+        sha256: String,
+        content: String,
+    ) -> Result<()> {
+        sqlx::query(
+            "INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (snapshot_id, path) DO NOTHING",
+        )
+        .bind(snapshot_id)
+        .bind(path)
+        .bind(language)
+        .bind(size_bytes)
+        .bind(sha256)
+        .bind(content)
+        .execute(self)
+        .await?;
+        Ok(())
+    }
+}
+
 pub async fn scan_and_index_files(
-    pool: &PgPool,
+    dao: &dyn FileDao,
     snapshot_id: Uuid,
     repo_path: &Path,
 ) -> Result<usize> {
@@ -34,25 +76,23 @@ pub async fn scan_and_index_files(
             .unwrap_or("unknown");
         let content = std::fs::read(path)?;
         let sha256 = format!("{:x}", Sha256::digest(&content));
+        let content_str = String::from_utf8_lossy(&content).into_owned();
 
-        sqlx::query(
-            "INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, content_text)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             ON CONFLICT (snapshot_id, path) DO NOTHING",
+        dao.insert_file(
+            snapshot_id,
+            relative_path,
+            extension.to_string(),
+            content.len() as i64,
+            sha256,
+            content_str,
         )
-        .bind(snapshot_id)
-        .bind(relative_path)
-        .bind(extension)
-        .bind(content.len() as i64)
-        .bind(sha256)
-        .bind(String::from_utf8_lossy(&content))
-        .execute(pool)
         .await?;
 
         count += 1;
     }
     Ok(count)
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,7 +101,31 @@ mod tests {
     use tempfile::tempdir;
 
     #[tokio::test]
-    async fn test_scan_and_index_files() {
+    async fn test_scan_and_index_files_mock() {
+        let mut mock_dao = MockFileDao::new();
+        let snapshot_id = Uuid::new_v4();
+        
+        // Expect 2 file insertions
+        mock_dao.expect_insert_file()
+            .times(2)
+            .returning(|_, _, _, _, _, _| Ok(()));
+
+        let dir = tempdir().unwrap();
+        let repo_path = dir.path();
+
+        let file1_path = repo_path.join("test.rs");
+        fs::write(file1_path, "fn main() {}").unwrap();
+
+        let file2_path = repo_path.join("other.txt");
+        fs::write(file2_path, "hello").unwrap();
+
+        let count = scan_and_index_files(&mock_dao, snapshot_id, repo_path).await.unwrap();
+        assert_eq!(count, 2);
+    }
+
+    #[tokio::test]
+    async fn test_scan_and_index_files_logic() {
+        // ... (pre-existing logic test)
         // Create a temporary directory structure
         let dir = tempdir().unwrap();
         let repo_path = dir.path();

@@ -1,0 +1,33 @@
+Name:                   catest-parser
+Namespace:              catest
+CreationTimestamp:      Mon, 16 Mar 2026 03:39:24 +0800
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 2
+Selector:               app=catest-parser
+Replicas:               1 desired | 1 updated | 1 total | 0 available | 1 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=catest-parser
+  Containers:
+   parser:
+    Image:      ghcr.io/ulyssesleolee/catest-parser:latest
+    Port:       <none>
+    Host Port:  <none>
+    Environment:
+      DATABASE_URL:            postgres://catest:password@postgres:34321/catest_parser
+      INGESTION_DATABASE_URL:  postgres://catest:password@postgres:34321/catest_ingestion
+      KAFKA_BROKER:            kafka:9092
+    Mounts:                    <none>
+  Volumes:                     <none>
+  Node-Selectors:              <none>
+  Tolerations:                 <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      False   MinimumReplicasUnavailable
+OldReplicaSets:  catest-parser-665d8f4fc5 (0/0 replicas created)
+NewReplicaSet:   catest-parser-7d957fc6 (1/1 replicas created)
+Events:          <none>

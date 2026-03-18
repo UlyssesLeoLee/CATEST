@@ -1,5 +1,41 @@
+# Rust
 /target
 **/*.rs.bk
-Cargo.lock
+
+# Node.js / Next.js
+node_modules/
+.next/
+dist/
+build/
+out/
+.turbo/
+.pnpm-debug.log*
+
+# Environment & Secrets
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs & Temporary Files
+*.log
+*_err.txt
+*_log.txt
+*_out.txt
+pod_status.txt
+final_svc.txt
+svc_ports.txt
+final_unified_svc.txt
+final_pod_status.txt
+check_out.txt
+clippy_run.txt
+
+# Documentation & Others
 /docs/

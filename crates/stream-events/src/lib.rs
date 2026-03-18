@@ -1,3 +1,17 @@
+#[cfg(feature = "mock")]
+use mockall::automock;
+use serde::de::DeserializeOwned;
+
+#[cfg_attr(feature = "mock", automock)]
+#[async_trait::async_trait]
+pub trait EventConsumer: Send + Sync {
+    async fn run<E, F, Fut>(&self, handler: F) -> anyhow::Result<()>
+    where
+        E: DeserializeOwned + Send + 'static,
+        F: FnMut(E) -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = anyhow::Result<()>> + Send + 'static;
+}
+
 pub mod consumer;
 pub mod events;
 pub mod producer;

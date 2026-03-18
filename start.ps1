@@ -1,57 +1,77 @@
-# CATEST 快速启动脚本 (PowerShell)
-# 职责：启动基础设施 (Docker) 并批量拉起所有后端微服务及前端。
+# CATEST Rapid Launch Script (Development Mode)
+# Shared Environment & Microservices Orchestrator
 
 $ErrorActionPreference = "Stop"
 $RootDir = Get-Location
 
-Write-Host "🚀 正在启动 CATEST 分布式平台..." -ForegroundColor Cyan
+# ─── Environment & Toolchain ──────────────────────────────────────────────────
+$Env:PATH = "C:\Program Files\Git\usr\bin;$Env:PATH"
+$Env:CMAKE_POLICY_VERSION_MINIMUM = "3.5"
+$Env:OPENSSL_DIR = "C:\Program Files\OpenSSL-Win64"
+$Env:OPENSSL_LIB_DIR = "C:\Program Files\OpenSSL-Win64\lib\VC\x64\MD"
+$Env:OPENSSL_INCLUDE_DIR = "C:\Program Files\OpenSSL-Win64\include"
+$Env:OPENSSL_LIBS = "libssl:libcrypto"
+$Env:OPENSSL_NO_VENDOR = 1
 
-# 1. 检查并启动基础设施 (Docker)
-Write-Host "📦 [1/3] 检查基础设施 (Docker Compose)..." -ForegroundColor Yellow
+# Load .env into session for local Rust processes
+if (Test-Path ".env") {
+    Get-Content .env | Where-Object { $_ -match "^[^#].+=.+" } | ForEach-Object {
+        $name, $value = $_.Split('=', 2)
+        Set-Item "Env:$name" $value.Trim()
+    }
+}
+
+Write-Host "🚀 Initializing CATEST Distributed Platform..." -ForegroundColor Cyan
+
+# 1. Infrastructure Boot
+Write-Host "📦 [1/4] Booting Infrastructure (Docker Compose)..." -ForegroundColor Yellow
 docker-compose up -d
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Docker Compose 启动失败，请确保 Docker Desktop 已运行。"
+    Write-Error "Docker failed. Ensure Docker Desktop is healthy."
     exit $LASTEXITCODE
 }
 
-# 2. 启动后端微服务 (Rust)
-Write-Host "🦀 [2/3] 正在后台拉起 Rust 微服务集群..." -ForegroundColor Yellow
-$Services = @("catest-gateway", "catest-review", "catest-ingestion", "catest-embedding", "catest-parser")
-$LogDir = Join-Path $RootDir "logs"
-
-if (-not (Test-Path $LogDir)) {
-    New-Item -ItemType Directory -Path $LogDir | Out-Null
+# 2. Database Readiness Check
+Write-Host "⏳ [2/4] Waiting for PostgreSQL readiness..." -ForegroundColor Yellow
+$Retries = 10
+while ($Retries -gt 0) {
+    # Test connection to the port we just mapped
+    $Port = if ($Env:PORT_POSTGRES) { $Env:PORT_POSTGRES } else { "34321" }
+    $Test = Test-NetConnection -Port $Port -ComputerName "localhost" -InformationLevel Quiet
+    if ($Test) { break }
+    $Retries--
+    Start-Sleep -Seconds 2
 }
 
+# 3. Backend Cluster (Rust)
+$Services = @("catest-gateway", "catest-review", "catest-ingestion", "catest-embedding", "catest-parser")
+$LogDir = Join-Path $RootDir "logs"
+if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir | Out-Null }
+
+Write-Host "🏗️ [3/4] Compiling and Launching Backend Cluster..." -ForegroundColor Yellow
+cargo build --workspace --quiet
 foreach ($Service in $Services) {
-    Write-Host "   -> 启动 $Service ..." -ForegroundColor Gray
+    Write-Host "   -> Starting node: $Service" -ForegroundColor Gray
     $LogFile = Join-Path $LogDir "$Service.log"
-    # 使用 cmd /c 启动以支持将 stdout 和 stderr 重定向到同一个文件
     Start-Process -FilePath "cmd" -ArgumentList "/c cargo run --bin $Service > `"$LogFile`" 2>&1" -WindowStyle Hidden
 }
 
-# 3. 启动前端服务 (Next.js)
-Write-Host "🌐 [3/3] 正在启动前端门户 (Next.js)..." -ForegroundColor Yellow
+# 4. Frontend Ecosystem (Next.js)
+Write-Host "🌐 [4/4] Launching Frontend Portals (pnpm/npm)..." -ForegroundColor Yellow
 $WebDir = Join-Path $RootDir "web"
 $WebLog = Join-Path $LogDir "web.log"
 
 if (Test-Path $WebDir) {
     Push-Location $WebDir
-    Write-Host "   -> 启动前端 (端口 33000) ..." -ForegroundColor Gray
-    Start-Process -FilePath "cmd" -ArgumentList "/c npm run dev -- -p 33000 > `"$WebLog`" 2>&1" -WindowStyle Hidden
+    # We use the root dev script which handles filtering
+    Start-Process -FilePath "cmd" -ArgumentList "/c npm run dev > `"$WebLog`" 2>&1" -WindowStyle Hidden
     Pop-Location
-} else {
-    Write-Warning "未找到 web 目录，跳过前端启动。"
 }
 
 Write-Host ""
-Write-Host "✅ 所有服务已尝试在后台启动！" -ForegroundColor Green
-Write-Host "📊 日志查看目录: $LogDir" -ForegroundColor Gray
-Write-Host "🌍 访问前端: http://localhost:33000" -ForegroundColor Cyan
-
-# 4. 自动打开网页
-Write-Host "🌐 正在打开浏览器..." -ForegroundColor Gray
-Start-Process "http://localhost:33000"
-
+Write-Host "✅ CATEST Logic Synchronized & Running!" -ForegroundColor Green
+Write-Host "📊 Monitoring logs at: $LogDir" -ForegroundColor Gray
+Write-Host "🌍 Identity Portal: http://localhost:33000" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "提示: 如需停止所有进程，请运行: taskkill /F /IM catest-*.exe /IM node.exe" -ForegroundColor Gray
+Start-Sleep -Seconds 3
+Start-Process "http://localhost:33000"

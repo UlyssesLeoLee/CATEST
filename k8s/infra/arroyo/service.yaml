@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: arroyo
+  namespace: catest
+spec:
+  ports:
+    - port: 35115
+      targetPort: 5115
+      name: ui
+  selector:
+    app: arroyo
+  type: ClusterIP

@@ -1,0 +1,11 @@
+{
+  "name": "@catest/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": {
+    "eslint": "^9",
+    "typescript": "^5",
+    "tailwindcss": "^4"
+  }
+}

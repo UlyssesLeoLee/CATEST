@@ -16,7 +16,13 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 futures = "0.3"
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "macros"] }
-rdkafka = { version = "0.36", features = ["ssl"] }
+rdkafka = { version = "0.36", features = ["ssl", "cmake-build"] }
+
+
+
+
+
+
 neo4rs = "0.7" # Neo4j driver
 qdrant-client = "1.12"
 uuid = { version = "1", features = ["v4", "serde"] }
@@ -25,9 +31,12 @@ anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 tree-sitter = "=0.20.10"
+
 reqwest = { version = "0.12", features = ["json"] }
 sha2 = "0.10"
 walkdir = "2"
 tree-sitter-rust = "=0.20.4"
 tree-sitter-java = "=0.20.2"
 actix-web = "4"
+mockall = "0.13"
+async-trait = "0.1"

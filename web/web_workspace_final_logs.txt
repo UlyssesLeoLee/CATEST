@@ -1,0 +1,18 @@
+
+> web-workspace@0.1.0 dev E:\CATEST\web\apps\web-workspace
+> next dev -p 33001
+
+鈻?Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:33001
+- Network:       http://192.168.1.10:33001
+- Environments: .env.local
+
+鉁?Starting...
+鉁?Ready in 110.4s
+鈼?Compiling /_not-found/page ...
+ GET /workspace 404 in 64s (compile: 64s, render: 134ms)
+鈼?Compiling / ...
+ GET / 200 in 60s (compile: 59s, render: 57ms)
+ GET / 200 in 373ms (compile: 323ms, render: 50ms)
+鉁?Finished writing to filesystem cache in 10.7s
+鉁?Finished writing to filesystem cache in 11.1s

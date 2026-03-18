@@ -1,0 +1,3 @@
+E0317 04:32:21.976121   80684 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://kubernetes.docker.internal:6443/api?timeout=32s\": EOF"
+E0317 04:32:32.010807   80684 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://kubernetes.docker.internal:6443/api?timeout=32s\": EOF"
+Unable to connect to the server: EOF

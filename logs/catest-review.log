@@ -1,9 +1,33 @@
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on package cache
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.55s
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:1:7
+  |
+1 | #[cfg(feature = "mock")]
+  |       ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:5:12
+  |
+5 | #[cfg_attr(feature = "mock", automock)]
+  |            ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: `stream-events` (lib) generated 2 warnings
+   Compiling catest-review v0.1.0 (E:\CATEST\crates\review)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 09s
      Running `E:\DevCache\cargo\target\debug\catest-review.exe`
-[2m2026-03-14T19:21:40.580701Z[0m [32m INFO[0m [2mcatest_review[0m[2m:[0m Starting Review Service on port 33081
-[2m2026-03-14T19:21:40.635856Z[0m [32m INFO[0m [2mactix_server::builder[0m[2m:[0m starting 24 workers
-[2m2026-03-14T19:21:40.636019Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m Actix runtime found; starting in Actix runtime
-[2m2026-03-14T19:21:40.636071Z[0m [32m INFO[0m [2mactix_server::server[0m[2m:[0m starting service: "actix-web-service-0.0.0.0:33081", workers: 24, listening on: 0.0.0.0:33081
+[2m2026-03-17T19:30:28.189696Z[0m [32m INFO[0m [2mcatest_review[0m[2m:[0m Starting Review Service on port 33081
+Error: Custom { kind: Other, error: Configuration(InvalidPort) }
+error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-review.exe` (exit code: 1)

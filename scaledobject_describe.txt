@@ -1,0 +1,64 @@
+Name:         parser-scaler
+Namespace:    catest
+Labels:       scaledobject.keda.sh/name=parser-scaler
+Annotations:  <none>
+API Version:  keda.sh/v1alpha1
+Kind:         ScaledObject
+Metadata:
+  Creation Timestamp:  2026-03-16T13:41:11Z
+  Finalizers:
+    finalizer.keda.sh
+  Generation:        1
+  Resource Version:  1942866
+  UID:               0729eae4-17fd-4a69-b71e-4cde13c80505
+Spec:
+  Max Replica Count:  5
+  Min Replica Count:  1
+  Scale Target Ref:
+    Name:  catest-parser
+  Triggers:
+    Metadata:
+      Bootstrap Servers:  kafka.catest.svc.cluster.local:9092
+      Consumer Group:     parser_worker_group
+      Lag Threshold:      5
+      Topic:              catest.snapshots.created
+    Type:                 kafka
+Status:
+  Authentications Types:  
+  Conditions:
+    Message:  Triggers defined in ScaledObject are not working correctly
+    Reason:   TriggerError
+    Status:   False
+    Type:     Ready
+    Message:  Scaling is not performed because triggers are not active
+    Reason:   ScalerNotActive
+    Status:   False
+    Type:     Active
+    Message:  No fallbacks are active on this scaled object
+    Reason:   NoFallbackFound
+    Status:   False
+    Type:     Fallback
+    Status:   False
+    Type:     Paused
+  External Metric Names:
+    s0-kafka-catest-snapshots-created
+  Hpa Name:                keda-hpa-parser-scaler
+  Original Replica Count:  1
+  Scale Target GVKR:
+    Group:            apps
+    Kind:             Deployment
+    Resource:         deployments
+    Version:          v1
+  Scale Target Kind:  apps/v1.Deployment
+  Triggers Activity:
+    s0-kafka-catest-snapshots-created:
+      Is Active:   false
+  Triggers Types:  kafka
+Events:
+  Type     Reason              Age                    From           Message
+  ----     ------              ----                   ----           -------
+  Normal   KEDAScalersStarted  2m40s                  keda-operator  Started scalers watch
+  Normal   ScaledObjectReady   2m34s (x2 over 2m40s)  keda-operator  ScaledObject is ready for scaling
+  Warning  KEDAScalerFailed    32s (x5 over 2m32s)    keda-operator  error describing topics: dial tcp: lookup kafka on 10.96.0.10:53: server misbehaving
+  Normal   KEDAScalersStarted  17s (x7 over 2m48s)    keda-operator  Scaler kafka is built
+  Warning  KEDAScalerFailed    9s                     keda-operator  scaler with id 0 not found. Len = 0

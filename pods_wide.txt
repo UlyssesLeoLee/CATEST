@@ -1,0 +1,21 @@
+NAME                                    READY   STATUS              RESTARTS       AGE    IP           NODE             NOMINATED NODE   READINESS GATES
+arroyo-7d54669d74-bnb4v                 1/1     Running             0              18h    10.1.4.81    docker-desktop   <none>           <none>
+catest-embedding-596b6c48b9-bjk4b       1/1     Running             0              103m   10.1.4.164   docker-desktop   <none>           <none>
+catest-gateway-6d48d45556-j58n9         1/1     Running             0              54m    10.1.4.173   docker-desktop   <none>           <none>
+catest-ingestion-g5vz5                  0/1     Error               0              18m    10.1.4.183   docker-desktop   <none>           <none>
+catest-ingestion-lm7jb                  0/1     Error               0              17m    10.1.4.184   docker-desktop   <none>           <none>
+catest-ingestion-tj9v4                  0/1     Error               0              25m    10.1.4.182   docker-desktop   <none>           <none>
+catest-ingestion-wbkl4                  0/1     ContainerCreating   0              56s    <none>       docker-desktop   <none>           <none>
+catest-parser-7d957fc6-jz6xm            0/1     CrashLoopBackOff    18 (61s ago)   103m   10.1.4.163   docker-desktop   <none>           <none>
+catest-review-78cd559b9c-s2qns          1/1     Running             0              18h    10.1.4.86    docker-desktop   <none>           <none>
+catest-web-base-6cbb9776d6-bfn62        1/1     Running             0              158m   10.1.4.149   docker-desktop   <none>           <none>
+catest-web-rag-579c96d97d-5fq87         0/1     ImagePullBackOff    0              16m    10.1.4.185   docker-desktop   <none>           <none>
+catest-web-rag-69f67475cb-6v7c8         0/1     ErrImagePull        0              158m   10.1.4.151   docker-desktop   <none>           <none>
+catest-web-review-55ccbd5c59-t2ln5      0/1     ContainerCreating   0              16m    <none>       docker-desktop   <none>           <none>
+catest-web-review-78c48f9d8f-jrzlg      0/1     ImagePullBackOff    0              158m   10.1.4.152   docker-desktop   <none>           <none>
+catest-web-workspace-764656b758-nbh8d   0/1     ImagePullBackOff    0              158m   10.1.4.150   docker-desktop   <none>           <none>
+catest-web-workspace-7f877445b8-k4x47   0/1     ImagePullBackOff    0              16m    10.1.4.186   docker-desktop   <none>           <none>
+kafka-0                                 1/1     Running             0              25h    10.1.4.48    docker-desktop   <none>           <none>
+neo4j-0                                 1/1     Running             0              125m   10.1.4.160   docker-desktop   <none>           <none>
+postgres-0                              1/1     Running             0              25h    10.1.4.50    docker-desktop   <none>           <none>
+qdrant-0                                1/1     Running             0              25h    10.1.4.51    docker-desktop   <none>           <none>

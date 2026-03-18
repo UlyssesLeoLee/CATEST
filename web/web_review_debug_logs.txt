@@ -1,0 +1,21 @@
+
+> web-review@0.1.0 dev E:\CATEST\web\apps\web-review
+> next dev -p 33003
+
+鈻?Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:33003
+- Network:       http://192.168.1.10:33003
+- Environments: .env.local
+
+鉁?Starting...
+鉁?Ready in 216.2s
+鈼?Compiling /review ...
+ GET /review 200 in 75s (compile: 75s, render: 127ms)
+鈼?Compiling /_not-found/page ...
+ GET /review 404 in 58s (compile: 57s, render: 1008ms)
+ GET /review 404 in 73s (compile: 71s, render: 1489ms)
+ GET /review 404 in 36.1s (compile: 36.0s, render: 88ms)
+ GET /review 404 in 36.1s (compile: 35.0s, render: 1129ms)
+ GET /review 404 in 36.1s (compile: 35.0s, render: 1146ms)
+ GET /review 404 in 36.1s (compile: 35.0s, render: 1115ms)
+ GET /review 404 in 42ms (compile: 4ms, render: 38ms)

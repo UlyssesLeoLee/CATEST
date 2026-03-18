@@ -67,6 +67,22 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: web-base
+            dockerfile: ./web/apps/web-base/Dockerfile
+            context: ./web
+          - app: web-workspace
+            dockerfile: ./web/apps/web-workspace/Dockerfile
+            context: ./web
+          - app: web-rag
+            dockerfile: ./web/apps/web-rag/Dockerfile
+            context: ./web
+          - app: web-review
+            dockerfile: ./web/apps/web-review/Dockerfile
+            context: ./web
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -85,14 +101,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Frontend image
+      - name: Build and push ${{ matrix.app }} image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./web/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-web:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-web:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-${{ matrix.app }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-${{ matrix.app }}:${{ github.sha }}

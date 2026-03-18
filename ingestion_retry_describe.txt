@@ -1,0 +1,65 @@
+Name:             catest-ingestion-tj9v4
+Namespace:        catest
+Priority:         0
+Service Account:  default
+Node:             docker-desktop/192.168.65.3
+Start Time:       Mon, 16 Mar 2026 22:16:42 +0800
+Labels:           app=catest-ingestion
+                  batch.kubernetes.io/controller-uid=0b0e113c-9ecf-402d-8a08-5e1d3a0f6215
+                  batch.kubernetes.io/job-name=catest-ingestion
+                  controller-uid=0b0e113c-9ecf-402d-8a08-5e1d3a0f6215
+                  job-name=catest-ingestion
+Annotations:      <none>
+Status:           Failed
+IP:               10.1.4.182
+IPs:
+  IP:           10.1.4.182
+Controlled By:  Job/catest-ingestion
+Containers:
+  ingestion:
+    Container ID:   docker://093a930f37f9f8c6f40fa1a1be5d5bacf6d87c683707d7f5e861aad4f99c4b37
+    Image:          ghcr.io/ulyssesleolee/catest-ingestion:latest
+    Image ID:       docker-pullable://ghcr.io/ulyssesleolee/catest-ingestion@sha256:eeacea25982833ee9019b4ba2ae55e88fb7c83cbda2dd9d0fc37d531b926d5f0
+    Port:           <none>
+    Host Port:      <none>
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Mon, 16 Mar 2026 22:17:09 +0800
+      Finished:     Mon, 16 Mar 2026 22:17:24 +0800
+    Ready:          False
+    Restart Count:  0
+    Environment:
+      DATABASE_URL:     postgres://catest:password@postgres:34321/catest_ingestion
+      KAFKA_BROKER:     kafka:9092
+      DEMO_PROJECT_ID:  00000000-0000-0000-0000-000000000000
+      DEMO_REPO_URL:    https://github.com/UlyssesLeoLee/CATEST.git
+      RUST_LOG:         debug
+      RUST_BACKTRACE:   full
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-cbwxs (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   False 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-cbwxs:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  18m   default-scheduler  Successfully assigned catest/catest-ingestion-tj9v4 to docker-desktop
+  Normal  Pulled     17m   kubelet            Container image "ghcr.io/ulyssesleolee/catest-ingestion:latest" already present on machine
+  Normal  Created    17m   kubelet            Created container: ingestion
+  Normal  Started    17m   kubelet            Started container ingestion

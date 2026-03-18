@@ -1,0 +1,360 @@
+
+> web-rag@0.1.0 dev E:\CATEST\web\apps\web-rag
+> next dev -p 33002
+
+鈻?Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:33002
+- Network:       http://192.168.1.10:33002
+- Environments: .env.local
+
+鉁?Starting...
+
+  We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+  	- include was updated to add '.next/dev/types/**/*.ts'
+
+  The following mandatory changes were made to your tsconfig.json:
+
+  	- jsx was set to react-jsx (next.js uses the React automatic runtime)
+
+鉁?Ready in 51.4s
+猕?./apps/web-rag/src/app/layout.tsx:2:1
+Module not found: Can't resolve './globals.css'
+  1 | import type { Metadata } from "next";
+> 2 | import "./globals.css";
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export const metadata: Metadata = {
+  5 |   title: "CATEST 鈥?RAG Knowledge Base",
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET /rag 500 in 2.4s (compile: 2.3s, render: 124ms)
+鉁?Compiled in 1106ms
+ GET /rag 404 in 978ms (compile: 813ms, render: 164ms)
+ GET /rag 404 in 30ms (compile: 3ms, render: 27ms)
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '1123225506'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '1123225506'
+}
+ GET / 500 in 678ms (compile: 614ms, render: 63ms)
+ GET /rag 404 in 55ms (compile: 13ms, render: 41ms)
+ GET /rag 404 in 36ms (compile: 5ms, render: 31ms)
+鉁?Compiled in 396ms
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+ GET /rag 200 in 9.7s (compile: 9.6s, render: 38ms)
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+ GET /rag 200 in 394ms (compile: 286ms, render: 108ms)
+ GET /rag 200 in 406ms (compile: 282ms, render: 124ms)
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+ GET /rag 200 in 1262ms (compile: 2ms, render: 1260ms)
+ GET /rag 200 in 1255ms (compile: 1881碌s, render: 1253ms)
+ GET /rag 200 in 1237ms (compile: 2ms, render: 1234ms)
+ GET /rag 200 in 1210ms (compile: 3ms, render: 1206ms)
+ GET /rag 200 in 1180ms (compile: 17ms, render: 1164ms)
+ GET /rag 500 in 1182ms (compile: 3ms, render: 1179ms)
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+ GET /rag 500 in 75ms (compile: 3ms, render: 71ms)
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+猕?TypeError: Cannot read properties of undefined (reading 'map')
+    at PluginGroupRenderer (..\..\packages\ui\src\plugins\index.tsx:37:22)
+  35 |   return (
+  36 |     <>
+> 37 |       {group.plugins.map((plugin) => {
+     |                      ^
+  38 |         const Comp = plugin.component as React.ComponentType<Record<string, unknown>>;
+  39 |         return <Comp key={plugin.id} {...props} />;
+  40 |       })} {
+  digest: '20247443'
+}
+ GET /rag 500 in 98ms (compile: 5ms, render: 94ms)
+ GET /rag 200 in 299ms (compile: 138ms, render: 161ms)
+ GET /rag 200 in 52ms (compile: 6ms, render: 46ms)
+ GET /rag 200 in 44ms (compile: 3ms, render: 41ms)
+ GET /rag 200 in 92ms (compile: 5ms, render: 87ms)
+鉁?Finished writing to filesystem cache in 11.0s
+ GET /rag 200 in 2.8s (compile: 1478ms, render: 1307ms)
+鉁?Finished writing to filesystem cache in 25.1s
+鈼?Compiling /rag ...
+ GET /rag 200 in 22.0s (compile: 20.9s, render: 1077ms)
+ GET /rag 200 in 590ms (compile: 564ms, render: 26ms)
+鉁?Finished writing to filesystem cache in 35.3s
+ GET /rag 200 in 3.6s (compile: 3ms, render: 3.6s)
+鉁?Finished writing to filesystem cache in 10.5s
+鉁?Finished writing to filesystem cache in 13.3s
+ GET /rag 200 in 1073ms (compile: 376ms, render: 697ms)
+ GET /rag 200 in 73ms (compile: 3ms, render: 70ms)
+鉁?Finished writing to filesystem cache in 10.6s
+鉁?Finished writing to filesystem cache in 10.9s
+鉁?Finished writing to filesystem cache in 13.3s
+鉁?Finished writing to filesystem cache in 18.5s

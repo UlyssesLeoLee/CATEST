@@ -32,6 +32,22 @@ async fn main() -> Result<()> {
 
     // In a real scenario, this would be triggered by a Kafka event
     let snapshot_id = Uuid::new_v4();
+    let repository_id = Uuid::nil(); // Using Nil as placeholder for demo
+    let commit_sha = "HEAD"; // Placeholder for demonstration
+
+    // Insert snapshot record first to satisfy foreign key constraint in 'files' table
+    tracing::info!("Attempting to insert snapshot {} for project {}", snapshot_id, project_id_str);
+    sqlx::query(
+        "INSERT INTO snapshots (id, repository_id, commit_sha, status)
+         VALUES ($1, $2, $3, 'running')"
+    )
+    .bind(snapshot_id)
+    .bind(repository_id)
+    .bind(commit_sha)
+    .execute(&pool)
+    .await?;
+    tracing::info!("DATABASE_CONFIRMED: Inserted snapshot {} into database", snapshot_id);
+
     let temp_dir = std::env::temp_dir().join(format!("catest-{}", snapshot_id));
 
     clone_repo(&repo_url, &temp_dir).await?;
@@ -42,6 +58,14 @@ async fn main() -> Result<()> {
         count,
         snapshot_id
     );
+
+    // Finalize snapshot status
+    sqlx::query(
+        "UPDATE snapshots SET status = 'ready', finished_at = now() WHERE id = $1"
+    )
+    .bind(snapshot_id)
+    .execute(&pool)
+    .await?;
 
     // Publish event to Kafka for Arroyo/Downstream processing
     let kafka_port = common::utils::get_env_default("KAFKA_PORT", "39092");

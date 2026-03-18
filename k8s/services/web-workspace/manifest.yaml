@@ -1,0 +1,46 @@
+---
+# web-workspace: Deployment + Service
+# Port: 3001 -> LoadBalancer: 33001
+# Maps to: catest-gateway workspace API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-web-workspace
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-web-workspace
+  template:
+    metadata:
+      labels:
+        app: catest-web-workspace
+    spec:
+      containers:
+        - name: web-workspace
+          image: ghcr.io/ulyssesleolee/catest-web-workspace:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - secretRef:
+                name: catest-app-secrets
+          env:
+            - name: NEXT_PUBLIC_SAAS_MODE
+              value: "true"
+            - name: NEXT_PUBLIC_GATEWAY_URL
+              value: "http://catest-workspace:33082"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-web-workspace
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 33001
+      targetPort: 3001
+  selector:
+    app: catest-web-workspace

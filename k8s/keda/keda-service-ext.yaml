@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keda-operator-ext
+  namespace: keda
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30400
+      name: metrics
+  selector:
+    app.kubernetes.io/name: keda-operator

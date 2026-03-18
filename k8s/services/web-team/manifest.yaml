@@ -1,0 +1,46 @@
+---
+# web-team: Deployment + Service
+# Port: 3004 -> LoadBalancer: 33004
+# Maps to: catest-hub team management
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-web-team
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-web-team
+  template:
+    metadata:
+      labels:
+        app: catest-web-team
+    spec:
+      containers:
+        - name: web-team
+          image: ghcr.io/ulyssesleolee/catest-web-team:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3004
+          envFrom:
+            - secretRef:
+                name: catest-app-secrets
+          env:
+            - name: NEXT_PUBLIC_SAAS_MODE
+              value: "true"
+            - name: NEXT_PUBLIC_GATEWAY_URL
+              value: "http://catest-hub:33080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-web-team
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 33004
+      targetPort: 3004
+  selector:
+    app: catest-web-team

@@ -1,0 +1,2 @@
+[2m2026-03-16T20:27:32.103587Z[0m [32m INFO[0m [2mcatest_parser[0m[2m:[0m Starting Parser Worker
+[2m2026-03-16T20:27:32.613936Z[0m [34mDEBUG[0m [2msqlx::query[0m[2m:[0m [3msummary[0m[2m=[0m"SELECT id, snapshot_id, path, 鈥? [3mdb.statement[0m[2m=[0m"\n\nSELECT id, snapshot_id, path, language, size_bytes, sha256, content_text, created_at FROM files\n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m1.460434ms [3melapsed_secs[0m[2m=[0m0.001460434

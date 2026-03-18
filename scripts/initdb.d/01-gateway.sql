@@ -1,5 +1,5 @@
--- Initial DDL for catest_gateway
-\c catest_gateway;
+-- Initial DDL for catest_hub
+\c catest_hub;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE user_status AS ENUM ('active', 'disabled', 'pending_verification');
@@ -91,4 +91,32 @@ CREATE TABLE IF NOT EXISTS repositories (
   default_branch text,
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now()
+);
+
+-- Persistent storage for ephemeral verification codes (email codes)
+CREATE TABLE IF NOT EXISTS verification_codes (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email         text NOT NULL,
+  code          text NOT NULL,
+  purpose       text NOT NULL, -- 'registration', 'password_reset'
+  pending_data  jsonb,         -- for registration: holds hashed password, etc.
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  expires_at    timestamptz NOT NULL DEFAULT now() + INTERVAL '10 minutes'
+);
+
+CREATE INDEX IF NOT EXISTS idx_verification_email ON verification_codes (email, purpose);
+-- 6. Teams & Organizations (SaaS Collaboration)
+CREATE TABLE IF NOT EXISTS teams (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID REFERENCES tenants(id),
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS team_members (
+    team_id UUID REFERENCES teams(id),
+    user_id UUID REFERENCES users(id),
+    role TEXT DEFAULT 'member', -- 'lead', 'member', 'observer'
+    PRIMARY KEY (team_id, user_id)
 );

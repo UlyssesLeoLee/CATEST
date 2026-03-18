@@ -1,15 +1,35 @@
 -- Modular RAG Components DDL
-\c catest_gateway;
+\c catest_intelligence;
 
--- 1. Termbase (TB) - Glossary and naming conventions
+-- 1. Memory Base (MB) - The "Translation Memory" for Code Review
+-- Stores historical code snippets and their successfully applied fixes or comments
+CREATE TABLE IF NOT EXISTS memory_base (
+    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id     uuid REFERENCES tenants(id) ON DELETE CASCADE,
+    code_hash     text NOT NULL, -- SHA256 of normalized code segment
+    source_code   text NOT NULL, -- The original problematic code 
+    fixed_code    text,          -- The applied fix if any
+    review_comment text NOT NULL, -- The expert/AI feedback that solved it
+    severity      text,          -- info, warning, danger
+    category      text,          -- performance, security, design_pattern
+    usage_count   integer DEFAULT 1,
+    last_applied  timestamptz DEFAULT now(),
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    updated_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_memory_base_hash ON memory_base (code_hash);
+
+-- 2. Termbase (TB) - Architectural & Naming Consistency
+-- Adapted from translation glossary to code naming/pattern enforcement
 CREATE TABLE IF NOT EXISTS term_base (
     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id     uuid REFERENCES tenants(id) ON DELETE CASCADE,
-    category      text NOT NULL, -- e.g. 'domain', 'ui', 'infrastructure'
-    source_term   text NOT NULL, -- The original or forbidden term
-    target_term   text,          -- The preferred term
+    category      text NOT NULL, -- 'naming_convention', 'pattern', 'dependency'
+    source_pattern text NOT NULL, -- Forbidden pattern or legacy name
+    target_pattern text,          -- Preferred pattern or new name
     is_forbidden  boolean DEFAULT false,
-    explanation   text,
+    explanation   text,          -- Architectural rationale
     created_at    timestamptz NOT NULL DEFAULT now(),
     updated_at    timestamptz NOT NULL DEFAULT now()
 );

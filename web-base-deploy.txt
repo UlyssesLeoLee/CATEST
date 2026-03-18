@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "3"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"catest-web-base","namespace":"catest"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"catest-web"}},"template":{"metadata":{"labels":{"app":"catest-web"}},"spec":{"containers":[{"envFrom":[{"secretRef":{"name":"catest-app-secrets"}}],"image":"ghcr.io/ulyssesleolee/catest-web:latest","imagePullPolicy":"Always","name":"web","ports":[{"containerPort":3000,"name":"http"}]}]}}}}
+  creationTimestamp: "2026-03-15T19:39:28Z"
+  generation: 3
+  name: catest-web-base
+  namespace: catest
+  resourceVersion: "1932241"
+  uid: d14134c4-5b06-41c7-b872-d9528fe24a31
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: catest-web
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-03-16T19:57:51+08:00"
+      labels:
+        app: catest-web
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: catest-app-secrets
+        image: ghcr.io/ulyssesleolee/catest-web:latest
+        imagePullPolicy: Always
+        name: web
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-03-15T19:40:05Z"
+    lastUpdateTime: "2026-03-15T19:40:05Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-03-15T19:39:28Z"
+    lastUpdateTime: "2026-03-16T11:58:27Z"
+    message: ReplicaSet "catest-web-base-6cbb9776d6" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 3
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

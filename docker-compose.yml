@@ -3,14 +3,26 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: catest
-      POSTGRES_USER: catest
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-catest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     ports:
       - "${POSTGRES_PORT:-35432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./scripts/create_databases.sh:/docker-entrypoint-initdb.d/00-create_databases.sh
       - ./scripts/initdb.d:/docker-entrypoint-initdb.d/
+    networks:
+      - catest-net
+
+  adminer:
+    image: adminer:latest
+    restart: always
+    ports:
+      - "${ADMINER_PORT:-38080}:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    networks:
+      - catest-net
 
   kafka:
     image: apache/kafka:latest
@@ -43,6 +55,8 @@ services:
 
   qdrant:
     image: qdrant/qdrant
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:-password}
     ports:
       - "${QDRANT_HTTP_PORT:-36334}:6333" # HTTP
       - "${QDRANT_GRPC_PORT:-36333}:6334" # gRPC
@@ -54,7 +68,7 @@ services:
     ports:
       - "${ARROYO_UI_PORT:-35115}:5115"
     environment:
-      - DATABASE_URL=postgres://catest:password@postgres:5432/arroyo
+      - DATABASE_URL=postgres://${POSTGRES_USER:-catest}:${POSTGRES_PASSWORD:-password}@postgres:5432/arroyo
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       - postgres
@@ -64,3 +78,7 @@ volumes:
   pgdata:
   neo4j_data:
   qdrant_storage:
+
+networks:
+  catest-net:
+    driver: bridge

@@ -24,3 +24,6 @@ CREATE TABLE IF NOT EXISTS files (
   is_binary     boolean NOT NULL DEFAULT false,
   created_at    timestamptz NOT NULL DEFAULT now()
 );
+
+-- Index for ON CONFLICT (snapshot_id, path)
+CREATE UNIQUE INDEX IF NOT EXISTS ux_files_snapshot_path ON files (snapshot_id, path);

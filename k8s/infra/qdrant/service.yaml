@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: qdrant
+  namespace: catest
+spec:
+  ports:
+    - port: 36334
+      targetPort: 6333
+      name: http
+    - port: 36333
+      targetPort: 6334
+      name: grpc
+  selector:
+    app: qdrant
+  type: ClusterIP

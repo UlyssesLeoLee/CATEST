@@ -1,0 +1,23 @@
+
+> web-workspace@0.1.0 dev E:\CATEST\web\apps\web-workspace
+> next dev -p 33001
+
+鈻?Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:33001
+- Network:       http://192.168.1.10:33001
+- Environments: .env.local
+
+鉁?Starting...
+鉁?Ready in 216.2s
+鈼?Compiling /workspace ...
+鈼?Compiling /_not-found/page ...
+ GET /workspace 404 in 86s (compile: 86s, render: 132ms)
+鉁?Compiled in 65.9s
+ GET /workspace 404 in 28.1s (compile: 27.5s, render: 653ms)
+ GET /workspace 404 in 28.1s (compile: 27.7s, render: 471ms)
+ GET /workspace 404 in 67s (compile: 67s, render: 507ms)
+ GET /workspace 404 in 28.1s (compile: 27.7s, render: 458ms)
+ GET /workspace 404 in 28.1s (compile: 27.6s, render: 492ms)
+ GET /workspace 404 in 28.1s (compile: 27.7s, render: 447ms)
+ GET /workspace 404 in 727ms (compile: 700ms, render: 28ms)
+ GET /workspace 404 in 732ms (compile: 8ms, render: 724ms)

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-review
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-review
+  template:
+    metadata:
+      labels:
+        app: catest-review
+    spec:
+      containers:
+        - name: review
+          image: ghcr.io/ulyssesleolee/catest-review:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 33081
+              name: http
+          env:
+            - name: REVIEW_PORT
+              value: "33081"
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_review"
+            - name: KAFKA_BROKER
+              value: "kafka:9092"

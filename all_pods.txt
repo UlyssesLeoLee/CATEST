@@ -1,0 +1,61 @@
+NAMESPACE     NAME                                        READY   STATUS             RESTARTS          AGE
+catest        arroyo-7d54669d74-bnb4v                     1/1     Running            0                 18h
+catest        catest-embedding-596b6c48b9-bjk4b           1/1     Running            0                 81m
+catest        catest-gateway-6d48d45556-j58n9             1/1     Running            0                 32m
+catest        catest-ingestion-tj9v4                      0/1     Pending            0                 2m38s
+catest        catest-parser-7d957fc6-jz6xm                0/1     CrashLoopBackOff   15 (4m32s ago)    81m
+catest        catest-review-78cd559b9c-s2qns              1/1     Running            0                 18h
+catest        catest-web-base-6cbb9776d6-bfn62            1/1     Running            0                 135m
+catest        catest-web-rag-69f67475cb-6v7c8             0/1     ImagePullBackOff   0                 135m
+catest        catest-web-rag-b589cdcd8-k8xpf              0/1     ImagePullBackOff   0                 165m
+catest        catest-web-review-78c48f9d8f-jrzlg          0/1     ImagePullBackOff   0                 135m
+catest        catest-web-review-98c4b7d85-vw9ff           0/1     ImagePullBackOff   0                 165m
+catest        catest-web-workspace-5c6bdb749b-lcbf7       0/1     ImagePullBackOff   0                 165m
+catest        catest-web-workspace-764656b758-nbh8d       0/1     ImagePullBackOff   0                 135m
+catest        kafka-0                                     1/1     Running            0                 24h
+catest        neo4j-0                                     1/1     Running            0                 102m
+catest        postgres-0                                  1/1     Running            0                 24h
+catest        qdrant-0                                    1/1     Running            0                 24h
+keda          keda-admission-6cc4fbc7cd-8j7qp             1/1     Running            3 (13h ago)       5d15h
+keda          keda-metrics-apiserver-55c956f864-9fgrj     1/1     Running            12 (12h ago)      5d15h
+keda          keda-operator-85bf96d5d7-b582w              0/1     Running            147 (6m1s ago)    5d15h
+kube-system   coredns-66bc5c9577-5p2pd                    1/1     Running            17 (4d17h ago)    12d
+kube-system   coredns-66bc5c9577-d6whd                    1/1     Running            17 (4d17h ago)    12d
+kube-system   etcd-docker-desktop                         1/1     Running            18 (13h ago)      12d
+kube-system   kube-apiserver-docker-desktop               1/1     Running            42 (12m ago)      12d
+kube-system   kube-controller-manager-docker-desktop      1/1     Running            35 (13h ago)      12d
+kube-system   kube-proxy-hb7kr                            1/1     Running            18 (4d17h ago)    12d
+kube-system   kube-scheduler-docker-desktop               0/1     CrashLoopBackOff   233 (2m39s ago)   12d
+kube-system   storage-provisioner                         1/1     Running            299 (2m50s ago)   12d
+kube-system   vpnkit-controller                           1/1     Running            18                12d
+rope          api-gateway-bdf97c597-nt87t                 1/1     Running            1 (13h ago)       14h
+rope          api-gateway-bdf97c597-s5jxw                 1/1     Running            1 (13h ago)       14h
+rope          auth-service-579fbb9d8-p5rb4                1/1     Running            2 (13h ago)       14h
+rope          hot-update-service-68fd469957-ddckk         1/1     Running            2 (13h ago)       14h
+rope          ingress-nginx-controller-74fdcbccdc-dssfl   1/1     Running            23 (13h ago)      12d
+rope          inventory-service-6c5f94cb9b-zx5w4          1/1     Running            2 (13h ago)       14h
+rope          kafka-0                                     1/1     Running            7 (4d17h ago)     6d16h
+rope          license-service-df7669bbd-tfqft             1/1     Running            0                 12h
+rope          match-service-d4455d6b7-722q7               1/1     Running            0                 12h
+rope          match-service-d4455d6b7-d9bx9               1/1     Running            0                 12h
+rope          payment-service-84df59cbf5-sw8rw            1/1     Running            0                 12h
+rope          postgres-auth-0                             1/1     Running            26                12d
+rope          postgres-economy-0                          1/1     Running            27                12d
+rope          postgres-gamecore-0                         1/1     Running            0                 13h
+rope          postgres-gameplay-0                         1/1     Running            28                12d
+rope          postgres-hotupdate-0                        1/1     Running            28                12d
+rope          postgres-match-0                            1/1     Running            0                 13h
+rope          postgres-ops-0                              1/1     Running            26                12d
+rope          postgres-payment-0                          1/1     Running            26 (13h ago)      12d
+rope          postgres-player-0                           1/1     Running            27                12d
+rope          postgres-shop-0                             1/1     Running            0                 13h
+rope          postgres-social-0                           1/1     Running            27                12d
+rope          postgres-space-0                            1/1     Running            0                 13h
+rope          redis-0                                     1/1     Running            19 (12h ago)      12d
+rope          rope-server-575b86d6f9-bgnwz                1/1     Running            2 (13h ago)       13h
+rope          shop-service-5c486bcdbf-6l7b2               1/1     Running            0                 12h
+rope          social-service-7d5c9f7cf9-8wmn7             1/1     Running            0                 12h
+rope          social-service-7d5c9f7cf9-xvppk             1/1     Running            0                 12h
+rope          space-service-5d949dd8f4-dsvmj              1/1     Running            0                 12h
+rope          space-service-5d949dd8f4-s7x2m              1/1     Running            0                 12h
+rope          user-profile-service-5d4555d44c-ctzr6       1/1     Running            2 (13h ago)       14h

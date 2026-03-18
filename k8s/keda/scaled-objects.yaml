@@ -1,0 +1,35 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: parser-scaler
+  namespace: catest
+spec:
+  scaleTargetRef:
+    name: catest-parser
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: 10.103.206.241:9092
+        topic: catest.snapshots.created
+        consumerGroup: parser_worker_group
+        lagThreshold: "5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: embedding-scaler
+  namespace: catest
+spec:
+  scaleTargetRef:
+    name: catest-embedding
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.catest.svc.cluster.local:9092
+        topic: catest.rag.cleaned
+        consumerGroup: embedding_rag_group
+        lagThreshold: "10"

@@ -1,8 +1,11 @@
 target/
 .git/
 .env
-web/node_modules/
-web/.next/
-web/out/
+**/node_modules/
+**/.next/
+**/out/
 *.txt
 *.ps1
+*.log
+.gemini/
+.antigravity/

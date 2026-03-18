@@ -1,0 +1,41 @@
+Name:             catest-ingestion-v9284
+Namespace:        catest
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=catest-ingestion
+                  batch.kubernetes.io/controller-uid=4d2f2325-94f4-44bc-b985-ae0942093c9e
+                  batch.kubernetes.io/job-name=catest-ingestion
+                  controller-uid=4d2f2325-94f4-44bc-b985-ae0942093c9e
+                  job-name=catest-ingestion
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    Job/catest-ingestion
+Containers:
+  ingestion:
+    Image:      ghcr.io/ulyssesleolee/catest-ingestion:latest
+    Port:       <none>
+    Host Port:  <none>
+    Environment:
+      DATABASE_URL:     postgres://catest:password@postgres:34321/catest_ingestion
+      KAFKA_BROKER:     kafka:9092
+      DEMO_PROJECT_ID:  00000000-0000-0000-0000-000000000000
+      DEMO_REPO_URL:    https://github.com/UlyssesLeoLee/CATEST.git
+      RUST_LOG:         debug
+      RUST_BACKTRACE:   full
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-kgtsd (ro)
+Volumes:
+  kube-api-access-kgtsd:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:                      <none>

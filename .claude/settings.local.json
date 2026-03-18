@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker info:*)",
+      "Bash(kubectl config:*)",
+      "Bash(wsl --shutdown)",
+      "Bash(kubectl cluster-info:*)",
+      "Bash(Select-String -Pattern \"Kubernetes|Server Version|Operating System\")",
+      "Read(//e/CATEST/$HOME/AppData/Roaming/Docker/**)",
+      "Bash(kubectl api-resources:*)",
+      "Bash(kubectl get:*)",
+      "Bash(curl -sI \"https://github.com/kedacore/keda/releases/latest\")",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl logs:*)"
+    ]
+  }
+}

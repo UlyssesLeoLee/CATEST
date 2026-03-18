@@ -19,3 +19,24 @@ CREATE TABLE IF NOT EXISTS findings (
   message         text NOT NULL,
   created_at      timestamptz NOT NULL DEFAULT now()
 );
+
+-- Review Task Assignments (Mainstream CAT-style collaboration)
+CREATE TABLE IF NOT EXISTS review_assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id UUID REFERENCES review_tasks(id) ON DELETE CASCADE,
+    assignee_id UUID NOT NULL, -- Logical reference to user_id in hub
+    role TEXT DEFAULT 'primary_reviewer', -- 'primary_reviewer', 'security_auditor', 'architect'
+    status TEXT DEFAULT 'assigned', -- 'assigned', 'in_progress', 'completed'
+    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Real-time collaborative comments (Threaded)
+CREATE TABLE IF NOT EXISTS review_comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id UUID REFERENCES review_tasks(id) ON DELETE CASCADE,
+    segment_hash TEXT, -- Specific code block hash
+    author_id UUID NOT NULL,
+    content TEXT NOT NULL,
+    parent_comment_id UUID REFERENCES review_comments(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,6 @@
+[2m2026-03-16T13:50:29.388626Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+[2m2026-03-16T13:50:29.754469Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "/tmp/catest-19b1b21c-5f81-4a48-bb7c-d4c74aa194c7"
+Error: error returned from database: insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"
+
+Caused by:
+    insert or update on table "files" violates foreign key constraint "files_snapshot_id_fkey"

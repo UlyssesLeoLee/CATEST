@@ -1,0 +1,4 @@
+NAME                                         TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                                   AGE
+envoy-catest-catest-envoy-gateway-07f08172   LoadBalancer   10.105.122.72   <pending>     80:30523/TCP                              7m51s
+envoy-gateway                                ClusterIP      10.107.68.199   <none>        18000/TCP,18001/TCP,18002/TCP,19001/TCP   3h53m
+envoy-rope-rope-edge-b9c5ff35                LoadBalancer   10.97.123.213   localhost     80:32640/TCP                              3h51m

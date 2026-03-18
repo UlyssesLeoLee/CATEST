@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::time::Duration;
 
 /// A thin async Kafka producer using rdkafka.
+#[derive(Clone)]
 pub struct KafkaProducer {
     inner: FutureProducer,
 }

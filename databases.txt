@@ -1,0 +1,19 @@
+                                                       List of databases
+       Name       | Owner  | Encoding | Locale Provider |  Collate   |   Ctype    | ICU Locale | ICU Rules | Access privileges 
+------------------+--------+----------+-----------------+------------+------------+------------+-----------+-------------------
+ catest           | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | 
+ catest_gateway   | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =Tc/catest       +
+                  |        |          |                 |            |            |            |           | catest=CTc/catest
+ catest_ingestion | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =Tc/catest       +
+                  |        |          |                 |            |            |            |           | catest=CTc/catest
+ catest_parser    | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =Tc/catest       +
+                  |        |          |                 |            |            |            |           | catest=CTc/catest
+ catest_review    | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =Tc/catest       +
+                  |        |          |                 |            |            |            |           | catest=CTc/catest
+ postgres         | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | 
+ template0        | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =c/catest        +
+                  |        |          |                 |            |            |            |           | catest=CTc/catest
+ template1        | catest | UTF8     | libc            | en_US.utf8 | en_US.utf8 |            |           | =c/catest        +
+                  |        |          |                 |            |            |            |           | catest=CTc/catest
+(8 rows)
+

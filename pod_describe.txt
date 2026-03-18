@@ -1,0 +1,60 @@
+Name:             catest-web-rag-69f67475cb-6v7c8
+Namespace:        catest
+Priority:         0
+Service Account:  default
+Node:             docker-desktop/192.168.65.3
+Start Time:       Mon, 16 Mar 2026 19:57:57 +0800
+Labels:           app=catest-web-rag
+                  pod-template-hash=69f67475cb
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-03-16T19:57:51+08:00
+Status:           Pending
+IP:               10.1.4.151
+IPs:
+  IP:           10.1.4.151
+Controlled By:  ReplicaSet/catest-web-rag-69f67475cb
+Containers:
+  web-rag:
+    Container ID:   
+    Image:          ghcr.io/ulyssesleolee/catest-web-rag:latest
+    Image ID:       
+    Port:           3002/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+    Restart Count:  0
+    Environment Variables from:
+      catest-app-secrets  Secret  Optional: false
+    Environment:
+      NEXT_PUBLIC_GATEWAY_URL:  http://catest-gateway:80
+      NEXT_PUBLIC_QDRANT_URL:   http://qdrant:6333
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-wnmcn (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-wnmcn:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                  From               Message
+  ----     ------     ----                 ----               -------
+  Normal   Scheduled  11m                  default-scheduler  Successfully assigned catest/catest-web-rag-69f67475cb-6v7c8 to docker-desktop
+  Normal   Pulling    7m29s (x5 over 10m)  kubelet            Pulling image "ghcr.io/ulyssesleolee/catest-web-rag:latest"
+  Warning  Failed     6m56s (x5 over 10m)  kubelet            Failed to pull image "ghcr.io/ulyssesleolee/catest-web-rag:latest": Error response from daemon: error from registry: denied
+denied
+  Warning  Failed   6m56s (x5 over 10m)  kubelet  Error: ErrImagePull
+  Normal   BackOff  64s (x37 over 10m)   kubelet  Back-off pulling image "ghcr.io/ulyssesleolee/catest-web-rag:latest"
+  Warning  Failed   64s (x37 over 10m)   kubelet  Error: ImagePullBackOff

@@ -1,5 +1,5 @@
--- Initial DDL for codecat_parser
-\c catest_parser;
+-- Initial DDL for catest_workspace (Parser Components)
+\c catest_workspace;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE segment_kind AS ENUM ('function','method','class','interface','enum','config_block','sql_block','statement_group','file_header','other');

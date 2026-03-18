@@ -1,0 +1,6 @@
+[2m2026-03-16T12:20:29.078364Z[0m [32m INFO[0m [2mcatest_parser[0m[2m:[0m Starting Parser Worker
+%3|1773663633.172|FAIL|rdkafka#producer-1| [thrd:kafka:39092/bootstrap]: kafka:39092/bootstrap: Failed to resolve 'kafka:39092': Temporary failure in name resolution (after 4003ms in state CONNECT)
+[2m2026-03-16T12:20:33.172234Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: Resolve (Local: Host resolution failure): kafka:39092/bootstrap: Failed to resolve 'kafka:39092': Temporary failure in name resolution (after 4003ms in state CONNECT)
+[2m2026-03-16T12:20:33.172284Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll
+[2m2026-03-16T12:20:33.172293Z[0m [31mERROR[0m [2mrdkafka::client[0m[2m:[0m librdkafka: Global error: AllBrokersDown (Local: All broker connections are down): 1/1 brokers are down
+[2m2026-03-16T12:20:33.172297Z[0m [33m WARN[0m [2mrdkafka::producer::base_producer[0m[2m:[0m Ignored event 'Error' on base producer poll

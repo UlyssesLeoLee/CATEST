@@ -3,22 +3,60 @@
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on build directory
-warning: unused import: `std::path::Path`
- --> crates\ingestion\src\main.rs:4:5
+   Compiling ring v0.17.9
+   Compiling libz-sys v1.1.25
+   Compiling openssl-sys v0.9.112
+   Compiling rustls v0.23.37
+   Compiling libssh2-sys v0.3.1
+   Compiling rdkafka-sys v4.8.0+2.3.0
+   Compiling rustls-webpki v0.103.9
+   Compiling libgit2-sys v0.17.0+1.8.1
+   Compiling sqlx-core v0.8.6
+   Compiling sqlx-postgres v0.8.6
+   Compiling sqlx-macros-core v0.8.6
+   Compiling sqlx-macros v0.8.6
+   Compiling git2 v0.19.0
+   Compiling sqlx v0.8.6
+   Compiling common v0.1.0 (E:\CATEST\crates\common)
+   Compiling rdkafka v0.36.2
+   Compiling stream-events v0.1.0 (E:\CATEST\crates\stream-events)
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:1:7
   |
-4 | use std::path::Path;
-  |     ^^^^^^^^^^^^^^^
+1 | #[cfg(feature = "mock")]
+  |       ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `mock`
+ --> crates\stream-events\src\lib.rs:5:12
+  |
+5 | #[cfg_attr(feature = "mock", automock)]
+  |            ^^^^^^^^^^^^^^^^ help: remove the condition
+  |
+  = note: no expected values for `feature`
+  = help: consider adding `mock` as a feature in `Cargo.toml`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+   Compiling catest-ingestion v0.1.0 (E:\CATEST\crates\ingestion)
+warning: unused import: `sqlx::PgPool`
+ --> crates\ingestion\src\lib.rs:4:5
+  |
+4 | use sqlx::PgPool;
+  |     ^^^^^^^^^^^^
   |
   = note: `#[warn(unused_imports)]` on by default
 
-warning: `catest-ingestion` (bin "catest-ingestion") generated 1 warning (run `cargo fix --bin "catest-ingestion"` to apply 1 suggestion)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.70s
+warning: `stream-events` (lib) generated 2 warnings
+warning: `catest-ingestion` (lib) generated 1 warning (run `cargo fix --lib -p catest-ingestion` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 53s
      Running `E:\DevCache\cargo\target\debug\catest-ingestion.exe`
-[2m2026-03-14T19:21:40.981543Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
-[2m2026-03-14T19:21:41.021041Z[0m [33m WARN[0m [2mcatest_ingestion[0m[2m:[0m DEMO_PROJECT_ID not set, ingestion might fail
-[2m2026-03-14T19:21:41.021123Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Cloning repo https://github.com/UlyssesLeoLee/CATEST.git to "E:\\Temp\\catest-8ced8029-a7bd-45de-a5e8-00952d3a57f1"
-Error: error returned from database: there is no unique or exclusion constraint matching the ON CONFLICT specification
+[2m2026-03-17T19:30:13.061867Z[0m [32m INFO[0m [2mcatest_ingestion[0m[2m:[0m Starting Ingestion Worker
+Error: error with configuration: invalid port number
 
 Caused by:
-    there is no unique or exclusion constraint matching the ON CONFLICT specification
+    invalid port number
 error: process didn't exit successfully: `E:\DevCache\cargo\target\debug\catest-ingestion.exe` (exit code: 1)

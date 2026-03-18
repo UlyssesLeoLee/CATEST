@@ -8,8 +8,12 @@ pub struct EmbeddingManager {
 }
 
 impl EmbeddingManager {
-    pub fn new(url: &str) -> Result<Self> {
-        let client = Qdrant::from_url(url).build()?;
+    pub fn new(url: &str, api_key: Option<&str>) -> Result<Self> {
+        let mut builder = Qdrant::from_url(url);
+        if let Some(key) = api_key {
+            builder = builder.api_key(key);
+        }
+        let client = builder.build()?;
         Ok(Self { qdrant: client })
     }
 

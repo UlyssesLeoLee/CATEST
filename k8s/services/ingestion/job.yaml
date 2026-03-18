@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: catest-ingestion
+  namespace: catest
+spec:
+  template:
+    metadata:
+      labels:
+        app: catest-ingestion
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nc -z postgres 34321; do echo waiting for postgres; sleep 2; done']
+      containers:
+        - name: ingestion
+          image: ghcr.io/ulyssesleolee/catest-ingestion:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_workspace"
+            - name: KAFKA_BROKER
+              value: "kafka:9092"
+            - name: DEMO_PROJECT_ID
+              value: "00000000-0000-0000-0000-000000000000"
+            - name: DEMO_REPO_URL
+              value: "https://github.com/UlyssesLeoLee/CATEST.git"
+            - name: RUST_LOG
+              value: "debug"
+            - name: RUST_BACKTRACE
+              value: "full"
+      restartPolicy: Never

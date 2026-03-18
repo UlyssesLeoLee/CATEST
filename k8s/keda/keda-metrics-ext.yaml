@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keda-metrics-ext
+  namespace: keda
+spec:
+  type: NodePort
+  ports:
+    - port: 443
+      targetPort: 443
+      nodePort: 30401
+      name: https
+  selector:
+    app.kubernetes.io/name: keda-metrics-apiserver

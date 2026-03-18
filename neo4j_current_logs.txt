@@ -1,0 +1,5 @@
+Failed to read config
+
+Unrecognized setting. No declared setting with name: EXT.PORT.37474.TCP.PORT. Cleanup the config or disable 'server.config.strict_validation.enabled' to continue.
+
+Run with '--verbose' for a more detailed error message.

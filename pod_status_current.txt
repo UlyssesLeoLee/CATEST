@@ -1,0 +1,19 @@
+NAME                                    READY   STATUS             RESTARTS       AGE
+arroyo-7d54669d74-bnb4v                 1/1     Running            0              19h
+catest-embedding-596b6c48b9-bjk4b       1/1     Running            0              119m
+catest-gateway-96c7968c6-pv4ph          1/1     Running            0              14m
+catest-ingestion-6lgss                  0/1     Pending            0              3m34s
+catest-ingestion-chxtf                  0/1     Error              0              6m2s
+catest-parser-7d957fc6-jz6xm            0/1     CrashLoopBackOff   22 (27s ago)   119m
+catest-review-78cd559b9c-s2qns          1/1     Running            0              19h
+catest-web-base-6cbb9776d6-bfn62        1/1     Running            0              173m
+catest-web-rag-579c96d97d-5fq87         0/1     ImagePullBackOff   0              31m
+catest-web-rag-69f67475cb-6v7c8         0/1     ImagePullBackOff   0              173m
+catest-web-review-55ccbd5c59-t2ln5      0/1     ImagePullBackOff   0              31m
+catest-web-review-78c48f9d8f-jrzlg      0/1     ImagePullBackOff   0              173m
+catest-web-workspace-764656b758-nbh8d   0/1     ImagePullBackOff   0              173m
+catest-web-workspace-7f877445b8-k4x47   0/1     ImagePullBackOff   0              31m
+kafka-0                                 1/1     Running            0              25h
+neo4j-0                                 1/1     Running            0              140m
+postgres-0                              1/1     Running            0              25h
+qdrant-0                                1/1     Running            0              25h

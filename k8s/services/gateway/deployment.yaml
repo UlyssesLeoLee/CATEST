@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-hub
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-hub
+  template:
+    metadata:
+      labels:
+        app: catest-hub
+    spec:
+      serviceAccountName: catest-service-account
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nc -z postgres 34321; do echo waiting for postgres; sleep 2; done']
+      containers:
+        - name: gateway
+          image: ghcr.io/ulyssesleolee/catest-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 33080
+              name: http
+          env:
+            - name: GATEWAY_PORT
+              value: "33080"
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_hub"
+            - name: KAFKA_BROKER
+              value: "kafka:9092"
+            - name: QDRANT_URL
+              value: "http://qdrant:36333"
+            - name: NEO4J_URI
+              value: "bolt://neo4j:37687"
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: neo4j-secrets
+                  key: neo4j-password
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          # No health check endpoint yet, using TCP probe as fallback
+          livenessProbe:
+            tcpSocket:
+              port: 33080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: 33080
+            initialDelaySeconds: 5
+            periodSeconds: 10

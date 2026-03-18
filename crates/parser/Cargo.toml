@@ -16,3 +16,7 @@ tracing = { workspace = true }
 sha2 = { workspace = true }
 chrono = { workspace = true }
 stream-events = { path = "../stream-events" }
+async-trait = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true }

@@ -1,0 +1,67 @@
+Name:             neo4j-0
+Namespace:        catest
+Priority:         0
+Service Account:  default
+Node:             docker-desktop/192.168.65.3
+Start Time:       Mon, 16 Mar 2026 20:22:46 +0800
+Labels:           app=neo4j
+                  apps.kubernetes.io/pod-index=0
+                  controller-revision-hash=neo4j-759b7666c4
+                  statefulset.kubernetes.io/pod-name=neo4j-0
+Annotations:      <none>
+Status:           Running
+IP:               10.1.4.159
+IPs:
+  IP:           10.1.4.159
+Controlled By:  StatefulSet/neo4j
+Containers:
+  neo4j:
+    Container ID:   docker://5311a3cfee524bc04a0366127ed90c53d3d352b9427146c20342ff277166f7ba
+    Image:          neo4j:community
+    Image ID:       docker-pullable://neo4j@sha256:7bbe414ef4c1e1184284b2f4dcb19fb8c7e03126b540a77907b2e4d07014b4af
+    Ports:          7474/TCP (http), 7687/TCP (bolt)
+    Host Ports:     0/TCP (http), 0/TCP (bolt)
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Mon, 16 Mar 2026 20:26:08 +0800
+      Finished:     Mon, 16 Mar 2026 20:26:26 +0800
+    Ready:          False
+    Restart Count:  4
+    Environment:
+      NEO4J_AUTH:  neo4j/password
+    Mounts:
+      /data from neo4j-data (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-jsrfm (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  neo4j-data:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  neo4j-data-neo4j-0
+    ReadOnly:   false
+  kube-api-access-jsrfm:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                  From               Message
+  ----     ------     ----                 ----               -------
+  Normal   Scheduled  3m56s                default-scheduler  Successfully assigned catest/neo4j-0 to docker-desktop
+  Normal   Pulled     34s (x5 over 3m54s)  kubelet            Container image "neo4j:community" already present on machine
+  Normal   Created    34s (x5 over 3m53s)  kubelet            Created container: neo4j
+  Normal   Started    34s (x5 over 3m53s)  kubelet            Started container neo4j
+  Warning  BackOff    3s (x8 over 2m35s)   kubelet            Back-off restarting failed container neo4j in pod neo4j-0_catest(f3b8e3a4-05c2-4072-854b-6c519aa99119)

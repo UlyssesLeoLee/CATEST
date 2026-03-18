@@ -1,0 +1,7 @@
+▲ Next.js 16.1.6
+- Local:         http://catest-web-base-5b9c9b56b7-xst8j:3000
+- Network:       http://catest-web-base-5b9c9b56b7-xst8j:3000
+
+✓ Starting...
+✓ Ready in 61ms
+[2026-03-16 21:47:01] DEBUG Creating transport: nodemailer (8.0.2; +https://nodemailer.com/; SMTP/8.0.2[client:8.0.2])
