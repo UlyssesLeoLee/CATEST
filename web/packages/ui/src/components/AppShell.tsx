@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "../lib/utils";
+import { CursorEffect } from "./CursorEffect";
 import {
   Home,
   LayoutDashboard,
@@ -38,7 +39,8 @@ const apps = [
 export function AppShell({ children, activeApp, user }: AppShellProps) {
   const profileHref = `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || "33000"}/profile`;
   return (
-    <div className="flex h-screen bg-[#0a0806] text-[#e8d5b5] overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-[#0a0806] text-[#e8d5b5] overflow-hidden font-sans relative" style={{ cursor: "none" }}>
+      <CursorEffect />
       {/* Steampunk Background Layers */}
       <div className="bg-mesh absolute inset-0 pointer-events-none" />
       <div className="bg-grid absolute inset-0 pointer-events-none opacity-30" />

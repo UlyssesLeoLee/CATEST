@@ -15,14 +15,14 @@ import {
 
 export default function ReviewPage() {
   return (
-    <div className="flex flex-col h-full overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
       {/* Content Area starts directly, Navigation is handled by AppShell */}
 
       {/* Main Content: Split Pane */}
-      <div className="flex flex-1 overflow-hidden p-6 gap-6">
+      <div className="flex flex-1 p-6 gap-6 min-h-0">
         {/* Left pane: Editor (Main focus) */}
-        <section className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <Card variant="glass" className="flex-1 overflow-hidden flex flex-col border-[#b87333]/20">
+        <section className="flex-1 flex flex-col gap-4 min-h-0">
+          <Card variant="glass" className="min-h-0 flex-1 flex flex-col border-[#b87333]/20">
             <div className="px-6 py-4 border-b border-[#b87333]/20 bg-white/[0.02] flex items-center justify-between">
               <h2 className="text-xs font-bold text-[#c4b49a] uppercase tracking-widest flex items-center gap-2">
                 <FileCheck className="w-3.5 h-3.5" />
@@ -39,8 +39,8 @@ export default function ReviewPage() {
         </section>
 
         {/* Right pane: AI Suggestions (Copilot style) */}
-        <aside className="w-96 shrink-0 flex flex-col gap-4 overflow-hidden">
-          <Card variant="glass" className="flex-1 flex flex-col border-[#c9a84c]/20 bg-[#c9a84c]/[0.02]">
+        <aside className="w-96 shrink-0 flex flex-col gap-4 min-h-0">
+          <Card variant="glass" className="min-h-0 flex-1 flex flex-col border-[#c9a84c]/20 bg-[#c9a84c]/[0.02]">
             <div className="px-6 py-4 border-b border-[#c9a84c]/10 bg-[#c9a84c]/5 flex items-center justify-between">
               <h2 className="text-xs font-bold text-[#c9a84c] uppercase tracking-widest flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5" />

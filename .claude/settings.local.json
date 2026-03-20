@@ -122,7 +122,13 @@
       "Bash(kubectl -n catest rollout status deployment catest-batch --timeout=90s)",
       "Bash(kubectl -n catest logs -l app=catest-batch --tail=10)",
       "Bash(curl -s -X POST http://localhost:30090/api/batch/jobs -H \"Content-Type: application/json\" -d '{\"\"\"\"job_type\"\"\"\":\"\"\"\"review\"\"\"\",\"\"\"\"items\"\"\"\":[\"\"\"\"repo/auth-service\"\"\"\",\"\"\"\"repo/payment-gateway\"\"\"\",\"\"\"\"repo/user-profile\"\"\"\"],\"\"\"\"payload\"\"\"\":{\"\"\"\"priority\"\"\"\":\"\"\"\"high\"\"\"\"}}')",
-      "Bash(curl -s http://localhost:30090/api/batch/jobs)"
+      "Bash(curl -s http://localhost:30090/api/batch/jobs)",
+      "Bash(kubectl -n catest rollout status deployment catest-web-base catest-web-workspace catest-web-rag catest-web-review catest-web-team --timeout=120s)",
+      "Bash(grep -n \"glass-card\\\\|glass-panel\" E:/CATEST/web/packages/ui/src/components/*.tsx)",
+      "Bash(grep -r \"#\\\\[get\\\\]\\\\|#\\\\[post\\\\]\\\\|#\\\\[put\\\\]\\\\|#\\\\[delete\\\\]\\\\|web::resource\\\\|\\\\.route\\(\" E:/CATEST/crates/gateway/src/ --include=*.rs)",
+      "Bash(kubectl -n catest get svc catest-hub -o yaml)",
+      "Bash(kubectl -n catest get svc)",
+      "Bash(xargs ls:*)"
     ]
   }
 }
