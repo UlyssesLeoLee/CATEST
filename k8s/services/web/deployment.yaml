@@ -16,13 +16,13 @@ spec:
       containers:
         - name: web
           image: ghcr.io/ulyssesleolee/catest-web:latest
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           ports:
             - containerPort: 3000
               name: http
           env:
             - name: NEXT_PUBLIC_SAAS_MODE
-              value: "true"
+              value: "false"
             - name: NEXT_PUBLIC_GATEWAY_URL
               value: "http://catest-hub:33080"
           envFrom:

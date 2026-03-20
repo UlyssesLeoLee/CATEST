@@ -16,7 +16,7 @@ spec:
       containers:
         - name: review
           image: ghcr.io/ulyssesleolee/catest-review:latest
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           ports:
             - containerPort: 33081
               name: http

@@ -21,7 +21,7 @@ spec:
       containers:
         - name: gateway
           image: ghcr.io/ulyssesleolee/catest-gateway:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
           ports:
             - containerPort: 33080
               name: http

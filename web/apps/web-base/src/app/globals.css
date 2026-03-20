@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0806;
+  --foreground: #f5e6d0;
+  --copper: #b87333;
+  --copper-light: #d4956a;
+  --brass: #c9a84c;
+  --steam: rgba(200, 180, 140, 0.08);
+  --pipe-border: rgba(184, 115, 51, 0.3);
+  --vapor-glow: rgba(200, 168, 76, 0.15);
+  --text-primary: #f5e6d0;
+  --text-secondary: #c4b49a;
+  --text-muted: #b8a080;
 }
 
 @theme inline {
@@ -12,82 +21,308 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Reposition Next.js Dev Indicator to the right of the Logo */
+/* Ensure readable text inside dark glass containers */
+.glass-panel,
+.glass-card {
+  color: var(--text-primary);
+}
+
+.glass-panel p,
+.glass-card p,
+.glass-panel span,
+.glass-card span {
+  color: inherit;
+}
+
+.glass-panel .text-muted,
+.glass-card .text-muted {
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════
+   STEAMPUNK VAPOR ANIMATIONS
+   ═══════════════════════════════════════════ */
+
+@keyframes vapor-flow {
+  0% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+  50% { background-position: 100% 100%, 0% 0%, 0% 100%; }
+  100% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+}
+
+@keyframes steam-rise {
+  0% { transform: translateY(0) scaleX(1); opacity: 0.4; }
+  50% { transform: translateY(-20px) scaleX(1.5); opacity: 0.1; }
+  100% { transform: translateY(-40px) scaleX(2); opacity: 0; }
+}
+
+@keyframes border-pulse {
+  0%, 100% { border-color: rgba(184, 115, 51, 0.2); box-shadow: 0 0 15px rgba(184, 115, 51, 0.05); }
+  50% { border-color: rgba(184, 115, 51, 0.5); box-shadow: 0 0 25px rgba(184, 115, 51, 0.15); }
+}
+
+@keyframes gear-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gear-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+  25%, 75% { opacity: 0.6; }
+}
+
+@keyframes vapor-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pressure-gauge {
+  0%, 100% { transform: rotate(-20deg); }
+  50% { transform: rotate(20deg); }
+}
+
+/* ═══════════════════════════════════════════
+   STEAMPUNK GLASS PANELS
+   ═══════════════════════════════════════════ */
+
+.glass-panel {
+  background: linear-gradient(135deg, rgba(20, 15, 10, 0.9), rgba(30, 22, 12, 0.85));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(184, 115, 51, 0.25);
+  box-shadow:
+    0 0 20px rgba(184, 115, 51, 0.05),
+    inset 0 1px 0 rgba(201, 168, 76, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  animation: border-pulse 4s ease-in-out infinite;
+  position: relative;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(184, 115, 51, 0.4),
+    rgba(201, 168, 76, 0.1),
+    rgba(184, 115, 51, 0.3),
+    rgba(201, 168, 76, 0.1),
+    rgba(184, 115, 51, 0.4)
+  );
+  background-size: 300% 300%;
+  animation: vapor-border 6s ease infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass-card {
+  background: linear-gradient(145deg, rgba(20, 15, 10, 0.7), rgba(15, 10, 5, 0.9));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(184, 115, 51, 0.15);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(184, 115, 51, 0.05), transparent);
+  transition: left 0.8s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(184, 115, 51, 0.4);
+  box-shadow: 0 0 30px rgba(184, 115, 51, 0.1), inset 0 0 20px rgba(184, 115, 51, 0.03);
+}
+
+.glass-card:hover::after {
+  left: 100%;
+}
+
+/* ═══════════════════════════════════════════
+   STEAMPUNK BACKGROUND
+   ═══════════════════════════════════════════ */
+
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: #0a0806;
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(184, 115, 51, 0.08) 0px, transparent 50%),
+    radial-gradient(ellipse at 85% 20%, rgba(201, 168, 76, 0.06) 0px, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(139, 90, 43, 0.07) 0px, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(184, 115, 51, 0.04) 0px, transparent 40%);
+}
+
+.bg-grid {
+  background-size: 60px 60px;
+  background-image:
+    linear-gradient(to right, rgba(184, 115, 51, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(184, 115, 51, 0.04) 1px, transparent 1px);
+}
+
+/* ═══════════════════════════════════════════
+   STEAM PARTICLES (decorative)
+   ═══════════════════════════════════════════ */
+
+.steam-particles::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(200, 180, 140, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: steam-rise 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   GEAR DECORATIONS
+   ═══════════════════════════════════════════ */
+
+.gear-decoration::before {
+  content: '⚙';
+  position: absolute;
+  font-size: 120px;
+  color: rgba(184, 115, 51, 0.03);
+  animation: gear-spin 30s linear infinite;
+  pointer-events: none;
+  top: -20px;
+  right: -20px;
+  z-index: 0;
+}
+
+.gear-decoration::after {
+  content: '⚙';
+  position: absolute;
+  font-size: 80px;
+  color: rgba(201, 168, 76, 0.03);
+  animation: gear-spin-reverse 20s linear infinite;
+  pointer-events: none;
+  bottom: 40px;
+  left: -10px;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════
+   CUSTOM SCROLLBAR (Copper pipe style)
+   ═══════════════════════════════════════════ */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(10, 8, 6, 0.5);
+  border-left: 1px solid rgba(184, 115, 51, 0.1);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b87333, #8b5a2b);
+  border-radius: 3px;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.3);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #d4956a, #b87333);
+}
+
+/* ═══════════════════════════════════════════
+   STEAMPUNK BUTTON STYLES
+   ═══════════════════════════════════════════ */
+
+.steam-btn {
+  background: linear-gradient(135deg, #8b5a2b, #b87333, #8b5a2b);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  color: #f5e6d0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.steam-btn:hover {
+  background: linear-gradient(135deg, #b87333, #c9a84c, #b87333);
+  box-shadow:
+    0 4px 16px rgba(184, 115, 51, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════
+   VAPOR BORDER EFFECT (for key containers)
+   ═══════════════════════════════════════════ */
+
+.vapor-border {
+  position: relative;
+}
+
+.vapor-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    rgba(184, 115, 51, 0.0),
+    rgba(184, 115, 51, 0.4),
+    rgba(201, 168, 76, 0.2),
+    rgba(184, 115, 51, 0.0),
+    rgba(201, 168, 76, 0.3),
+    rgba(184, 115, 51, 0.0)
+  );
+  animation: gear-spin 8s linear infinite;
+  z-index: -1;
+  filter: blur(4px);
+}
+
+/* ═══════════════════════════════════════════
+   STATUS INDICATORS (steampunk gauges)
+   ═══════════════════════════════════════════ */
+
+.gauge-active {
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3), 0 0 20px rgba(76, 175, 80, 0.1);
+  animation: flicker 3s ease-in-out infinite;
+}
+
+/* Reposition Next.js Dev Indicator */
 nextjs-portal {
   display: block !important;
   position: fixed !important;
   top: 10px !important;
-  left: 240px !important; 
+  left: 240px !important;
   bottom: auto !important;
   right: auto !important;
   pointer-events: auto !important;
   z-index: 9999 !important;
 }
 
-/* Ensure the portal's child items are correctly aligned */
 nextjs-portal > div {
   position: static !important;
 }
-
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #312e81;
-}
-
-/* Glassmorphism Utilities */
-.glass-panel {
-  @apply bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
-}
-
-.glass-card {
-  @apply bg-white/[0.02] backdrop-blur-md border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-500;
-}
-
-.glass-nav {
-  @apply bg-black/20 backdrop-blur-2xl border-b border-white/10;
-}
-
-/* Decorative Background Elements */
-.bg-mesh {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-color: #050505;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(67, 56, 202, 0.05) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.05) 0px, transparent 50%);
-}
-
-.bg-grid {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-}
-

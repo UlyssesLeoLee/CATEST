@@ -37,15 +37,14 @@ export default function HubPage() {
 
   return (
     <div className="p-10 max-w-7xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      <h1 className="text-9xl font-black text-red-500 bg-white p-20 text-center animate-bounce z-50">SAAS VERSION V2 LOADED</h1>
       {/* Welcome & Search Bar */}
       <section className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
         <div className="space-y-1">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white capitalize">
-            Good Morning, <span className="text-indigo-400">{userName}</span>
+          <h1 className="text-4xl font-extrabold tracking-tight text-[#f5e6d0] capitalize">
+            Good Morning, <span className="text-[#c9a84c]">{userName}</span>
           </h1>
-          <p className="text-zinc-500 text-sm font-medium">
-            System status is <span className="text-emerald-500">optimal</span>. You have 3 projects pending review.
+          <p className="text-[#c4b49a] text-sm font-medium">
+            System status is <span className="text-emerald-400">optimal</span>. You have 3 projects pending review.
           </p>
         </div>
         
@@ -66,20 +65,20 @@ export default function HubPage() {
       {/* Quick Actions Grid */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Upload Docs", icon: Plus, color: "text-indigo-400", bg: "bg-indigo-400/10", href: getAppUrl('workspace', '/upload') },
-          { label: "Team Access", icon: Users, color: "text-violet-400", bg: "bg-violet-400/10", href: getAppUrl('team') },
+          { label: "Upload Docs", icon: Plus, color: "text-[#c9a84c]", bg: "bg-[#c9a84c]/10", href: getAppUrl('workspace', '/upload') },
+          { label: "Team Access", icon: Users, color: "text-[#d4956a]", bg: "bg-[#d4956a]/10", href: getAppUrl('team') },
           { label: "Security Audit", icon: Shield, color: "text-emerald-400", bg: "bg-emerald-400/10", href: getAppUrl('review') },
-          { label: "Fast Analyze", icon: Zap, color: "text-amber-400", bg: "bg-amber-400/10", href: getAppUrl('rag') },
+          { label: "Fast Analyze", icon: Zap, color: "text-[#c9a84c]", bg: "bg-[#c9a84c]/10", href: getAppUrl('rag') },
         ].map((action, i) => (
           <button 
             key={i} 
             onClick={() => window.location.href = action.href}
-            className="flex items-center gap-3 p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/50 hover:bg-zinc-800/60 hover:border-zinc-700 transition-all group"
+            className="flex items-center gap-3 p-4 rounded-2xl glass-card hover:border-[#b87333]/40 transition-all group"
           >
             <div className={cn("p-2.5 rounded-xl group-hover:scale-110 transition-transform", action.bg, action.color)}>
               <action.icon className="w-4 h-4" />
             </div>
-            <span className="text-sm font-semibold text-zinc-300 group-hover:text-white transition-colors">{action.label}</span>
+            <span className="text-sm font-semibold text-[#ede0cc] group-hover:text-[#f5e6d0] transition-colors">{action.label}</span>
           </button>
         ))}
       </section>
@@ -92,13 +91,13 @@ export default function HubPage() {
           { label: "Safety Pipeline", value: "99.98%", icon: LayoutDashboard, trend: "Stable" },
           { label: "Review Nodes", value: "12 Pods", icon: Database, trend: "Healthy" },
         ].map((stat, i) => (
-          <Card key={i} variant="glass" className="p-6 flex items-center justify-between group hover:border-indigo-500/30 transition-all shadow-xl shadow-black/20">
+          <Card key={i} variant="glass" className="p-6 flex items-center justify-between group hover:border-[#b87333]/40 transition-all shadow-xl shadow-black/20">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1.5">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-white tracking-tight">{stat.value}</h3>
-              <p className="text-[10px] text-emerald-500 font-bold mt-1 bg-emerald-500/10 w-fit px-1.5 py-0.5 rounded italic">{stat.trend}</p>
+              <p className="text-[10px] uppercase tracking-widest text-[#c4b49a] font-bold mb-1.5">{stat.label}</p>
+              <h3 className="text-2xl font-bold text-[#f5e6d0] tracking-tight">{stat.value}</h3>
+              <p className="text-[10px] text-emerald-400 font-bold mt-1 bg-emerald-500/10 w-fit px-1.5 py-0.5 rounded italic">{stat.trend}</p>
             </div>
-            <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">
+            <div className="p-3 rounded-2xl bg-[#b87333]/10 border border-[#b87333]/20 text-[#c9a84c] group-hover:bg-[#b87333] group-hover:text-[#f5e6d0] transition-all duration-300">
               <stat.icon className="w-5 h-5" />
             </div>
           </Card>
@@ -108,12 +107,12 @@ export default function HubPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Main Section: Recent Projects Table-ish */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-500" />
+          <div className="flex items-center justify-between border-b border-[#b87333]/20 pb-4">
+            <h2 className="text-xl font-bold text-[#f5e6d0] flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#c9a84c]" />
               Active Projects
             </h2>
-            <button className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">View all</button>
+            <button className="text-sm font-semibold text-[#c9a84c] hover:text-[#e8d5b5] transition-colors">View all</button>
           </div>
           <div className="space-y-3">
             {recentProjects.map((p) => (
@@ -124,32 +123,32 @@ export default function HubPage() {
                 className="p-4 flex items-center gap-6 group cursor-pointer"
                 onClick={() => window.location.href = getAppUrl('workspace', `/projects/${p.id}`)}
               >
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                <div className="w-12 h-12 rounded-2xl bg-[#b87333]/10 border border-[#b87333]/20 flex items-center justify-center text-[#c9a84c] group-hover:bg-[#b87333] group-hover:text-[#f5e6d0] transition-all duration-300">
                   <FileText className="w-6 h-6" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1 min-w-0">
-                    <span className="text-base font-bold text-zinc-100 truncate group-hover:text-indigo-400 transition-colors">{p.name}</span>
+                    <span className="text-base font-bold text-[#ede0cc] truncate group-hover:text-[#c9a84c] transition-colors">{p.name}</span>
                     <Badge className={cn(
                       "px-2 py-0.5 rounded-lg text-[10px] font-bold border shrink-0",
-                      p.status === "In Progress" ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" :
-                      p.status === "Review" ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                      "bg-zinc-800 text-zinc-500 border-zinc-700"
+                      p.status === "In Progress" ? "bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/20" :
+                      p.status === "Review" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                      "bg-[#1a1408] text-[#c4b49a] border-[#b87333]/20"
                     )}>
                       {p.status}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 text-xs font-medium text-zinc-500">
+                  <div className="flex items-center gap-4 text-xs font-medium text-[#c4b49a]">
                     <span className="flex items-center gap-1"><Database className="w-3 h-3" /> {p.type}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Updated 2h ago</span>
                   </div>
                 </div>
                 <div className="w-32 text-right space-y-2">
                    <div className="flex items-center justify-end gap-2">
-                    <span className="text-xs text-zinc-400 font-mono font-bold">{p.progress}%</span>
+                    <span className="text-xs text-[#c4b49a] font-mono font-bold">{p.progress}%</span>
                    </div>
-                   <div className="w-full h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-1000" style={{ width: `${p.progress}%` }} />
+                   <div className="w-full h-1.5 bg-[#1a1408] rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-[#b87333] to-[#c9a84c] shadow-[0_0_8px_rgba(184,115,51,0.5)] transition-all duration-1000" style={{ width: `${p.progress}%` }} />
                    </div>
                 </div>
               </Card>
@@ -161,7 +160,7 @@ export default function HubPage() {
         {/* Sidebar Section: System Health & Actions */}
         <div className="space-y-6">
           <div className="space-y-4">
-            <h2 className="text-lg font-bold text-zinc-200">System Health</h2>
+            <h2 className="text-lg font-bold text-[#f5e6d0]">System Health</h2>
             <div className="space-y-3">
               {[
                 { name: "Code Gateway", status: "Healthy", color: "bg-emerald-500" },
@@ -169,10 +168,10 @@ export default function HubPage() {
                 { name: "Neo4j Semantic", status: "Syncing", color: "bg-amber-500" },
                 { name: "Qdrant TB", status: "Healthy", color: "bg-emerald-500" },
               ].map((svc, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
-                  <span className="text-xs text-zinc-300 font-bold">{svc.name}</span>
+                <div key={i} className="flex items-center justify-between p-3 rounded-2xl glass-card">
+                  <span className="text-xs text-[#ede0cc] font-bold">{svc.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tight">{svc.status}</span>
+                    <span className="text-[10px] text-[#c4b49a] font-bold uppercase tracking-tight">{svc.status}</span>
                     <div className={cn("w-1.5 h-1.5 rounded-full shadow-[0_0_8px]", svc.color)} />
                   </div>
                 </div>
@@ -180,17 +179,17 @@ export default function HubPage() {
             </div>
           </div>
 
-          <Card variant="glass" className="bg-indigo-600/5 border-indigo-500/20 p-6 relative overflow-hidden group">
+          <Card variant="glass" className="bg-[#b87333]/5 border-[#b87333]/20 p-6 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
-               <AlertCircle className="w-16 h-16 text-indigo-400" />
+               <AlertCircle className="w-16 h-16 text-[#c9a84c]" />
             </div>
-            <h3 className="text-sm font-black text-indigo-400 mb-1 uppercase tracking-tighter">Memory Base Update</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed mb-4 font-medium">
+            <h3 className="text-sm font-black text-[#c9a84c] mb-1 uppercase tracking-tighter">Memory Base Update</h3>
+            <p className="text-xs text-[#c4b49a] leading-relaxed mb-4 font-medium">
               42 new verified code snippets added to your Memory Base (MB) in the last 24 hours. Verification ready.
             </p>
-            <Button 
-              size="sm" 
-              className="w-full bg-indigo-600 text-white hover:bg-indigo-500 font-black"
+            <Button
+              size="sm"
+              className="w-full steam-btn font-black"
               onClick={() => window.location.href = getAppUrl('review')}
             >
               Run Review Now

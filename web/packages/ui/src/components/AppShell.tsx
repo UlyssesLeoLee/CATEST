@@ -1,15 +1,16 @@
 import React from "react";
 import { cn } from "../lib/utils";
-import { 
-  Home, 
-  LayoutDashboard, 
-  Database, 
-  Code, 
-  Settings, 
+import {
+  Home,
+  LayoutDashboard,
+  Database,
+  Code,
+  Settings,
   User,
   ChevronRight,
-  ShieldCheck,
-  Users
+  Users,
+  Gauge,
+  Cog
 } from "lucide-react";
 
 import { APP_URLS } from "../lib/navigation";
@@ -30,42 +31,52 @@ const apps = [
   { id: "base",      name: "Hub Control",      href: APP_URLS.base, icon: Home },
   { id: "workspace", name: "Project Space",     href: APP_URLS.workspace, icon: LayoutDashboard },
   { id: "rag",       name: "Intelligence Hub",  href: APP_URLS.rag, icon: Database },
-  { id: "review",    name: "Qual Review",      href: APP_URLS.review, icon: Code },
-  { id: "team",      name: "Team & Collab",    href: APP_URLS.team, icon: Users },
+  { id: "review",    name: "Qual Review",       href: APP_URLS.review, icon: Code },
+  { id: "team",      name: "Team & Collab",     href: APP_URLS.team, icon: Users },
 ];
 
 export function AppShell({ children, activeApp, user }: AppShellProps) {
   const profileHref = `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || "33000"}/profile`;
   return (
-    <div className="flex h-screen bg-[#050505] text-zinc-100 overflow-hidden font-sans selection:bg-indigo-500/30 relative border-4 border-red-500">
-      {/* Dynamic Background Layer */}
+    <div className="flex h-screen bg-[#0a0806] text-[#e8d5b5] overflow-hidden font-sans relative">
+      {/* Steampunk Background Layers */}
       <div className="bg-mesh absolute inset-0 pointer-events-none" />
-      <div className="bg-grid absolute inset-0 pointer-events-none opacity-20" />
-      
+      <div className="bg-grid absolute inset-0 pointer-events-none opacity-30" />
+
       {/* Floating Sidebar Navigation */}
-      <aside className="w-72 m-4 mr-0 rounded-3xl glass-panel flex flex-col shrink-0 relative z-30 overflow-hidden">
-        {/* Glossy Overlay effect for sidebar */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-        
+      <aside className="w-72 m-3 mr-0 rounded-2xl glass-panel flex flex-col shrink-0 relative z-30 overflow-hidden gear-decoration">
+        {/* Brass rivet decorations - top */}
+        <div className="absolute top-3 left-3 w-2 h-2 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#8b5a2b] shadow-[0_0_4px_rgba(184,115,51,0.4)] z-10" />
+        <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#8b5a2b] shadow-[0_0_4px_rgba(184,115,51,0.4)] z-10" />
+        <div className="absolute bottom-3 left-3 w-2 h-2 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#8b5a2b] shadow-[0_0_4px_rgba(184,115,51,0.4)] z-10" />
+        <div className="absolute bottom-3 right-3 w-2 h-2 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#8b5a2b] shadow-[0_0_4px_rgba(184,115,51,0.4)] z-10" />
+
         {/* Brand Header */}
-        <div className="p-8 relative">
+        <div className="p-7 pb-5 relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white border border-white/20 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)] overflow-hidden shrink-0">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#1a1408] to-[#0d0a04] border border-[#b87333]/40 flex items-center justify-center shadow-[0_0_15px_rgba(184,115,51,0.15),inset_0_1px_0_rgba(201,168,76,0.1)] overflow-hidden shrink-0">
                <img src="/icon.png" alt="CATEST" className="w-6 h-6 object-contain" />
             </div>
             <div className="min-w-0">
-              <div className="text-xl font-black tracking-tighter text-white truncate">
+              <div className="text-xl font-black tracking-tight text-[#e8d5b5] truncate" style={{ textShadow: '0 0 20px rgba(184,115,51,0.2)' }}>
                 CATEST
               </div>
-              <div className="text-[9px] uppercase tracking-[0.2em] text-zinc-500 font-black truncate">
-                OS v4.2.0-GP
+              <div className="text-[9px] uppercase tracking-[0.25em] text-[#c9a84c] font-bold truncate flex items-center gap-1">
+                <Cog className="w-2.5 h-2.5 animate-spin" style={{ animationDuration: '8s' }} />
+                Engine v4.2
               </div>
             </div>
           </div>
         </div>
 
+        {/* Decorative pipe divider */}
+        <div className="mx-6 mb-2 relative">
+          <div className="h-px bg-gradient-to-r from-transparent via-[#b87333]/40 to-transparent" />
+          <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 rounded-full border border-[#b87333]/30 bg-[#0d0a04]" />
+        </div>
+
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-2 space-y-2 overflow-y-auto custom-scrollbar relative min-w-0">
+        <nav className="flex-1 px-3 py-1 space-y-1 overflow-y-auto custom-scrollbar relative min-w-0 z-10">
           {apps.map((app) => {
             const Icon = app.icon;
             const isActive = activeApp === app.id;
@@ -74,83 +85,101 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
                 key={app.id}
                 href={app.href}
                 className={cn(
-                  "group flex items-center justify-between px-6 py-4 text-sm font-bold rounded-2xl transition-all duration-500 relative overflow-hidden min-w-0",
+                  "group flex items-center justify-between px-5 py-3.5 text-sm font-semibold rounded-xl transition-all duration-500 relative overflow-hidden min-w-0",
                   isActive
-                    ? "bg-white/10 text-white shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-white/10"
-                    : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5 border border-transparent"
+                    ? "bg-[#b87333]/10 text-[#f5e6d0] border border-[#b87333]/30 shadow-[0_0_15px_rgba(184,115,51,0.08)]"
+                    : "text-[#c4b49a] hover:text-[#e8d5b5] hover:bg-[#b87333]/5 border border-transparent"
                 )}
               >
-                {/* Active Indicator Glow */}
+                {/* Active steam indicator */}
                 {isActive && (
-                  <div className="absolute inset-y-2 left-0 w-1 bg-indigo-500 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.8)]" />
+                  <>
+                    <div className="absolute inset-y-2 left-0 w-1 rounded-full bg-gradient-to-b from-[#c9a84c] to-[#b87333] shadow-[0_0_8px_rgba(184,115,51,0.6)]" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#b87333]/5 to-transparent pointer-events-none" />
+                  </>
                 )}
-                
-                <div className="flex items-center gap-4 relative z-10 min-w-0 flex-1">
-                  <Icon className={cn("w-5 h-5 shrink-0", isActive ? "text-indigo-400" : "text-zinc-600 group-hover:text-zinc-400")} />
+
+                <div className="flex items-center gap-3.5 relative z-10 min-w-0 flex-1">
+                  <Icon className={cn(
+                    "w-[18px] h-[18px] shrink-0 transition-all duration-300",
+                    isActive ? "text-[#c9a84c] drop-shadow-[0_0_6px_rgba(201,168,76,0.4)]" : "text-[#b8a080] group-hover:text-[#c9a84c]"
+                  )} />
                   <span className="whitespace-nowrap">{app.name}</span>
                 </div>
-                {isActive && <ChevronRight className="w-4 h-4 text-white/50 shrink-0" />}
+                {isActive && <ChevronRight className="w-4 h-4 text-[#b87333]/50 shrink-0" />}
               </a>
             );
           })}
         </nav>
 
-        {/* Sidebar Footer */}
-        <div className="p-8 mt-auto border-t border-white/5 bg-black/20 relative">
-          <a 
+        {/* Pressure gauge decoration */}
+        <div className="px-6 py-3 relative z-10">
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[#0d0a04]/60 border border-[#b87333]/10">
+            <Gauge className="w-4 h-4 text-[#4caf50] gauge-active" style={{ filter: 'drop-shadow(0 0 4px rgba(76,175,80,0.4))' }} />
+            <div className="flex-1">
+              <div className="text-[9px] uppercase tracking-widest text-[#c4b49a] font-bold">System Pressure</div>
+              <div className="mt-1 h-1.5 rounded-full bg-[#1a1408] overflow-hidden border border-[#b87333]/10">
+                <div className="h-full w-[92%] rounded-full bg-gradient-to-r from-[#4caf50] via-[#8bc34a] to-[#c9a84c]" style={{ boxShadow: '0 0 8px rgba(76,175,80,0.3)' }} />
+              </div>
+            </div>
+            <span className="text-[10px] font-bold text-[#4caf50]" style={{ textShadow: '0 0 6px rgba(76,175,80,0.3)' }}>92%</span>
+          </div>
+        </div>
+
+        {/* Sidebar Footer - User Card */}
+        <div className="p-4 pt-2 mt-auto border-t border-[#b87333]/10 relative z-10">
+          <a
             href={profileHref}
-            className="flex items-center gap-5 p-5 rounded-3xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-all cursor-pointer group min-w-0"
+            className="flex items-center gap-4 p-4 rounded-xl bg-[#0d0a04]/40 border border-[#b87333]/10 hover:border-[#b87333]/30 hover:bg-[#b87333]/5 transition-all cursor-pointer group min-w-0"
           >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform shrink-0">
-              <User className="w-6 h-6 text-indigo-400" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a1408] to-[#0d0a04] flex items-center justify-center border border-[#b87333]/20 group-hover:border-[#c9a84c]/40 transition-all shrink-0 shadow-[inset_0_1px_0_rgba(201,168,76,0.1)]">
+              <User className="w-5 h-5 text-[#c9a84c]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-black text-white truncate">{user?.displayName || user?.email?.split('@')[0] || "Guest"}</p>
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest truncate">{user?.email || "System Node"}</p>
+              <p className="text-sm font-bold text-[#e8d5b5] truncate">{user?.displayName || user?.email?.split('@')[0] || "Operator"}</p>
+              <p className="text-[9px] font-semibold text-[#c4b49a] uppercase tracking-widest truncate">{user?.email || "System Node"}</p>
             </div>
-            <Settings className="w-5 h-5 text-zinc-700 group-hover:text-white transition-colors shrink-0" />
+            <Settings className="w-4 h-4 text-[#b8a080] group-hover:text-[#c9a84c] transition-colors shrink-0 group-hover:animate-spin" style={{ animationDuration: '3s' }} />
           </a>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative overflow-hidden m-4 ml-4 min-w-0">
-        {/* Floating Top Header (Glass) */}
-        <header className="h-20 rounded-3xl glass-panel flex items-center justify-between px-6 sm:px-10 mb-4 shrink-0 relative z-20 min-w-0">
-          <div className="flex items-center gap-4 min-w-0 flex-1 lg:flex-none">
-             <div className="px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 shadow-[0_0_15px_rgba(16,185,129,0.1)] shrink-0 w-fit">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]" />
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.1em] whitespace-nowrap">Core Engine Healthy</span>
+      <main className="flex-1 flex flex-col relative overflow-hidden m-3 ml-3 min-w-0">
+        {/* Steampunk Top Header */}
+        <header className="h-16 rounded-2xl glass-panel flex items-center justify-between px-6 mb-3 shrink-0 relative z-20 min-w-0">
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+             {/* Engine Status */}
+             <div className="px-4 py-2 rounded-lg bg-[#4caf50]/5 border border-[#4caf50]/15 flex items-center gap-2.5 shrink-0 gauge-active">
+                <div className="w-2 h-2 rounded-full bg-[#4caf50] shadow-[0_0_8px_#4caf50]" />
+                <span className="text-[10px] font-bold text-[#4caf50] uppercase tracking-[0.15em] whitespace-nowrap" style={{ textShadow: '0 0 10px rgba(76,175,80,0.3)' }}>
+                  Core Engine Online
+                </span>
              </div>
-             <div className="h-4 w-px bg-white/10 shrink-0 hidden md:block" />
-             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2 whitespace-nowrap w-fit">
-                <Database className="w-3 h-3 shrink-0" />
-                <span className="whitespace-nowrap hidden md:inline">Neo4j Shard 4</span>
+
+             {/* Pipe divider */}
+             <div className="h-6 w-px bg-gradient-to-b from-transparent via-[#b87333]/30 to-transparent shrink-0 hidden md:block" />
+
+             {/* Shard Info */}
+             <div className="text-[10px] font-bold text-[#c4b49a] uppercase tracking-widest flex items-center gap-2 whitespace-nowrap w-fit hidden md:flex">
+                <Database className="w-3 h-3 text-[#b87333]/60" />
+                <span>Neo4j Shard 4</span>
              </div>
-          </div>
-          
-          <div className="flex items-center gap-3 sm:gap-6 shrink-0 ml-4">
-             <div className="hidden lg:flex -space-x-3">
-               {[1, 2, 3].map(i => (
-                 <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0a0a0a] bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
-                    JD
-                 </div>
-               ))}
-               <div className="w-8 h-8 rounded-full border-2 border-[#0a0a0a] bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
-                  +
-               </div>
+
+             {/* Pipe divider */}
+             <div className="h-6 w-px bg-gradient-to-b from-transparent via-[#b87333]/30 to-transparent shrink-0 hidden lg:block" />
+
+             {/* Timestamp */}
+             <div className="text-[10px] font-bold text-[#b8a080] uppercase tracking-widest hidden lg:flex items-center gap-2">
+                <Cog className="w-3 h-3 text-[#b87333]/40 animate-spin" style={{ animationDuration: '10s' }} />
+                <span>Steam Protocol v2.1</span>
              </div>
-             <button className="h-10 px-8 rounded-2xl bg-white text-black text-xs font-black hover:bg-zinc-200 transition-colors shadow-[0_10px_20px_rgba(255,255,255,0.1)] whitespace-nowrap min-w-fit">
-                Launch Node
-             </button>
           </div>
         </header>
 
-
-
-        {/* Pure Content Scroll Area */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar rounded-3xl relative z-10 glass-panel border-none shadow-none min-w-0">
-          <div className="p-6 sm:p-10 min-w-0">
+        {/* Content Scroll Area */}
+        <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar rounded-2xl relative z-10 glass-panel min-w-0 steam-particles">
+          <div className="p-6 sm:p-8 min-w-0 relative z-10">
             {children}
           </div>
         </div>
@@ -158,4 +187,3 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
     </div>
   );
 }
-

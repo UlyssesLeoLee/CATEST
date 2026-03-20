@@ -52,7 +52,25 @@
       "Bash(pwsh -File ./k8s-build.ps1 -Only embedding,ingestion)",
       "Bash(docker rmi:*)",
       "Bash(docker builder:*)",
-      "Bash(DOCKER_BUILDKIT=0 docker build --no-cache -t ghcr.io/ulyssesleolee/catest-embedding:latest --build-arg \"SERVICE_NAME=catest-embedding\" -f E:/CATEST/rust.Dockerfile E:/CATEST)"
+      "Bash(DOCKER_BUILDKIT=0 docker build --no-cache -t ghcr.io/ulyssesleolee/catest-embedding:latest --build-arg \"SERVICE_NAME=catest-embedding\" -f E:/CATEST/rust.Dockerfile E:/CATEST)",
+      "Bash(python3 -m json.tool)",
+      "Bash(find E:/CATEST/crates/gateway -name *.sql)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(f''''=== {k} ===''''\\) for k in d.keys\\(\\)]\")",
+      "Bash(docker system:*)",
+      "Bash(docker image:*)",
+      "Bash(git -C E:/CATEST ls-files k8s_tools/)",
+      "Bash(git -C E:/CATEST mv k8s_tools/k9s.exe k8s_tools/k8s.exe)",
+      "Bash(cmd.exe /c \"del E:\\\\CATEST\\\\.git\\\\index.lock\")",
+      "Bash(git -C E:/CATEST rm -r k8s_tools/)",
+      "Bash(git -C E:/CATEST rm -rf k8s_tools/)",
+      "Bash(git -C E:/CATEST status)",
+      "Bash(git -C E:/CATEST diff --staged --stat)",
+      "Bash(git -C E:/CATEST log --oneline -5)",
+      "Bash(git -C E:/CATEST add .gitignore scripts/create_databases.sh scripts/initdb.d/01-gateway.sql)",
+      "Bash(git -C:*)",
+      "Bash(pwsh -File E:/CATEST/k8s-build.ps1 -Web)",
+      "Bash(for app:*)",
+      "Read(//e/CATEST/web/apps/$app/src/app/**)"
     ]
   }
 }
