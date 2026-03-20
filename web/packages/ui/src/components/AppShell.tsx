@@ -44,7 +44,7 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
       <div className="bg-grid absolute inset-0 pointer-events-none opacity-30" />
 
       {/* Floating Sidebar Navigation */}
-      <aside className="w-72 m-3 mr-0 rounded-2xl glass-panel flex flex-col shrink-0 relative z-30 overflow-hidden gear-decoration">
+      <aside className="w-72 m-4 mr-0 rounded-2xl glass-panel flex flex-col shrink-0 relative z-30 overflow-hidden gear-decoration">
         {/* Brass rivet decorations - top */}
         <div className="absolute top-3 left-3 w-2 h-2 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#8b5a2b] shadow-[0_0_4px_rgba(184,115,51,0.4)] z-10" />
         <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#8b5a2b] shadow-[0_0_4px_rgba(184,115,51,0.4)] z-10" />
@@ -76,7 +76,7 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-3 py-1 space-y-1 overflow-y-auto custom-scrollbar relative min-w-0 z-10">
+        <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar relative min-w-0 z-10">
           {apps.map((app) => {
             const Icon = app.icon;
             const isActive = activeApp === app.id;
@@ -145,12 +145,12 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative overflow-hidden m-3 ml-3 min-w-0">
+      <main className="flex-1 flex flex-col relative overflow-hidden m-4 ml-4 min-w-0">
         {/* Steampunk Top Header */}
-        <header className="h-16 rounded-2xl glass-panel flex items-center justify-between px-6 mb-3 shrink-0 relative z-20 min-w-0">
+        <header className="h-16 rounded-2xl glass-panel flex items-center justify-between px-8 mb-4 shrink-0 relative z-20 min-w-0">
           <div className="flex items-center gap-4 min-w-0 flex-1">
              {/* Engine Status */}
-             <div className="px-4 py-2 rounded-lg bg-[#4caf50]/5 border border-[#4caf50]/15 flex items-center gap-2.5 shrink-0 gauge-active">
+             <div className="px-5 py-3 rounded-xl bg-[#4caf50]/5 border border-[#4caf50]/15 flex items-center gap-2.5 shrink-0 gauge-active">
                 <div className="w-2 h-2 rounded-full bg-[#4caf50] shadow-[0_0_8px_#4caf50]" />
                 <span className="text-[10px] font-bold text-[#4caf50] uppercase tracking-[0.15em] whitespace-nowrap" style={{ textShadow: '0 0 10px rgba(76,175,80,0.3)' }}>
                   Core Engine Online
@@ -178,8 +178,8 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
         </header>
 
         {/* Content Scroll Area */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar rounded-2xl relative z-10 glass-panel min-w-0 steam-particles">
-          <div className="p-6 sm:p-8 min-w-0 relative z-10">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar rounded-2xl relative z-10 glass-panel particle-field min-w-0 steam-particles">
+          <div className="p-8 sm:p-10 min-w-0 relative z-10">
             {children}
           </div>
         </div>
