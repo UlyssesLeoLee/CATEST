@@ -2,6 +2,7 @@ use anyhow::Result;
 use catest_embedding::EmbeddingManager;
 use neo4rs::{query, Graph};
 use serde::Deserialize;
+use stream_events::EventConsumer;
 
 #[derive(Deserialize, Debug)]
 struct CleanedRagItem {
@@ -36,6 +37,7 @@ async fn main() -> Result<()> {
         reranker_model
     );
     let qdrant_api_key = common::utils::get_env_default("QDRANT_API_KEY", "password");
+    tracing::info!("Connecting to Qdrant @ {} (api_key_len={})", qdrant_url, qdrant_api_key.len());
     let manager = EmbeddingManager::new(&qdrant_url, Some(&qdrant_api_key))?;
     manager.ensure_collection("catest_rag", embed_dim).await?;
 
@@ -64,10 +66,13 @@ async fn main() -> Result<()> {
         stream_events::topics::RAG_CLEANED
     );
 
+    let manager_clone = manager.clone();
+    let graph_clone = graph.clone();
+
     consumer
-        .run(|item: CleanedRagItem| {
-            let manager = &manager;
-            let graph = &graph;
+        .run(move |item: CleanedRagItem| {
+            let manager = manager_clone.clone();
+            let graph = graph_clone.clone();
             async move {
                 tracing::info!(
                     "Processing cleaned item {} ({} words)",

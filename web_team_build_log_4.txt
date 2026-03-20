@@ -1,0 +1,103 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 DONE 0.0s
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 388B done
+#1 DONE 0.2s
+
+#2 [auth] library/node:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:22-slim
+#3 DONE 2.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 108B done
+#4 DONE 0.5s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [stage-0 1/6] FROM docker.io/library/node:22-slim@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d
+#6 resolve docker.io/library/node:22-slim@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d
+#6 resolve docker.io/library/node:22-slim@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d 1.0s done
+#6 DONE 1.1s
+
+#5 [internal] load build context
+#5 transferring context: 499.50kB 0.1s done
+#5 DONE 0.5s
+
+#7 [stage-0 2/6] WORKDIR /app
+#7 CACHED
+
+#8 [stage-0 3/6] RUN corepack enable
+#8 CACHED
+
+#9 [stage-0 4/6] COPY . .
+#9 CACHED
+
+#10 [stage-0 5/6] RUN pnpm install --no-frozen-lockfile
+#10 CACHED
+
+#11 [stage-0 6/6] RUN pnpm --filter=web-team build
+#11 3.100 
+#11 3.100 > web-team@0.1.0 build /app/apps/web-team
+#11 3.100 > next build
+#11 3.100 
+#11 3.785 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#11 3.785 This information is used to shape Next.js' roadmap and prioritize features.
+#11 3.785 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#11 3.785 https://nextjs.org/telemetry
+#11 3.785 
+#11 3.844 鈻?Next.js 16.1.6 (Turbopack)
+#11 3.844 
+#11 3.997   Creating an optimized production build ...
+#11 7.761 
+#11 7.761 > Build error occurred
+#11 7.765 Error: Turbopack build failed with 1 errors:
+#11 7.765 ./apps/web-team/src/app/layout.tsx:2:1
+#11 7.765 Module not found: Can't resolve './globals.css'
+#11 7.765   1 | import type { Metadata } from "next";
+#11 7.765 > 2 | import "./globals.css";
+#11 7.765     | ^^^^^^^^^^^^^^^^^^^^^^^
+#11 7.765   3 | import { AppShell } from "@catest/ui";
+#11 7.765   4 | import { getSession, getUser } from "@/lib/session";
+#11 7.765   5 | import { redirect } from "next/navigation";
+#11 7.765 
+#11 7.765 
+#11 7.765 
+#11 7.765 https://nextjs.org/docs/messages/module-not-found
+#11 7.765 
+#11 7.765 
+#11 7.765     at <unknown> (./apps/web-team/src/app/layout.tsx:2:1)
+#11 7.765     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+#11 7.846 /app/apps/web-team:
+#11 7.846 鈥塃RR_PNPM_RECURSIVE_RUN_FIRST_FAIL鈥?web-team@0.1.0 build: `next build`
+#11 7.846 Exit status 1
+#11 ERROR: process "/bin/sh -c pnpm --filter=web-team build" did not complete successfully: exit code: 1
+------
+ > [stage-0 6/6] RUN pnpm --filter=web-team build:
+7.765 
+7.765 
+7.765 https://nextjs.org/docs/messages/module-not-found
+7.765 
+7.765 
+7.765     at <unknown> (./apps/web-team/src/app/layout.tsx:2:1)
+7.765     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+7.846 /app/apps/web-team:
+7.846 鈥塃RR_PNPM_RECURSIVE_RUN_FIRST_FAIL鈥?web-team@0.1.0 build: `next build`
+7.846 Exit status 1
+------
+Dockerfile:6
+--------------------
+   4 |     COPY . .
+   5 |     RUN pnpm install --no-frozen-lockfile
+   6 | >>> RUN pnpm --filter=web-team build
+   7 |     
+   8 |     FROM node:22-slim AS runner
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c pnpm --filter=web-team build" did not complete successfully: exit code: 1
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/i3yiajqf9lchp19jkudb6wj1h

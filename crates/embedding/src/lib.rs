@@ -3,12 +3,14 @@ use qdrant_client::qdrant::{CreateCollectionBuilder, Distance, VectorParamsBuild
 use qdrant_client::{Payload, Qdrant};
 use uuid::Uuid;
 
+#[derive(Clone)]
 pub struct EmbeddingManager {
     qdrant: Qdrant,
 }
 
 impl EmbeddingManager {
     pub fn new(url: &str, api_key: Option<&str>) -> Result<Self> {
+        tracing::info!("Qdrant connecting to url={} api_key={:?}", url, api_key.map(|k| format!("{}...", &k[..k.len().min(3)])));
         let mut builder = Qdrant::from_url(url);
         if let Some(key) = api_key {
             builder = builder.api_key(key);

@@ -33,7 +33,26 @@
       "Bash(powershell.exe -Command \"kubectl delete statefulset postgres -n catest --wait; kubectl delete pvc pgdata-postgres-0 -n catest\")",
       "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- psql -U catest -d postgres -c ''\\\\l''\")",
       "Bash(powershell.exe -Command \"kubectl exec postgres-0 -n catest -- psql -U catest -d catest_ingestion -c ''\\\\dt''\")",
-      "Bash(grep -rn \"port:\" E:/CATEST/k8s/infra/*/service.yaml E:/CATEST/k8s/services/*/service.yaml E:/CATEST/k8s/services/workspace-svc.yaml E:/CATEST/k8s/services/*/manifest.yaml)"
+      "Bash(grep -rn \"port:\" E:/CATEST/k8s/infra/*/service.yaml E:/CATEST/k8s/services/*/service.yaml E:/CATEST/k8s/services/workspace-svc.yaml E:/CATEST/k8s/services/*/manifest.yaml)",
+      "Bash(pwsh -File ./k8s-build.ps1 -Only web-team)",
+      "Bash(docker run:*)",
+      "Bash(pwsh -File ./k8s-build.ps1 -Web)",
+      "Bash(find /e/CATEST -name *migration* -type f)",
+      "Bash(find /e/CATEST -path */migrations/* -type f)",
+      "Bash(find /e/CATEST -name *files* -type f)",
+      "Bash(grep -E \"\\\\.\\(sql|rs\\)$\")",
+      "Bash(find /e/CATEST -type f \\\\\\(-name *.yaml -o -name *.yml \\\\\\))",
+      "Bash(find /e/CATEST -type f -name *.sql)",
+      "Bash(kubectl run:*)",
+      "Bash(curl -s -H \"api-key: password\" http://localhost:36333/collections)",
+      "Bash(curl -s http://localhost:36334)",
+      "Bash(kubectl set:*)",
+      "Read(//c/Users/leo19/.cargo/registry/**)",
+      "Bash(ls E:/CATEST/Dockerfile*)",
+      "Bash(pwsh -File ./k8s-build.ps1 -Only embedding,ingestion)",
+      "Bash(docker rmi:*)",
+      "Bash(docker builder:*)",
+      "Bash(DOCKER_BUILDKIT=0 docker build --no-cache -t ghcr.io/ulyssesleolee/catest-embedding:latest --build-arg \"SERVICE_NAME=catest-embedding\" -f E:/CATEST/rust.Dockerfile E:/CATEST)"
     ]
   }
 }

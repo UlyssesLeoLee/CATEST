@@ -17,6 +17,7 @@ chrono = { workspace = true }
 async-trait = { workspace = true }
 stream-events = { path = "../stream-events" }
 tempfile = "3.10"
+serde_json = { workspace = true }
 
 
 [dev-dependencies]

@@ -1,0 +1,141 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 388B done
+#1 DONE 0.4s
+
+#2 [auth] library/node:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:22-slim
+#3 DONE 2.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 108B done
+#4 DONE 0.4s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [stage-0 1/6] FROM docker.io/library/node:22-slim@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d
+#6 resolve docker.io/library/node:22-slim@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d
+#6 resolve docker.io/library/node:22-slim@sha256:4f77a690f2f8946ab16fe1e791a3ac0667ae1c3575c3e4d0d4589e9ed5bfaf3d 1.7s done
+#6 DONE 1.8s
+
+#5 [internal] load build context
+#5 transferring context: 500.88kB 0.2s done
+#5 DONE 0.8s
+
+#7 [stage-0 2/6] WORKDIR /app
+#7 CACHED
+
+#8 [stage-0 3/6] RUN corepack enable
+#8 CACHED
+
+#9 [stage-0 4/6] COPY . .
+#9 DONE 236.9s
+
+#10 [stage-0 5/6] RUN pnpm install --no-frozen-lockfile
+#10 24.05 ! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-10.32.1.tgz
+#10 27.00 Scope: all 9 workspace projects
+#10 27.85 Progress: resolved 1, reused 0, downloaded 0, added 0
+#10 28.85 Progress: resolved 6, reused 0, downloaded 2, added 0
+#10 29.85 Progress: resolved 33, reused 0, downloaded 33, added 0
+#10 30.85 Progress: resolved 37, reused 0, downloaded 37, added 0
+#10 34.55 Progress: resolved 37, reused 0, downloaded 38, added 0
+#10 35.55 Progress: resolved 38, reused 0, downloaded 38, added 0
+#10 36.55 Progress: resolved 39, reused 0, downloaded 39, added 0
+#10 37.95 Progress: resolved 39, reused 0, downloaded 40, added 0
+#10 38.92 Progress: resolved 172, reused 0, downloaded 160, added 0
+#10 39.93 Progress: resolved 246, reused 0, downloaded 239, added 0
+#10 40.96 Progress: resolved 468, reused 0, downloaded 453, added 0
+#10 41.96 Progress: resolved 626, reused 0, downloaded 542, added 0
+#10 42.96 Progress: resolved 632, reused 0, downloaded 549, added 0
+#10 44.16 Progress: resolved 632, reused 0, downloaded 550, added 0
+#10 45.16 Progress: resolved 794, reused 0, downloaded 716, added 0
+#10 46.16 Progress: resolved 830, reused 0, downloaded 728, added 0
+#10 47.16 Progress: resolved 832, reused 0, downloaded 733, added 0
+#10 48.16 Progress: resolved 834, reused 0, downloaded 735, added 0
+#10 49.34 Progress: resolved 834, reused 0, downloaded 736, added 0
+#10 49.67 鈥塛ARN鈥?3 deprecated subdependencies found: glob@7.2.3, inflight@1.0.6, prebuild-install@7.1.3
+#10 49.68 Packages: +732
+#10 49.68 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#10 51.92 Progress: resolved 834, reused 0, downloaded 736, added 1
+#10 52.92 Progress: resolved 834, reused 0, downloaded 736, added 729
+#10 53.92 Progress: resolved 834, reused 0, downloaded 736, added 731
+#10 101.5 Progress: resolved 834, reused 0, downloaded 736, added 732
+#10 101.5 Progress: resolved 834, reused 0, downloaded 736, added 732, done
+#10 116.9 
+#10 116.9 devDependencies:
+#10 116.9 + turbo 2.8.17
+#10 116.9 + typescript 5.9.3
+#10 116.9 
+#10 117.1 鈺?Warning 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈺?#10 117.1 鈹?                                                                             鈹?#10 117.1 鈹?  Ignored build scripts: better-sqlite3@12.8.0, sharp@0.34.5,                鈹?#10 117.1 鈹?  unrs-resolver@1.11.1.                                                      鈹?#10 117.1 鈹?  Run "pnpm approve-builds" to pick which dependencies should be allowed     鈹?#10 117.1 鈹?  to run scripts.                                                            鈹?#10 117.1 鈹?                                                                             鈹?#10 117.1 鈺扳攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈺?#10 118.8 Done in 1m 32.2s using pnpm v10.32.1
+#10 DONE 154.8s
+
+#11 [stage-0 6/6] RUN pnpm --filter=web-team build
+#11 41.39 
+#11 41.39 > web-team@0.1.0 build /app/apps/web-team
+#11 41.39 > next build
+#11 41.39 
+#11 59.21 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#11 59.21 This information is used to shape Next.js' roadmap and prioritize features.
+#11 59.21 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#11 59.21 https://nextjs.org/telemetry
+#11 59.21 
+#11 61.85 鈻?Next.js 16.1.6 (Turbopack)
+#11 61.85 
+#11 ...
+
+#7 [stage-0 2/6] WORKDIR /app
+#7 CACHED
+
+#11 [stage-0 6/6] RUN pnpm --filter=web-team build
+#11 63.05   Creating an optimized production build ...
+#11 69.12 
+#11 69.12 > Build error occurred
+#11 69.12 Error: Turbopack build failed with 1 errors:
+#11 69.12 ./apps/web-team/src/app/layout.tsx:2:1
+#11 69.12 Module not found: Can't resolve './globals.css'
+#11 69.12   1 | import type { Metadata } from "next";
+#11 69.12 > 2 | import "./globals.css";
+#11 69.12     | ^^^^^^^^^^^^^^^^^^^^^^^
+#11 69.12   3 | import { AppShell } from "@catest/ui";
+#11 69.12   4 | import { getSession, getUser } from "@/lib/session";
+#11 69.12   5 | import { redirect } from "next/navigation";
+#11 69.12 
+#11 69.12 
+#11 69.12 
+#11 69.12 https://nextjs.org/docs/messages/module-not-found
+#11 69.12 
+#11 69.12 
+#11 69.12     at <unknown> (./apps/web-team/src/app/layout.tsx:2:1)
+#11 69.12     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+#11 69.19 /app/apps/web-team:
+#11 69.19 鈥塃RR_PNPM_RECURSIVE_RUN_FIRST_FAIL鈥?web-team@0.1.0 build: `next build`
+#11 69.19 Exit status 1
+#11 ERROR: process "/bin/sh -c pnpm --filter=web-team build" did not complete successfully: exit code: 1
+------
+ > [stage-0 6/6] RUN pnpm --filter=web-team build:
+69.12 
+69.12 
+69.12 https://nextjs.org/docs/messages/module-not-found
+69.12 
+69.12 
+69.12     at <unknown> (./apps/web-team/src/app/layout.tsx:2:1)
+69.12     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+69.19 /app/apps/web-team:
+69.19 鈥塃RR_PNPM_RECURSIVE_RUN_FIRST_FAIL鈥?web-team@0.1.0 build: `next build`
+69.19 Exit status 1
+------
+Dockerfile:6
+--------------------
+   4 |     COPY . .
+   5 |     RUN pnpm install --no-frozen-lockfile
+   6 | >>> RUN pnpm --filter=web-team build
+   7 |     
+   8 |     FROM node:22-slim AS runner
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c pnpm --filter=web-team build" did not complete successfully: exit code: 1
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/l18c2xiayt6tzf086yx2udymt

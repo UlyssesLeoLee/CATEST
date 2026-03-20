@@ -36,6 +36,11 @@ impl FileDao for sqlx::PgPool {
         sha256: String,
         s3_key: Option<String>,
     ) -> Result<()> {
+        let path = path.replace('\0', "");
+        let language = language.replace('\0', "");
+        let sha256 = sha256.replace('\0', "");
+        let s3_key = s3_key.map(|s| s.replace('\0', ""));
+
         sqlx::query(
             "INSERT INTO files (snapshot_id, path, language, size_bytes, sha256, s3_key)
              VALUES ($1, $2, $3, $4, $5, $6)
