@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-batch
+  namespace: catest
+spec:
+  selector:
+    app: catest-batch
+  ports:
+    - port: 33090
+      targetPort: 33090
+      name: http
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-batch-nodeport
+  namespace: catest
+spec:
+  selector:
+    app: catest-batch
+  ports:
+    - port: 33090
+      targetPort: 33090
+      nodePort: 30090
+      name: http
+  type: NodePort

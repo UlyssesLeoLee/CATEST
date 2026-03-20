@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-batch
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-batch
+  template:
+    metadata:
+      labels:
+        app: catest-batch
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nc -z postgres 34321; do echo waiting for postgres; sleep 2; done']
+        - name: wait-for-kafka
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nc -z kafka 39092; do echo waiting for kafka; sleep 2; done']
+      containers:
+        - name: batch
+          image: ghcr.io/ulyssesleolee/catest-batch:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 33090
+              name: http
+          env:
+            - name: BATCH_MODE
+              value: "api"
+            - name: BATCH_PORT
+              value: "33090"
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_batch"
+            - name: KAFKA_BROKER
+              value: "kafka:39092"
+            - name: INGESTION_SERVICE_URL
+              value: "http://catest-ingestion:33082"
+            - name: REVIEW_SERVICE_URL
+              value: "http://catest-review:33081"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 33090
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 33090
+            initialDelaySeconds: 10
+            periodSeconds: 10

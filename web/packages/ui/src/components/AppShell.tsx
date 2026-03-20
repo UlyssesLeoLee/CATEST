@@ -76,7 +76,7 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar relative min-w-0 z-10">
+        <nav className="flex-1 px-4 py-3 space-y-2 overflow-y-auto custom-scrollbar relative min-w-0 z-10">
           {apps.map((app) => {
             const Icon = app.icon;
             const isActive = activeApp === app.id;
@@ -85,28 +85,38 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
                 key={app.id}
                 href={app.href}
                 className={cn(
-                  "group flex items-center justify-between px-5 py-3.5 text-sm font-semibold rounded-xl transition-all duration-500 relative overflow-hidden min-w-0",
+                  "group flex items-center justify-between px-6 py-4 text-sm font-semibold rounded-2xl transition-all duration-500 relative overflow-hidden min-w-0",
                   isActive
-                    ? "bg-[#b87333]/10 text-[#f5e6d0] border border-[#b87333]/30 shadow-[0_0_15px_rgba(184,115,51,0.08)]"
-                    : "text-[#c4b49a] hover:text-[#e8d5b5] hover:bg-[#b87333]/5 border border-transparent"
+                    ? "bg-gradient-to-r from-[#b87333]/15 via-[#c9a84c]/10 to-[#b87333]/5 text-[#f5e6d0] border border-[#b87333]/40 shadow-[0_0_20px_rgba(184,115,51,0.12),inset_0_1px_0_rgba(201,168,76,0.15)]"
+                    : "text-[#c4b49a] hover:text-[#e8d5b5] hover:bg-gradient-to-r hover:from-[#b87333]/8 hover:to-transparent border border-transparent hover:border-[#b87333]/15"
                 )}
               >
-                {/* Active steam indicator */}
+                {/* Active steam indicator - left bar */}
                 {isActive && (
                   <>
-                    <div className="absolute inset-y-2 left-0 w-1 rounded-full bg-gradient-to-b from-[#c9a84c] to-[#b87333] shadow-[0_0_8px_rgba(184,115,51,0.6)]" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#b87333]/5 to-transparent pointer-events-none" />
+                    <div className="absolute inset-y-3 left-0 w-1 rounded-full bg-gradient-to-b from-[#c9a84c] via-[#b87333] to-[#c9a84c] shadow-[0_0_10px_rgba(184,115,51,0.7)]" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#b87333]/8 via-transparent to-transparent pointer-events-none" />
+                    {/* Corner brass dots */}
+                    <div className="absolute top-2 right-2 w-1 h-1 rounded-full bg-[#c9a84c]/30" />
+                    <div className="absolute bottom-2 right-2 w-1 h-1 rounded-full bg-[#c9a84c]/30" />
                   </>
                 )}
 
-                <div className="flex items-center gap-3.5 relative z-10 min-w-0 flex-1">
-                  <Icon className={cn(
-                    "w-[18px] h-[18px] shrink-0 transition-all duration-300",
-                    isActive ? "text-[#c9a84c] drop-shadow-[0_0_6px_rgba(201,168,76,0.4)]" : "text-[#b8a080] group-hover:text-[#c9a84c]"
-                  )} />
-                  <span className="whitespace-nowrap">{app.name}</span>
+                <div className="flex items-center gap-4 relative z-10 min-w-0 flex-1">
+                  <div className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 border",
+                    isActive
+                      ? "bg-gradient-to-br from-[#b87333]/20 to-[#c9a84c]/10 border-[#b87333]/30 shadow-[0_0_12px_rgba(184,115,51,0.15)]"
+                      : "bg-[#0d0a04]/40 border-[#b87333]/10 group-hover:border-[#b87333]/25 group-hover:bg-[#b87333]/10"
+                  )}>
+                    <Icon className={cn(
+                      "w-[18px] h-[18px] transition-all duration-300",
+                      isActive ? "text-[#c9a84c] drop-shadow-[0_0_8px_rgba(201,168,76,0.5)]" : "text-[#b8a080] group-hover:text-[#c9a84c]"
+                    )} />
+                  </div>
+                  <span className="whitespace-nowrap font-bold tracking-wide">{app.name}</span>
                 </div>
-                {isActive && <ChevronRight className="w-4 h-4 text-[#b87333]/50 shrink-0" />}
+                {isActive && <ChevronRight className="w-4 h-4 text-[#c9a84c]/60 shrink-0" />}
               </a>
             );
           })}

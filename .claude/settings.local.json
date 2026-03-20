@@ -101,7 +101,28 @@
       "Bash(powershell.exe -Command \"Start-Sleep 15; kubectl get pods -n catest -l ''app in \\(catest-web-base,catest-web-workspace,catest-web-rag,catest-web-review,catest-web-team\\)'' --sort-by=.metadata.creationTimestamp\")",
       "Bash(powershell.exe -Command \"kubectl get pods -n catest | Select-String ''web''\")",
       "Bash(powershell.exe -Command \"kubectl exec -n catest deployment/catest-web-workspace -- printenv | Select-String SAAS\")",
-      "Bash(powershell.exe -Command \"Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-workspace\\\\src\\\\app\\\\globals.css'' -Force; Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-rag\\\\src\\\\app\\\\globals.css'' -Force; Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-review\\\\src\\\\app\\\\globals.css'' -Force; Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-team\\\\src\\\\app\\\\globals.css'' -Force; Write-Host ''All 4 copies done''\")"
+      "Bash(powershell.exe -Command \"Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-workspace\\\\src\\\\app\\\\globals.css'' -Force; Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-rag\\\\src\\\\app\\\\globals.css'' -Force; Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-review\\\\src\\\\app\\\\globals.css'' -Force; Copy-Item ''E:\\\\CATEST\\\\web\\\\apps\\\\web-base\\\\src\\\\app\\\\globals.css'' -Destination ''E:\\\\CATEST\\\\web\\\\apps\\\\web-team\\\\src\\\\app\\\\globals.css'' -Force; Write-Host ''All 4 copies done''\")",
+      "Bash(powershell.exe -Command \"Start-Sleep 30; kubectl get pods -n catest -l ''app in \\(catest-web-base,catest-web-workspace,catest-web-rag,catest-web-review,catest-web-team\\)'' --sort-by=.metadata.creationTimestamp\")",
+      "Bash(powershell -File scripts/k8s-build.ps1 -Web)",
+      "Bash(powershell.exe -File E:/CATEST/scripts/k8s-build.ps1 -Web)",
+      "Bash(pwsh.exe -File \"E:\\\\CATEST\\\\scripts\\\\k8s-build.ps1\" -Web)",
+      "Bash(ls E:/CATEST/scripts/*.ps1)",
+      "Bash(ls E:/CATEST/k8s/*.ps1)",
+      "Bash(ls E:/CATEST/*.ps1)",
+      "Bash(pwsh.exe -File \"k8s-build.ps1\" -Web)",
+      "Bash(kubectl -n catest rollout restart deployment catest-web-base catest-web-workspace catest-web-rag catest-web-review catest-web-team)",
+      "Bash(kubectl -n catest rollout status deployment catest-web-base catest-web-workspace catest-web-rag catest-web-review catest-web-team --timeout=90s)",
+      "Read(//e/CATEST/web/apps/$app/**)",
+      "Bash(cargo check:*)",
+      "Bash(pwsh.exe -File \"k8s-build.ps1\" -Only batch)",
+      "Bash(kubectl -n catest rollout status deployment catest-batch --timeout=60s)",
+      "Bash(kubectl -n catest describe pod -l app=catest-batch)",
+      "Bash(kubectl -n catest logs -l app=catest-batch --tail=30)",
+      "Bash(kubectl -n catest rollout restart deployment catest-batch)",
+      "Bash(kubectl -n catest rollout status deployment catest-batch --timeout=90s)",
+      "Bash(kubectl -n catest logs -l app=catest-batch --tail=10)",
+      "Bash(curl -s -X POST http://localhost:30090/api/batch/jobs -H \"Content-Type: application/json\" -d '{\"\"\"\"job_type\"\"\"\":\"\"\"\"review\"\"\"\",\"\"\"\"items\"\"\"\":[\"\"\"\"repo/auth-service\"\"\"\",\"\"\"\"repo/payment-gateway\"\"\"\",\"\"\"\"repo/user-profile\"\"\"\"],\"\"\"\"payload\"\"\"\":{\"\"\"\"priority\"\"\"\":\"\"\"\"high\"\"\"\"}}')",
+      "Bash(curl -s http://localhost:30090/api/batch/jobs)"
     ]
   }
 }

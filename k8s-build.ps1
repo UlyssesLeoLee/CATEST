@@ -24,6 +24,7 @@ $Images = [ordered]@{
     embedding = @{ Tag = 'ghcr.io/ulyssesleolee/catest-embedding:latest';     Type = 'rust'; Bin = 'catest-embedding' }
     review    = @{ Tag = 'ghcr.io/ulyssesleolee/catest-review:latest';        Type = 'rust'; Bin = 'catest-review' }
     ingestion = @{ Tag = 'ghcr.io/ulyssesleolee/catest-ingestion:latest';     Type = 'rust'; Bin = 'catest-ingestion' }
+    batch     = @{ Tag = 'ghcr.io/ulyssesleolee/catest-batch:latest';         Type = 'rust'; Bin = 'catest-batch' }
     # Web apps (each has its own Dockerfile under web/apps/<name>/)
     web            = @{ Tag = 'ghcr.io/ulyssesleolee/catest-web:latest';           Type = 'web'; Dir = 'web-base' }
     'web-workspace'= @{ Tag = 'ghcr.io/ulyssesleolee/catest-web-workspace:latest'; Type = 'web'; Dir = 'web-workspace' }

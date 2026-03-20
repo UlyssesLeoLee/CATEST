@@ -28,13 +28,12 @@ export default function WorkspacePage() {
         <div className="flex gap-3">
           <Button
             variant="secondary"
-            className="border-[#b87333]/20 bg-[#b87333]/10 hover:bg-[#b87333]/20"
             onClick={() => window.location.href = getAppUrl('review')}
           >
             <ArrowRight className="w-4 h-4 mr-2" />
             Start Global Audit
           </Button>
-          <Button className="bg-[#b87333] hover:bg-[#c9a84c] text-[#f5e6d0]">
+          <Button>
             <Plus className="w-4 h-4 mr-2" />
             Deploy Node
           </Button>
@@ -49,7 +48,7 @@ export default function WorkspacePage() {
           { label: "Total Asset Load", value: "4.2 TB", icon: Layers, color: "text-[#b87333]" },
         ].map((stat, i) => (
           <Card key={i} variant="glass" className="p-6 flex items-center gap-5 hover:border-white/10 transition-colors group">
-            <div className={`p-4 rounded-2xl bg-white/[0.03] border border-white/5 ${stat.color} group-hover:bg-white group-hover:text-zinc-950 transition-all duration-300`}>
+            <div className={`p-4 rounded-2xl bg-[#b87333]/10 border border-[#b87333]/20 ${stat.color} group-hover:bg-[#b87333] group-hover:text-[#f5e6d0] transition-all duration-300`}>
               <stat.icon className="w-6 h-6" />
             </div>
             <div>

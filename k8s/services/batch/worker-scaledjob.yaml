@@ -1,0 +1,60 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: catest-batch-worker
+  namespace: catest
+spec:
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    activeDeadlineSeconds: 600
+    backoffLimit: 3
+    template:
+      spec:
+        containers:
+          - name: batch-worker
+            image: ghcr.io/ulyssesleolee/catest-batch:latest
+            imagePullPolicy: Never
+            env:
+              - name: BATCH_MODE
+                value: "worker"
+              - name: DATABASE_URL
+                value: "postgres://catest:password@postgres:34321/catest_batch"
+              - name: KAFKA_BROKER
+                value: "kafka:39092"
+              - name: KAFKA_GROUP_ID
+                value: "catest-batch-workers"
+              - name: INGESTION_SERVICE_URL
+                value: "http://catest-ingestion:33082"
+              - name: REVIEW_SERVICE_URL
+                value: "http://catest-review:33081"
+            resources:
+              limits:
+                cpu: "1000m"
+                memory: "1Gi"
+              requests:
+                cpu: "200m"
+                memory: "256Mi"
+        restartPolicy: Never
+  pollingInterval: 10
+  minReplicaCount: 0
+  maxReplicaCount: 10
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka:39092
+        consumerGroup: catest-batch-workers
+        topic: catest.batch.ingestion
+        lagThreshold: "5"
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka:39092
+        consumerGroup: catest-batch-workers
+        topic: catest.batch.review
+        lagThreshold: "5"
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka:39092
+        consumerGroup: catest-batch-workers
+        topic: catest.batch.mb_rebuild
+        lagThreshold: "5"

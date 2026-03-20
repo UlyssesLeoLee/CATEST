@@ -7,6 +7,7 @@ members = [
     "crates/embedding",
     "crates/review",
     "crates/stream-events", "crates/search-domain",
+    "crates/batch",
 ]
 resolver = "2"
 

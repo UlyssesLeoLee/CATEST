@@ -30,14 +30,14 @@ export default function RagPage() {
 
           <div className="flex-1 max-w-3xl flex items-center gap-3">
             <SearchInput placeholder="Query cross-lingual embeddings..." containerClassName="flex-1" />
-            <Button variant="secondary" size="md" className="border-[#b87333]/20">
+            <Button variant="secondary" size="md">
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button size="md" className="bg-[#b87333] hover:bg-[#c9a84c] text-[#f5e6d0] font-bold">
+            <Button size="md">
               Index Documents
             </Button>
           </div>

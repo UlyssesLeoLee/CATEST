@@ -46,10 +46,10 @@ export default function TeamPage() {
         </div>
 
         <div className="flex gap-3">
-          <Button variant="secondary" className="border-[#b87333]/20 bg-[#b87333]/10">
+          <Button variant="secondary">
             邀请成员
           </Button>
-          <Button className="bg-[#b87333] hover:bg-[#c9a84c] text-[#f5e6d0]">
+          <Button>
             <UserPlus className="w-4 h-4 mr-2" />
             新建团队
           </Button>
@@ -100,7 +100,6 @@ export default function TeamPage() {
                    <Button
                     size="sm"
                     variant="secondary"
-                    className="px-3 h-8 text-[10px] bg-[#b87333]/10 border-[#b87333]/20"
                     onClick={() => window.location.href = getAppUrl('base', '/profile')}
                    >
                       View Profile
@@ -154,7 +153,7 @@ export default function TeamPage() {
                    <p className="text-[10px] text-[#c4b49a] font-medium leading-relaxed">@leo tagged the Security Team in 'Memory Base Match Analysis'.</p>
                 </div>
              </div>
-             <Button size="sm" className="w-full h-8 text-[10px] bg-[#b87333] hover:bg-[#c9a84c] text-[#f5e6d0] font-black">
+             <Button size="sm" className="w-full">
                 Open Collaboration Panel
              </Button>
           </Card>

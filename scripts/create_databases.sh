@@ -8,6 +8,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE catest_workspace;
     CREATE DATABASE catest_intelligence;
     CREATE DATABASE catest_review;
+    CREATE DATABASE catest_batch;
 
     -- Grant privileges
     GRANT ALL PRIVILEGES ON DATABASE catest_hub TO catest;
@@ -16,4 +17,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     GRANT ALL PRIVILEGES ON DATABASE catest_workspace TO catest;
     GRANT ALL PRIVILEGES ON DATABASE catest_intelligence TO catest;
     GRANT ALL PRIVILEGES ON DATABASE catest_review TO catest;
+    GRANT ALL PRIVILEGES ON DATABASE catest_batch TO catest;
 EOSQL
