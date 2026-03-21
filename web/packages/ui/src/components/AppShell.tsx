@@ -157,7 +157,7 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative overflow-hidden m-4 ml-4 min-w-0">
+      <main className="flex-1 flex flex-col relative m-4 ml-4 min-w-0 min-h-0">
         {/* Steampunk Top Header */}
         <header className="h-16 rounded-2xl glass-panel flex items-center justify-between px-8 mb-4 shrink-0 relative z-20 min-w-0">
           <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -190,7 +190,7 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
         </header>
 
         {/* Content Scroll Area */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar rounded-2xl relative z-10 glass-panel particle-field min-w-0 steam-particles">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden rounded-2xl relative z-10 glass-panel particle-field min-w-0 min-h-0 steam-particles steam-scroll">
           <div className="p-8 sm:p-10 min-w-0 relative z-10">
             {children}
           </div>
