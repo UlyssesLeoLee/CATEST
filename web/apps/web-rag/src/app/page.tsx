@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { GraphExplorerPluginGroup } from "@/plugins/GraphExplorerPluginGroup";
 import { PluginGroupRenderer }        from "@catest/ui/plugins";
-import { Card, Badge, Button, SearchInput, cn } from "@catest/ui";
+import { Card, Badge, Button, SearchInput, cn, SteamEmission, VictorianDivider } from "@catest/ui";
 import {
   Database,
   GitBranch,
@@ -40,18 +40,18 @@ interface FilterState {
   limit: number;
 }
 
-// ── Modal component ────────────────────────────────────────────────────────
+// ── Modal ─────────────────────────────────────────────────────────────
 function Modal({ open, onClose, title, children }: {
   open: boolean; onClose: () => void; title: string; children: React.ReactNode;
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative glass-panel rounded-3xl w-full max-w-lg mx-4 shadow-2xl shadow-black/60 z-10">
+    <div className="modal-backdrop">
+      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-content glass-panel rounded-3xl shadow-2xl shadow-black/60">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-base font-black text-[#f5e6d0] uppercase tracking-wider">{title}</h3>
-          <button onClick={onClose} className="text-[#c4b49a] hover:text-[#f5e6d0] transition-colors">
+          <h3 className="text-base font-black text-[var(--text-primary)] uppercase tracking-wider">{title}</h3>
+          <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -61,7 +61,7 @@ function Modal({ open, onClose, title, children }: {
   );
 }
 
-// ── Search Result Card ─────────────────────────────────────────────────────
+// ── Search Result Card ────────────────────────────────────────────────
 function ResultCard({ result, onClick }: { result: SearchResult; onClick?: () => void }) {
   const score = result.score ?? 0;
   const source = result.source ?? String(result.payload?.source ?? "Unknown");
@@ -69,42 +69,43 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick?: () =>
   const tags: string[] = result.tags ?? (result.payload?.tags as string[] ?? []);
 
   return (
-    <div className="group cursor-pointer" onClick={onClick}>
+    <div className="group cursor-pointer relative" onClick={onClick}>
+      <SteamEmission />
       <div className="glass-card rounded-2xl p-5 hover:border-[#b87333]/40 transition-all">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="p-1.5 rounded-lg bg-[#b87333]/10 text-[#c9a84c] border border-[#b87333]/20 shrink-0">
+            <div className="p-1.5 rounded-lg bg-[#b87333]/10 text-[var(--text-brass)] border border-[#b87333]/20 shrink-0">
               <FileText className="w-4 h-4" />
             </div>
-            <span className="text-xs font-bold text-[#ede0cc] group-hover:text-[#c9a84c] transition-colors uppercase tracking-tight truncate">{source}</span>
+            <span className="text-xs font-bold text-[var(--text-primary)] group-hover:text-[var(--text-brass)] transition-colors uppercase tracking-tight truncate">{source}</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <Target className="w-3 h-3 text-emerald-500" />
-              <span className="text-[10px] font-mono font-bold text-emerald-500">{(score * 100).toFixed(2)}% MATCH</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[var(--verdigris)]/10 border border-[var(--verdigris)]/20">
+              <Target className="w-3 h-3 text-[var(--verdigris)]" />
+              <span className="text-[10px] font-mono font-bold text-[var(--verdigris)]">{(score * 100).toFixed(2)}% MATCH</span>
             </div>
-            <button className="text-[#c4b49a]/40 hover:text-[#c9a84c] transition-colors">
+            <button className="text-[var(--text-muted)]/40 hover:text-[var(--text-brass)] transition-colors">
               <Link2 className="w-4 h-4" />
             </button>
           </div>
         </div>
-        <p className="text-sm text-[#c4b49a] leading-relaxed font-medium line-clamp-2 italic border-l-2 border-[#b87333]/30 pl-4 py-1">
-          "{snippet}"
+        <p className="text-sm text-[var(--text-secondary)] leading-relaxed font-medium line-clamp-2 italic border-l-2 border-[#b87333]/30 pl-4 py-1">
+          &ldquo;{snippet}&rdquo;
         </p>
         <div className="flex items-center justify-between mt-3">
           <div className="flex gap-2 flex-wrap">
             {tags.map(tag => (
-              <Badge key={tag} className="bg-[#b87333]/10 text-[#c4b49a] border-[#b87333]/20 text-[9px] font-bold px-1.5 py-0">{tag}</Badge>
+              <Badge key={tag} className="bg-[#b87333]/10 text-[var(--text-muted)] border-[#b87333]/20 text-[9px] font-bold px-1.5 py-0">{tag}</Badge>
             ))}
           </div>
-          <ChevronRight className="w-4 h-4 text-[#c4b49a]/40 group-hover:text-[#c9a84c] group-hover:translate-x-1 transition-all" />
+          <ChevronRight className="w-4 h-4 text-[var(--text-muted)]/40 group-hover:text-[var(--text-brass)] group-hover:translate-x-1 transition-all" />
         </div>
       </div>
     </div>
   );
 }
 
-// ── Default results shown before any search ────────────────────────────────
+// ── Default results ───────────────────────────────────────────────────
 const DEFAULT_RESULTS: SearchResult[] = [
   { id: "r1", snippet: "Memory Base Pattern: 'handleRequest' must use 'validateAuthorization' as per security baseline 2026.0.4 to prevent token leakage.", score: 0.9542, source: "SecurityPolicy_Baseline", tags: ["Policy", "Security"] },
   { id: "r2", snippet: "Termbase Match: Pattern 'getSession' is marked as 'Forbidden' for production services. Preferred pattern is 'validateAuthorization'.", score: 0.8819, source: "Termbase_Global", tags: ["Lint", "Standard"] },
@@ -118,13 +119,11 @@ export default function RagPage() {
   const [latency, setLatency] = useState<number | null>(42);
   const [searched, setSearched] = useState(false);
 
-  // Modals
   const [filterOpen, setFilterOpen] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
   const [filter, setFilter] = useState<FilterState>({ minScore: 0, tags: [], limit: 10 });
   const [pendingFilter, setPendingFilter] = useState<FilterState>({ minScore: 0, tags: [], limit: 10 });
 
-  // Index Documents form
   const [indexText, setIndexText] = useState("");
   const [indexSource, setIndexSource] = useState("");
   const [indexing, setIndexing] = useState(false);
@@ -208,15 +207,15 @@ export default function RagPage() {
 
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* Search Header */}
-      <div className="px-8 py-8 rounded-3xl glass-panel mb-8">
+      {/* ── Search Header ──────────────────────────────────── */}
+      <div className="px-8 py-8 rounded-3xl glass-panel mb-[var(--section-gap)]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-[#f5e6d0] tracking-tight flex items-center gap-3">
-              <Database className="w-6 h-6 text-[#c9a84c]" />
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-3">
+              <Database className="w-6 h-6 text-[var(--text-brass)]" />
               Intelligence Hub (MB/TB)
             </h1>
-            <p className="text-xs text-[#c4b49a] font-medium tracking-wide">Querying 82.4M code semantics across distributed Memory Base (MB) and Termbase (TB) shards.</p>
+            <p className="text-xs text-[var(--text-muted)] font-medium tracking-wide">Querying 82.4M code semantics across distributed Memory Base (MB) and Termbase (TB) shards.</p>
           </div>
 
           <div className="flex-1 max-w-3xl flex items-center gap-3">
@@ -242,53 +241,56 @@ export default function RagPage() {
         </div>
       </div>
 
-      {/* Main Grid Layout */}
-      <div className="flex flex-1 p-8 gap-8 min-h-0">
-        {/* Left Section: Search Results */}
-        <section className="flex-1 flex flex-col gap-6 min-h-0">
+      {/* ── Main Grid Layout ───────────────────────────────── */}
+      <div className="flex flex-1 gap-[var(--section-gap)] min-h-0">
+        {/* Left: Search Results */}
+        <section className="flex-[var(--phi)] flex flex-col gap-6 min-h-0">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#c4b49a] uppercase tracking-widest flex items-center gap-2">
+            <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               Vector Results
             </h2>
-            <div className="flex items-center gap-4 text-[10px] font-bold text-[#c4b49a]/60">
+            <div className="flex items-center gap-4 text-[10px] font-bold text-[var(--text-muted)]/60">
               {latency !== null && <span className="flex items-center gap-1"><Cpu className="w-3 h-3" /> Latency: {latency}ms</span>}
               <span className="flex items-center gap-1"><Terminal className="w-3 h-3" /> Precision: 0.992</span>
-              <button onClick={handleExport} className="flex items-center gap-1 text-[#c9a84c] hover:text-[#f5e6d0] transition-colors">
+              <button onClick={handleExport} className="flex items-center gap-1 text-[var(--text-brass)] hover:text-[var(--text-primary)] transition-colors">
                 <Download className="w-3 h-3" /> Export
               </button>
             </div>
           </div>
 
-          <Card variant="glass" className="min-h-0 flex-1 border-[#b87333]/20 bg-[#b87333]/5 flex flex-col">
-            <div className="flex-1 overflow-auto p-4 space-y-4">
-              {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#c9a84c]" />
-                </div>
-              ) : results.map((r) => (
-                <ResultCard key={r.id} result={r} />
-              ))}
+          <div className="min-h-0 flex-1 relative flex flex-col">
+            <div className="absolute inset-0 border border-[#b87333]/20 bg-[#b87333]/5 rounded-2xl z-0 pointer-events-none glass-card" />
+            <div className="flex-1 overflow-y-auto overflow-x-hidden steam-scroll relative z-10" style={{ margin: '0 -40px', padding: '16px 40px' }}>
+              <div className="flex flex-col space-y-4 relative">
+                {loading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="w-8 h-8 animate-spin text-[var(--text-brass)]" />
+                  </div>
+                ) : results.map((r) => (
+                  <ResultCard key={r.id} result={r} />
+                ))}
+              </div>
             </div>
-          </Card>
+          </div>
         </section>
 
-        {/* Right Section: Graph Explorer */}
-        <aside className="w-[30rem] flex flex-col gap-6 min-h-0">
+        {/* Right: Graph Explorer */}
+        <aside className="flex-1 flex flex-col gap-6 min-h-0 max-w-[30rem]">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-[#c4b49a] uppercase tracking-widest flex items-center gap-2">
+            <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
               <GitBranch className="w-4 h-4" />
               Relation Graph
             </h2>
           </div>
 
-          <Card variant="glass" className="min-h-0 flex-1 border-[#c9a84c]/20 bg-[#c9a84c]/[0.02] flex flex-col relative group">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(201,168,76,0.05),transparent)] pointer-events-none" />
+          <Card variant="glass" className="min-h-0 flex-1 border-[var(--verdigris)]/20 bg-[var(--verdigris)]/[0.02] flex flex-col relative group">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(74,139,110,0.05),transparent)] pointer-events-none" />
             <div className="flex-1 overflow-auto relative z-10">
               <PluginGroupRenderer group={GraphExplorerPluginGroup} />
             </div>
-            <div className="p-4 border-t border-[#c9a84c]/10 bg-[#c9a84c]/5 relative z-10">
-              <div className="flex items-center justify-between text-[10px] text-[#c9a84c]/80 font-bold uppercase tracking-tight">
+            <div className="p-4 border-t border-[var(--verdigris)]/10 bg-[var(--verdigris)]/5 relative z-10">
+              <div className="flex items-center justify-between text-[10px] text-[var(--verdigris)]/80 font-bold uppercase tracking-tight">
                 <span>Rendering 420 nodes</span>
                 <span>Force-Directed Layout</span>
               </div>
@@ -297,11 +299,11 @@ export default function RagPage() {
         </aside>
       </div>
 
-      {/* Filter Modal */}
+      {/* ── Filter Modal ───────────────────────────────────── */}
       <Modal open={filterOpen} onClose={() => setFilterOpen(false)} title="Search Filters">
         <div className="space-y-5">
           <div>
-            <label className="text-xs font-bold text-[#c4b49a] uppercase tracking-wider block mb-2">
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-2">
               Min Score: {Math.round(pendingFilter.minScore * 100)}%
             </label>
             <input
@@ -312,7 +314,7 @@ export default function RagPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-bold text-[#c4b49a] uppercase tracking-wider block mb-2">
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-2">
               Result Limit: {pendingFilter.limit}
             </label>
             <input
@@ -322,43 +324,45 @@ export default function RagPage() {
               className="w-full accent-[#b87333]"
             />
           </div>
-          <div className="flex gap-3 pt-2">
+          <VictorianDivider />
+          <div className="flex gap-3">
             <Button variant="secondary" className="flex-1" onClick={() => setFilterOpen(false)}>Cancel</Button>
             <Button className="flex-1" onClick={applyFilter}>Apply Filter</Button>
           </div>
         </div>
       </Modal>
 
-      {/* Index Documents Modal */}
+      {/* ── Index Documents Modal ──────────────────────────── */}
       <Modal open={indexOpen} onClose={() => setIndexOpen(false)} title="Index Documents">
         {indexSuccess ? (
           <div className="flex flex-col items-center gap-4 py-6">
             <CheckCircle2 className="w-12 h-12 text-emerald-400" />
-            <p className="text-sm font-bold text-[#f5e6d0]">Document indexed successfully!</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Document indexed successfully!</p>
           </div>
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-[#c4b49a] uppercase tracking-wider block mb-2">Source Identifier</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-2">Source Identifier</label>
               <input
                 type="text"
                 placeholder="e.g. SecurityPolicy_v2.md"
                 value={indexSource}
                 onChange={e => setIndexSource(e.target.value)}
-                className="w-full bg-[#1a1408] border border-[#b87333]/30 rounded-xl px-4 py-3 text-sm text-[#f5e6d0] placeholder-[#c4b49a]/40 focus:outline-none focus:border-[#c9a84c]/60"
+                className="w-full bg-[var(--coal)] border border-[#b87333]/30 rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none focus:border-[#c9a84c]/60"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[#c4b49a] uppercase tracking-wider block mb-2">Document Content</label>
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block mb-2">Document Content</label>
               <textarea
                 rows={6}
                 placeholder="Paste document content to index into the Memory Base..."
                 value={indexText}
                 onChange={e => setIndexText(e.target.value)}
-                className="w-full bg-[#1a1408] border border-[#b87333]/30 rounded-xl px-4 py-3 text-sm text-[#f5e6d0] placeholder-[#c4b49a]/40 focus:outline-none focus:border-[#c9a84c]/60 resize-none"
+                className="w-full bg-[var(--coal)] border border-[#b87333]/30 rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none focus:border-[#c9a84c]/60 resize-none"
               />
             </div>
-            <div className="flex gap-3 pt-1">
+            <VictorianDivider />
+            <div className="flex gap-3">
               <Button variant="secondary" className="flex-1" onClick={() => setIndexOpen(false)}>Cancel</Button>
               <Button className="flex-1" onClick={handleIndex} disabled={indexing || !indexText.trim()}>
                 {indexing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}

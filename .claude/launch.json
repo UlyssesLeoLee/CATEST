@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web-base",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web-base", "run", "dev"],
+      "port": 33000,
+      "cwd": "web",
+      "autoPort": false
+    }
+  ]
+}

@@ -40,27 +40,31 @@ export function CursorEffect() {
       cursorPos.current = { x: e.clientX, y: e.clientY };
       outerPos.current = { x: e.clientX, y: e.clientY };
 
-      // Move both cursor elements instantly together
       cursor.style.left = `${e.clientX}px`;
       cursor.style.top = `${e.clientY}px`;
       outerRing.style.left = `${e.clientX}px`;
       outerRing.style.top = `${e.clientY}px`;
 
-      // Spawn 2-3 smoke particles per move
-      const count = Math.floor(Math.random() * 2) + 2;
+      // Check if hovering over interactive element (button, a, select, input, .glass-card)
+      const target = e.target as HTMLElement;
+      const isInteractive = target.closest('button, a, select, input, .glass-card, [role="button"]');
+      
+      // Spawn more steam particles if over interactive element (pressure release)
+      const count = isInteractive ? (Math.floor(Math.random() * 5) + 6) : (Math.floor(Math.random() * 2) + 1);
+      
       for (let i = 0; i < count; i++) {
         particlesRef.current.push({
           x: e.clientX + (Math.random() - 0.5) * 6,
           y: e.clientY + (Math.random() - 0.5) * 6,
-          vx: (Math.random() - 0.5) * 1.2,
-          vy: -(Math.random() * 1.8 + 0.5),
-          life: 1.0,
-          size: Math.random() * 3.5 + 1.5,
-          copper: Math.random() > 0.4,
+          vx: (Math.random() - 0.5) * (isInteractive ? 2.5 : 0.8),
+          vy: -(Math.random() * (isInteractive ? 3.0 : 1.5) + 0.3),
+          life: isInteractive ? 1.2 : 0.8,
+          size: Math.random() * (isInteractive ? 4.0 : 2.0) + 1.5,
+          copper: false,
         });
       }
-      if (particlesRef.current.length > 80) {
-        particlesRef.current = particlesRef.current.slice(-80);
+      if (particlesRef.current.length > 200) {
+        particlesRef.current = particlesRef.current.slice(-200);
       }
     };
 
@@ -75,32 +79,32 @@ export function CursorEffect() {
       for (const p of particlesRef.current) {
         p.x += p.vx;
         p.y += p.vy;
-        p.vy *= 0.97; // slow down over time
-        p.vx *= 0.97;
-        p.vy -= 0.015; // upward drift (smoke rising)
-        p.size *= 1.015; // expand like smoke
-        p.life -= 0.035;
+        p.vy *= 0.96;
+        p.vx *= 0.96;
+        p.vy -= 0.01; // gentle upward float
+        p.size *= 1.01; // very slow expansion
+        p.life -= 0.06; // fast decay — vanishes quickly
 
         const alpha = Math.max(0, p.life);
-        // Copper: #b87333 | Brass: #c9a84c
-        const r = p.copper ? 184 : 201;
-        const g = p.copper ? 115 : 168;
-        const b = p.copper ? 51 : 76;
+        // Pure White Steam Emission
+        const r = 255;
+        const g = 255;
+        const b = 255;
 
-        // Outer glow ring
-        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.5);
-        grd.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.5})`);
-        grd.addColorStop(0.5, `rgba(${r},${g},${b},${alpha * 0.15})`);
+        // Outer glow ring (very subtle diffuse halo)
+        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.0);
+        grd.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.15})`);
+        grd.addColorStop(0.6, `rgba(${r},${g},${b},${alpha * 0.04})`);
         grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * 2.0, 0, Math.PI * 2);
         ctx.fillStyle = grd;
         ctx.fill();
 
-        // Core particle
+        // Core particle (small, semi-transparent)
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.75})`;
+        ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.25})`;
         ctx.fill();
       }
 

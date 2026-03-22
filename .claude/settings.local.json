@@ -128,7 +128,22 @@
       "Bash(grep -r \"#\\\\[get\\\\]\\\\|#\\\\[post\\\\]\\\\|#\\\\[put\\\\]\\\\|#\\\\[delete\\\\]\\\\|web::resource\\\\|\\\\.route\\(\" E:/CATEST/crates/gateway/src/ --include=*.rs)",
       "Bash(kubectl -n catest get svc catest-hub -o yaml)",
       "Bash(kubectl -n catest get svc)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(find E:/CATEST/web -path **/plugins/** -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))",
+      "Bash(python tools/generate_textures.py --size 256)",
+      "Bash(ls E:/CATEST/web/Dockerfile* E:/CATEST/Dockerfile* E:/CATEST/docker-compose*)",
+      "Bash(pnpm build:*)",
+      "Bash(ls /e/CATEST/web/apps/*/Dockerfile)",
+      "Bash(ls /e/CATEST/docker-compose*.yml)",
+      "Bash(ls /e/CATEST/web/docker-compose*.yml)",
+      "Bash(docker ps:*)",
+      "Bash(docker tag:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(\"E:/CATEST/web/apps/web-base/src/app/\\(dashboard\\)/page.tsx\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 8144)",
+      "Bash(taskkill //F //PID 23252)",
+      "Bash(powershell -ExecutionPolicy Bypass -File ./k8s-restart.ps1 -Build -Only web -SkipInfra)"
     ]
   }
 }

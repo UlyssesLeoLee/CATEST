@@ -1,7 +1,8 @@
-node_modules
-.next
-.turbo
-dist
-out
-.env*.local
-*.tsbuildinfo
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/out
+**/.env*.local
+**/*.tsbuildinfo
+**/*.ktx2

@@ -48,6 +48,9 @@ export function PluginGroupRenderer({
  */
 const registry = new Map<string, PluginGroup>();
 
+// Re-export the unified steampunk theme plugin group
+export { SteampunkThemePluginGroup } from "./SteampunkThemePluginGroup";
+
 export const PluginRegistry = {
   register(group: PluginGroup) {
     registry.set(group.id, group);

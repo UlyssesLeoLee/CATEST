@@ -1,0 +1,1203 @@
+/*
+ * ═══════════════════════════════════════════════════════════════════════
+ *  CATEST STEAMPUNK THEME — Unified CSS Module
+ *  Inspired by: Hugo, Mortal Engines, Steamboy, City of Lost Children,
+ *               Howl's Moving Castle, The Prestige
+ *  Shared by ALL apps via @import in each app's globals.css
+ *  This is the SINGLE SOURCE OF TRUTH for steampunk visual styling.
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
+/* ───────────────────────────────────────────
+   DESIGN TOKENS — Victorian-era palette
+   ─────────────────────────────────────────── */
+:root {
+  /* Core backgrounds */
+  --background: #080604;
+  --background-elevated: #0e0b08;
+  --foreground: #f0e4d0;
+
+  /* Metal palette — aged, patinated, real */
+  --copper: #b87333;
+  --copper-light: #d4956a;
+  --copper-dark: #8b5a2b;
+  --brass: #c9a84c;
+  --brass-aged: #917b3c;
+  --iron: #4a4036;
+  --iron-dark: #2c1810;
+  --iron-oxide: #3d2b1f;
+  --steel: #6b6560;
+
+  /* Victorian accents */
+  --burgundy: #6b1c23;
+  --burgundy-light: #8b2252;
+  --oxblood: #4a0e0e;
+  --verdigris: #4a8b6e;
+  --verdigris-dark: #2e6b47;
+  --amber-glow: #ffb347;
+  --gas-lamp: #e67e22;
+  --furnace: #ff6b1a;
+  --coal: #1a0e08;
+
+  /* Text hierarchy */
+  --text-primary: #f0e4d0;
+  --text-secondary: #c4b49a;
+  --text-muted: #8a7b6a;
+  --text-brass: #d4b854;
+  --text-ember: #e8a050;
+
+  /* Functional */
+  --steam: rgba(220, 220, 220, 0.12);
+  --pipe-border: rgba(184, 115, 51, 0.35);
+  --vapor-glow: rgba(200, 168, 76, 0.2);
+
+  /* Golden Ratio Constants */
+  --phi: 1.61803398875;
+  --phi-inv: 0.61803398875;
+  --side-pane-ratio: 38.2%;
+  --main-pane-ratio: 61.8%;
+
+  /* Skeuomorphic Metal */
+  --metal-bg: linear-gradient(135deg, #2a1b12 0%, #4d3319 25%, #7a5c3d 50%, #4d3319 75%, #2a1b12 100%);
+  --metal-specular: linear-gradient(105deg, transparent 45%, rgba(255,240,200,0.3) 50%, transparent 55%);
+
+  /* Compact sizing scale */
+  --btn-sm-h: 1.75rem;
+  --btn-md-h: 2.25rem;
+  --btn-lg-h: 2.75rem;
+  --btn-sm-px: 0.625rem;
+  --btn-md-px: 1rem;
+  --btn-lg-px: 1.5rem;
+  --btn-sm-fs: 0.625rem;
+  --btn-md-fs: 0.7rem;
+  --btn-lg-fs: 0.8rem;
+
+  /* Consistent layout spacing */
+  --section-gap: 1.5rem;
+  --card-radius: 12px;
+  --panel-radius: 16px;
+  --header-h: 4rem;
+  --stat-card-min-h: 7rem;
+  --modal-max-w: 28rem;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ───────────────────────────────────────────
+   CURSOR — hide system cursor for custom one
+   ─────────────────────────────────────────── */
+*, *::before, *::after {
+  cursor: none !important;
+}
+
+/* ───────────────────────────────────────────
+   COMPACT SIZING — prevent oversized buttons
+   ─────────────────────────────────────────── */
+button, [role="button"], .btn, a.btn {
+  padding: 0.375rem 0.875rem;
+  min-height: var(--btn-md-h);
+  max-height: 3rem;
+  min-width: fit-content;
+  font-size: var(--btn-md-fs);
+  line-height: 1.2;
+}
+
+button > svg:first-child,
+[role="button"] > svg:first-child {
+  margin-right: 0.375rem;
+}
+
+/* Sidebar/nav buttons keep their own padding */
+nav button, aside button,
+nav [role="button"], aside [role="button"] {
+  padding: revert !important;
+  min-height: revert;
+  max-height: revert;
+}
+
+/* Small buttons */
+button.btn-sm, .btn-sm {
+  padding: 0.25rem 0.625rem;
+  min-height: var(--btn-sm-h);
+  max-height: 2.25rem;
+  font-size: var(--btn-sm-fs);
+}
+
+/* Cards - tight padding */
+[class*="glass-card"],
+[class*="glass-panel"] > div:not(.absolute) {
+  padding: 0.625rem;
+}
+
+/* Badge spacing */
+[class*="Badge"], .badge {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6rem;
+}
+
+/* Input fields */
+input, textarea, select {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8rem;
+}
+
+/* Text color inheritance in glass panels */
+.glass-panel, .glass-card {
+  color: var(--text-primary);
+}
+
+.glass-panel p, .glass-card p,
+.glass-panel span, .glass-card span {
+  color: inherit;
+}
+
+.glass-panel .text-muted, .glass-card .text-muted {
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS — Cinematic steampunk motion
+   ═══════════════════════════════════════════ */
+
+@keyframes vapor-flow {
+  0% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+  50% { background-position: 100% 100%, 0% 0%, 0% 100%; }
+  100% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+}
+
+@keyframes steam-rise {
+  0% { transform: translateY(0) scaleX(1); opacity: 0.4; }
+  50% { transform: translateY(-20px) scaleX(1.5); opacity: 0.1; }
+  100% { transform: translateY(-40px) scaleX(2); opacity: 0; }
+}
+
+@keyframes border-pulse {
+  0%, 100% { border-color: rgba(184, 115, 51, 0.25); box-shadow: 0 0 20px rgba(184, 115, 51, 0.08), 0 0 60px rgba(184, 115, 51, 0.03); }
+  50% { border-color: rgba(184, 115, 51, 0.55); box-shadow: 0 0 30px rgba(184, 115, 51, 0.2), 0 0 80px rgba(184, 115, 51, 0.06); }
+}
+
+@keyframes gear-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gear-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+  25%, 75% { opacity: 0.6; }
+}
+
+@keyframes vapor-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pressure-gauge {
+  0%, 100% { transform: rotate(-20deg); }
+  50% { transform: rotate(20deg); }
+}
+
+/* Copper specular sweep */
+@keyframes copper-shine {
+  0% { background-position: 300% center, center, center, center, center, center; }
+  100% { background-position: -200% center, center, center, center, center, center; }
+}
+
+@keyframes copper-shine-btn {
+  0% { background-position: 400% center, center, center; }
+  100% { background-position: -200% center, center, center; }
+}
+
+/* Vapor drift layers */
+@keyframes vapor-drift-1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+  33% { transform: translate(5px, -8px) scale(1.2); opacity: 0.6; }
+  66% { transform: translate(-4px, 10px) scale(0.9); opacity: 0.4; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+}
+
+@keyframes vapor-drift-2 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0.4; }
+  50% { transform: translate(-8px, -4px) rotate(180deg); opacity: 0.7; }
+  100% { transform: translate(0, 0) rotate(360deg); opacity: 0.4; }
+}
+
+/* Smoke particles */
+@keyframes smoke-particle-1 {
+  0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  10%  { opacity: 0.7; }
+  40%  { transform: translate(80px, -30px) scale(1.5); opacity: 0.3; }
+  70%  { transform: translate(160px, -10px) scale(2); opacity: 0.1; }
+  100% { transform: translate(250px, -40px) scale(2.5); opacity: 0; }
+}
+
+@keyframes smoke-particle-2 {
+  0%   { transform: translate(0, 0) scale(0.8); opacity: 0; }
+  15%  { opacity: 0.5; }
+  50%  { transform: translate(-60px, -50px) scale(1.8); opacity: 0.2; }
+  100% { transform: translate(-120px, -80px) scale(2.2); opacity: 0; }
+}
+
+@keyframes smoke-particle-3 {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  20%  { opacity: 0.6; }
+  60%  { transform: translate(40px, 60px) scale(1.6); opacity: 0.15; }
+  100% { transform: translate(100px, 120px) scale(2); opacity: 0; }
+}
+
+@keyframes smoke-ring {
+  0%   { transform: scale(0.3); opacity: 0; border-width: 3px; }
+  20%  { opacity: 0.5; }
+  60%  { transform: scale(1.2); opacity: 0.15; border-width: 1px; }
+  100% { transform: scale(2); opacity: 0; border-width: 0.5px; }
+}
+
+@keyframes true-particle-drift {
+  0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  15%  { opacity: 0.7; }
+  75%  { opacity: 0.1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(2.5); opacity: 0; }
+}
+
+@keyframes ember-float {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-30px) scale(0.5); opacity: 1; }
+}
+
+/* Ember rise — forge sparks float upward with wander */
+@keyframes ember-rise {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0; }
+  5%   { opacity: 0.9; }
+  30%  { opacity: 0.7; }
+  60%  { transform: translate(calc(var(--ember-drift, 30px) * 0.6), -40vh) scale(0.7); opacity: 0.4; }
+  100% { transform: translate(var(--ember-drift, 30px), -75vh) scale(0.3); opacity: 0; }
+}
+
+@keyframes gear-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gear-rotate-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes steam-puff {
+  0% { transform: scale(0.2) translateY(0); opacity: 0; filter: blur(2px); }
+  20% { opacity: 0.6; filter: blur(4px); }
+  100% { transform: scale(2.5) translateY(-40px); opacity: 0; filter: blur(12px); }
+}
+
+@keyframes boiler-flicker {
+  0%, 100% { opacity: 0.05; }
+  10% { opacity: 0.12; }
+  20% { opacity: 0.08; }
+  35% { opacity: 0.15; }
+  50% { opacity: 0.05; }
+  65% { opacity: 0.18; }
+  85% { opacity: 0.1; }
+}
+
+@keyframes subtle-glint {
+  0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.15; }
+  40% { transform: translateX(50%) translateY(50%) rotate(45deg); opacity: 0.05; }
+  100% { transform: translateX(150%) translateY(150%) rotate(90deg); opacity: 0; }
+}
+
+@keyframes frame-vibrate {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(0.3px, -0.2px); }
+  50% { transform: translate(-0.2px, 0.3px); }
+  75% { transform: translate(0.1px, 0.1px); }
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Dense steam particle field animation */
+@keyframes steam-field-drift {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0; }
+  10%  { opacity: var(--particle-max-opacity, 0.5); }
+  80%  { opacity: 0.05; }
+  100% { transform: translate(var(--drift-x, 60px), var(--drift-y, -80px)) scale(var(--end-scale, 2)); opacity: 0; }
+}
+
+/* Gas lamp flicker — irregular warm glow pulsing */
+@keyframes gas-lamp-flicker {
+  0%   { opacity: 0.7; filter: brightness(1); }
+  5%   { opacity: 0.85; filter: brightness(1.1); }
+  10%  { opacity: 0.6; filter: brightness(0.9); }
+  15%  { opacity: 0.9; filter: brightness(1.15); }
+  20%  { opacity: 0.75; filter: brightness(1); }
+  30%  { opacity: 0.95; filter: brightness(1.2); }
+  35%  { opacity: 0.65; filter: brightness(0.95); }
+  50%  { opacity: 0.8; filter: brightness(1.05); }
+  60%  { opacity: 0.55; filter: brightness(0.85); }
+  70%  { opacity: 0.9; filter: brightness(1.1); }
+  80%  { opacity: 0.7; filter: brightness(1); }
+  90%  { opacity: 0.85; filter: brightness(1.15); }
+  100% { opacity: 0.7; filter: brightness(1); }
+}
+
+/* Furnace pulse — deep warm glow from below */
+@keyframes furnace-pulse {
+  0%, 100% { opacity: 0.06; }
+  20% { opacity: 0.12; }
+  40% { opacity: 0.08; }
+  60% { opacity: 0.15; }
+  80% { opacity: 0.1; }
+}
+
+/* Victorian ornament reveal */
+@keyframes ornament-reveal {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Pressure needle bounce — mechanical overshoot */
+@keyframes needle-settle {
+  0% { transform: rotate(var(--needle-from)); }
+  40% { transform: rotate(calc(var(--needle-to) + 5deg)); }
+  60% { transform: rotate(calc(var(--needle-to) - 3deg)); }
+  80% { transform: rotate(calc(var(--needle-to) + 1deg)); }
+  100% { transform: rotate(var(--needle-to)); }
+}
+
+/* ═══════════════════════════════════════════
+   STEAMPUNK SURFACE CLASSES
+   ═══════════════════════════════════════════ */
+
+.industrial-copper {
+  background:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.1 0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' fill='transparent'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 30% 0%, rgba(20, 10, 5, 0.5) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='hammered'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.15' numOctaves='2' stitchTiles='stitch'/%3E%3CfeDiffuseLighting lighting-color='white' surfaceScale='2'%3E%3CfeDistantLight azimuth='135' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23hammered)' fill='white' opacity='0.1'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, #2a1608 0%, #4d3319 15%, #b87333 45%, #d4956a 50%, #b87333 55%, #4d3319 85%, #2a1608 100%);
+  border: 2px solid #1a0f0a;
+  outline: 1px solid rgba(184, 115, 51, 0.3);
+  outline-offset: -3px;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.9),
+    0 5px 10px rgba(0, 0, 0, 0.7),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -12px 30px rgba(0, 0, 0, 1),
+    inset 8px 8px 20px rgba(255, 255, 255, 0.1);
+  position: relative;
+  image-rendering: pixelated;
+}
+
+/* Button-specific constraints — use .industrial-copper-btn on button elements */
+.industrial-copper-btn {
+  overflow: hidden;
+  max-height: 80px;
+}
+
+.industrial-copper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.12;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.industrial-copper::after {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background: var(--metal-specular);
+  animation: shine 8s infinite linear;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Master Industrial Plate — enhanced with burgundy undertone */
+.master-industrial-plate {
+  padding: 0.75rem;
+  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  background:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.1 0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' fill='transparent'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 30% 0%, rgba(107, 28, 35, 0.15) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='hammered'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.15' numOctaves='2' stitchTiles='stitch'/%3E%3CfeDiffuseLighting lighting-color='white' surfaceScale='2'%3E%3CfeDistantLight azimuth='135' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23hammered)' fill='white' opacity='0.1'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, #2a1608 0%, #4d3319 15%, #b87333 45%, #d4956a 50%, #b87333 55%, #4d3319 85%, #2a1608 100%);
+  border: 2px solid #1a0f0a;
+  outline: 1px solid rgba(184, 115, 51, 0.3);
+  outline-offset: -3px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), 0 5px 10px rgba(0, 0, 0, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.4), inset 0 -12px 30px rgba(0, 0, 0, 1), inset 0 0 20px rgba(107, 28, 35, 0.2);
+  position: relative;
+}
+
+/* Button-specific constraints — use .master-industrial-plate-btn on button elements */
+.master-industrial-plate-btn {
+  overflow: hidden;
+  max-height: 80px;
+}
+
+.master-industrial-plate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px);
+  pointer-events: none;
+}
+
+/* Cast Iron Shabby — with oxblood paint remnants */
+.cast-iron-shabby {
+  background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.cast-iron-shabby::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.25;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Peeling Paint — burgundy/oxblood remnants */
+.peeling-red-paint {
+  background: var(--burgundy);
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 100%, 0% 100%,
+    5% 10%, 15% 5%, 20% 15%, 10% 25%, 5% 10%,
+    80% 85%, 90% 80%, 95% 90%, 85% 95%, 80% 85%
+  );
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.8));
+}
+
+/* Hollow Vapor Variant */
+.hollow-vapor {
+  background: transparent !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px var(--vapor-glow);
+  position: relative;
+  backdrop-filter: blur(4px);
+  overflow: visible !important;
+}
+
+.hollow-vapor::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  filter: blur(4px);
+  animation: vapor-drift-1 4s infinite ease-in-out;
+}
+
+/* Vapor particle ring overlay */
+.vapor-particle-ring {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: screen;
+}
+
+/* ═══════════════════════════════════════════
+   VICTORIAN ORNAMENTAL BORDERS
+   ═══════════════════════════════════════════ */
+
+.victorian-border {
+  position: relative;
+  border: 1px solid rgba(184, 115, 51, 0.25);
+}
+
+.victorian-border::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  pointer-events: none;
+}
+
+/* Filigree corner decoration — CSS-only ornament */
+.filigree-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.filigree-corner::before,
+.filigree-corner::after {
+  content: "";
+  position: absolute;
+  background: var(--brass-aged);
+  opacity: 0.3;
+}
+
+.filigree-corner::before {
+  width: 16px;
+  height: 1px;
+  top: 0;
+  left: 0;
+}
+
+.filigree-corner::after {
+  width: 1px;
+  height: 16px;
+  top: 0;
+  left: 0;
+}
+
+.filigree-corner.top-right {
+  top: 4px;
+  right: 4px;
+}
+
+.filigree-corner.top-right::before {
+  right: 0;
+  left: auto;
+}
+
+.filigree-corner.top-right::after {
+  right: 0;
+  left: auto;
+}
+
+.filigree-corner.bottom-left {
+  bottom: 4px;
+  left: 4px;
+}
+
+.filigree-corner.bottom-left::before {
+  bottom: 0;
+  top: auto;
+}
+
+.filigree-corner.bottom-left::after {
+  bottom: 0;
+  top: auto;
+}
+
+.filigree-corner.bottom-right {
+  bottom: 4px;
+  right: 4px;
+}
+
+.filigree-corner.bottom-right::before {
+  right: 0;
+  left: auto;
+  bottom: 0;
+  top: auto;
+}
+
+.filigree-corner.bottom-right::after {
+  right: 0;
+  left: auto;
+  bottom: 0;
+  top: auto;
+}
+
+/* ═══════════════════════════════════════════
+   CHIPPED RIVET DECORATIONS — Enhanced 3D
+   ═══════════════════════════════════════════ */
+
+.chipped-rivet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #e0d0b0 0%, #b89050 25%, #6b5030 60%, #2a1a0e 100%);
+  box-shadow:
+    0 1px 1px rgba(0,0,0,0.9),
+    0 2px 3px rgba(0,0,0,0.6),
+    inset 0 1px 1px rgba(255,255,255,0.3),
+    inset 0 -1px 1px rgba(0,0,0,0.4);
+  position: absolute;
+  z-index: 10;
+}
+
+.chipped-rivet::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 2px;
+  height: 2px;
+  background: radial-gradient(circle, rgba(255,240,200,0.6) 0%, transparent 100%);
+  border-radius: 50%;
+}
+
+.chipped-rivet::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  height: 1px;
+  background: rgba(0,0,0,0.4);
+  transform: translateX(-50%) rotate(45deg);
+  transform-origin: center;
+}
+
+/* ═══════════════════════════════════════════
+   COPPER PIPING — Enhanced with verdigris
+   ═══════════════════════════════════════════ */
+
+.copper-pipe-v {
+  width: 10px;
+  background: linear-gradient(to right, #3e1b0d 0%, #b87333 40%, #c9a84c 50%, #b87333 60%, #3e1b0d 100%);
+  border-left: 1px solid rgba(0,0,0,0.5);
+  border-right: 1px solid rgba(0,0,0,0.5);
+  box-shadow: inset 1px 0 3px rgba(255,255,255,0.2), 2px 0 5px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+/* Verdigris patches on pipes */
+.copper-pipe-v::after {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 0;
+  right: 0;
+  height: 15%;
+  background: linear-gradient(to right, transparent, rgba(74, 139, 110, 0.15), transparent);
+  pointer-events: none;
+}
+
+.copper-pipe-h {
+  height: 10px;
+  background: linear-gradient(to bottom, #3e1b0d 0%, #b87333 40%, #c9a84c 50%, #b87333 60%, #3e1b0d 100%);
+  border-top: 1px solid rgba(0,0,0,0.5);
+  border-bottom: 1px solid rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 3px rgba(255,255,255,0.2), 0 2px 5px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+.pipe-joint {
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 30% 30%, #c9a84c 0%, #8b5a2b 60%, #1a1108 100%);
+  border-radius: 4px;
+  border: 1.5px solid #1a1108;
+  position: absolute;
+  z-index: 5;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+}
+
+/* ═══════════════════════════════════════════
+   GLASS CARD & PANEL — Deeper, richer
+   ═══════════════════════════════════════════ */
+
+.glass-card {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(107, 28, 35, 0.04) 0%, transparent 50%),
+    rgba(14, 11, 8, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(184, 115, 51, 0.15);
+  border-radius: var(--card-radius);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0,0,0,0.5),
+    0 12px 40px rgba(0,0,0,0.4);
+  transition: all 0.4s ease;
+}
+
+.glass-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255,255,255,0.03) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, rgba(255,255,255,0.02) 0%, transparent 40%);
+  opacity: 0.6;
+  mix-blend-mode: soft-light;
+}
+
+.glass-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(184, 115, 51, 0.35);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.12),
+    0 8px 24px rgba(0,0,0,0.6),
+    0 0 20px rgba(184,115,51,0.06),
+    0 0 40px rgba(107, 28, 35, 0.04);
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.06) 50%, transparent 55%);
+  background-size: 200% 200%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 2;
+}
+
+.glass-card:hover::before {
+  opacity: 1;
+  animation: subtle-glint 4s ease-in-out;
+}
+
+.glass-panel {
+  background:
+    radial-gradient(ellipse at 50% 120%, rgba(255, 107, 26, 0.02) 0%, transparent 60%),
+    rgba(14, 11, 8, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(184, 115, 51, 0.2);
+  border-radius: var(--panel-radius);
+  position: relative;
+  overflow: hidden;
+  padding: 1rem 1.25rem;
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.08),
+    0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* ═══════════════════════════════════════════
+   GEAR ROOM & STEAM EFFECTS
+   ═══════════════════════════════════════════ */
+
+.gear-room {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.15;
+  pointer-events: none;
+  mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 80%);
+}
+
+.bg-flicker {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 174, 0, 0.15), transparent);
+  pointer-events: none;
+  z-index: 50;
+  mix-blend-mode: overlay;
+  animation: boiler-flicker 8s infinite ease-in-out;
+}
+
+.steam-puff-element {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: steam-puff 3.5s infinite ease-out;
+}
+
+/* ═══════════════════════════════════════════
+   FOG LAYERS — volumetric steam with depth
+   ═══════════════════════════════════════════ */
+
+.fog-layer-1, .fog-layer-2, .fog-layer-3, .fog-layer-4 {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+}
+
+.fog-layer-1 {
+  inset: -10% -5% auto -5%;
+  height: 35%;
+  background: radial-gradient(ellipse at 30% 0%, rgba(200,180,140,0.06) 0%, transparent 70%);
+  animation: vapor-drift-1 25s infinite ease-in-out;
+}
+
+.fog-layer-2 {
+  inset: auto -5% -10% -5%;
+  height: 30%;
+  background: radial-gradient(ellipse at 70% 100%, rgba(200,180,140,0.05) 0%, transparent 70%);
+  animation: vapor-drift-2 30s infinite ease-in-out;
+}
+
+.fog-layer-3 {
+  inset: 20% -10% auto -10%;
+  height: 40%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(184,115,51,0.03) 0%, transparent 60%);
+  animation: vapor-drift-1 35s infinite ease-in-out reverse;
+}
+
+.fog-layer-4 {
+  inset: 40% -5%;
+  height: 35%;
+  background: radial-gradient(ellipse at 20% 60%, rgba(255,255,255,0.02) 0%, transparent 50%);
+  animation: vapor-drift-2 20s infinite ease-in-out;
+}
+
+/* ═══════════════════════════════════════════
+   BACKGROUND TEXTURES
+   ═══════════════════════════════════════════ */
+
+.bg-mesh {
+  background-image: radial-gradient(circle at 2px 2px, rgba(184,115,51,0.04) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(184,115,51,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184,115,51,0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+.bg-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-grain {
+  position: fixed;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════
+   PARTICLE FIELD & STEAM SCROLL
+   ═══════════════════════════════════════════ */
+
+.particle-field {
+  position: relative;
+}
+
+.particle-field::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.04) 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(201,168,76,0.03) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(184,115,51,0.02) 1px, transparent 1px);
+  background-size: 100px 100px, 150px 150px, 200px 200px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.steam-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.steam-scroll::-webkit-scrollbar-track {
+  background: rgba(10, 8, 6, 0.4);
+  border-radius: 3px;
+}
+
+.steam-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b87333, #8b5a2b);
+  border-radius: 3px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(184, 115, 51, 0.3);
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   DENSE STEAM PARTICLES OVERLAY
+   ═══════════════════════════════════════════ */
+
+.steam-particles {
+  position: relative;
+}
+
+.steam-particles::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(circle 3px, rgba(255,255,255,0.15) 0%, transparent 100%),
+    radial-gradient(circle 5px, rgba(255,255,255,0.08) 0%, transparent 100%),
+    radial-gradient(circle 2px, rgba(201,168,76,0.12) 0%, transparent 100%),
+    radial-gradient(circle 4px, rgba(184,115,51,0.06) 0%, transparent 100%),
+    radial-gradient(circle 6px, rgba(255,255,255,0.05) 0%, transparent 100%);
+  background-size: 120px 160px, 200px 240px, 80px 100px, 160px 200px, 300px 350px;
+  animation: vapor-flow 40s infinite linear;
+  mix-blend-mode: screen;
+}
+
+/* Vapor cloud used in VaporBorder component */
+.vapor-cloud {
+  position: absolute;
+  background: radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%);
+  border-radius: 50%;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.vapor-border-top {
+  position: absolute;
+  inset: -16px;
+  pointer-events: none;
+  z-index: 9998;
+  overflow: visible;
+}
+
+/* Animate gear decorative classes */
+.animate-gear-rotate {
+  animation: gear-rotate var(--gear-speed, 120s) linear infinite;
+}
+
+.animate-gear-rotate-reverse {
+  animation: gear-rotate-reverse var(--gear-speed, 90s) linear infinite;
+}
+
+/* Gauge active pulse */
+.gauge-active {
+  animation: flicker 3s infinite ease-in-out;
+}
+
+/* Gas lamp glow — applied to accent elements */
+.gas-lamp-glow {
+  animation: gas-lamp-flicker 4s infinite ease-in-out;
+  filter: drop-shadow(0 0 6px rgba(255, 179, 71, 0.4));
+}
+
+/* ═══════════════════════════════════════════
+   PIPE STEAM EMISSION ZONES
+   ═══════════════════════════════════════════ */
+
+.pipe-joint {
+  overflow: visible;
+}
+
+.pipe-joint::before {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  top: -8px;
+  left: -8px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(6px);
+  animation: steam-puff 4s infinite ease-out;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   ENHANCED AMBIENT — Furnace underglow + burgundy
+   ═══════════════════════════════════════════ */
+
+.bg-vignette {
+  background:
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%),
+    radial-gradient(ellipse at 50% 110%, rgba(255,107,26,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 90%, rgba(107,28,35,0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 80%, rgba(74,139,110,0.02) 0%, transparent 35%);
+}
+
+/* ═══════════════════════════════════════════
+   CONSISTENT APP SECTION STYLES
+   ═══════════════════════════════════════════ */
+
+/* Unified page header across all apps */
+.app-page-header {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(184, 115, 51, 0.2);
+  position: relative;
+}
+
+.app-page-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(201, 168, 76, 0.15), rgba(184, 115, 51, 0.3), rgba(201, 168, 76, 0.15), transparent);
+}
+
+/* Unified stat card sizing */
+.stat-card {
+  min-height: var(--stat-card-min-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Unified modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: var(--modal-max-w);
+  margin: 0 1rem;
+}
+
+/* ═══════════════════════════════════════════
+   DRIFTING STEAM CLOUDS — atmospheric fog banks
+   ═══════════════════════════════════════════ */
+
+@keyframes steam-cloud-drift-right {
+  0% { transform: translateX(-120%) translateY(0); opacity: 0; }
+  5% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(120vw) translateY(-8%); opacity: 0; }
+}
+
+@keyframes steam-cloud-drift-left {
+  0% { transform: translateX(120%) translateY(0); opacity: 0; }
+  5% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(-120vw) translateY(-5%); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   STEAM SMOKE RING — button fog effect
+   ═══════════════════════════════════════════ */
+
+.btn-steam-wrap {
+  position: relative;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.steam-smoke-ring {
+  position: absolute;
+  inset: -12px;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+  opacity: 0.7;
+  transition: opacity 0.4s ease;
+}
+
+.btn-steam-wrap:hover .steam-smoke-ring {
+  opacity: 1;
+}
+
+.steam-fog-layer {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.5;
+  transition: opacity 0.4s ease;
+}
+
+.btn-steam-wrap:hover .steam-fog-layer {
+  opacity: 0.9;
+}
+
+.steam-fog-top {
+  top: -14px;
+  left: -5%;
+  right: -5%;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 80% 100% at center, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.06) 40%, transparent 75%);
+  filter: blur(6px);
+  animation: steam-fog-drift-h 4s ease-in-out infinite alternate;
+}
+
+.steam-fog-bottom {
+  bottom: -14px;
+  left: -5%;
+  right: -5%;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 80% 100% at center, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 40%, transparent 75%);
+  filter: blur(6px);
+  animation: steam-fog-drift-h 5s ease-in-out infinite alternate-reverse;
+}
+
+.steam-fog-left {
+  left: -14px;
+  top: -10%;
+  bottom: -10%;
+  width: 22px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 100% 80% at center, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.04) 40%, transparent 75%);
+  filter: blur(5px);
+  animation: steam-fog-drift-v 4.5s ease-in-out infinite alternate;
+}
+
+.steam-fog-right {
+  right: -14px;
+  top: -10%;
+  bottom: -10%;
+  width: 22px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 100% 80% at center, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.04) 40%, transparent 75%);
+  filter: blur(5px);
+  animation: steam-fog-drift-v 5.5s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes steam-fog-drift-h {
+  0% { transform: translateX(-3px) scaleX(0.9); }
+  100% { transform: translateX(3px) scaleX(1.1); }
+}
+
+@keyframes steam-fog-drift-v {
+  0% { transform: translateY(-2px) scaleY(0.9); }
+  100% { transform: translateY(2px) scaleY(1.1); }
+}
+
+/* ═══════════════════════════════════════════
+   PREFERS-REDUCED-MOTION — accessibility
+   ═══════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .fog-layer-1, .fog-layer-2, .fog-layer-3, .fog-layer-4,
+  .steam-particles::after,
+  .industrial-copper::after,
+  .master-industrial-plate::before,
+  .gas-lamp-glow,
+  .steam-smoke-ring svg *,
+  .steam-fog-layer {
+    animation: none !important;
+  }
+  .steam-smoke-ring { display: none; }
+}
