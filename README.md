@@ -1,6 +1,6 @@
 # CATEST: 分布式 Agentic RAG 代码审校与翻译辅助平台
 
-![GitHub license](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
+![GitHub license](https://img.shields.io/badge/license-AGPL--3.0-brightgreen.svg)(https://opensource.org/licenses/AGPL-3.0)
 ![Rust](https://img.shields.io/badge/backend-Rust-orange.svg)
 ![Next.js](https://img.shields.io/badge/frontend-Next.js-black.svg)
 ![Agent](https://img.shields.io/badge/orchestrator-LangGraph-green.svg)
@@ -141,16 +141,6 @@ pnpm dev
 - [03 数据摄取与流处理管道](./docs/03_ingestion_pipeline.md)
 - [04 知识库 (RAG) 存储与检索](./docs/04_knowledge_base_rag.md)
 - [05 智能 Agent 与审校逻辑](./docs/05_agent_review_logic.md)
-
-
-
-# Project Title
-
-[![License](https://img.shields.io/badge/license-AGPL--3.0-brightgreen.svg)](https://opensource.org/licenses/AGPL-3.0)
-
-## Description
-This is the project description.
-
 ...
 
 ## License
