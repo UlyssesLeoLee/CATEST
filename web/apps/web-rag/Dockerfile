@@ -3,7 +3,7 @@ WORKDIR /app
 RUN corepack enable
 COPY . .
 RUN pnpm install --no-frozen-lockfile
-ENV NEXT_PUBLIC_SAAS_MODE=false
+ENV NEXT_PUBLIC_SAAS_MODE=true
 RUN pnpm --filter=web-rag build
 
 FROM node:22-slim AS runner

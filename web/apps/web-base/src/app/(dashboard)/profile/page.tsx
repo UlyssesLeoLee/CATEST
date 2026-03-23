@@ -17,12 +17,12 @@ import {
   User, ShieldCheck, Key, LogOut, Plus, Trash2,
   Loader2, Copy, Check, Monitor, Zap, Crown, Settings, Mail
 } from 'lucide-react';
-import { Card, Button, Badge, cn } from "@catest/ui";
+import { Card, Button, Badge, Spinner, cn } from "@catest/ui";
 
 const PLAN_BADGE: Record<string, { label: string; color: string; icon: React.ReactNode; border: string }> = {
-  free:       { label: 'Free Tier',   color: 'text-zinc-400 bg-zinc-400/10',         icon: <Zap size={14} />, border: 'border-zinc-400/20' },
-  pro:        { label: 'Professional', color: 'text-indigo-400 bg-indigo-400/10',    icon: <ShieldCheck size={14} />, border: 'border-indigo-400/20' },
-  enterprise: { label: 'Enterprise',   color: 'text-amber-400 bg-amber-400/10',      icon: <Crown size={14} />, border: 'border-amber-400/20' },
+  free:       { label: 'Free Tier',   color: 'text-[#c9a84c] bg-[#c9a84c]/10',      icon: <Zap size={14} />, border: 'border-[#c9a84c]/20' },
+  pro:        { label: 'Professional', color: 'text-[#4a8b6e] bg-[#4a8b6e]/10',     icon: <ShieldCheck size={14} />, border: 'border-[#4a8b6e]/20' },
+  enterprise: { label: 'Enterprise',   color: 'text-[#e8a050] bg-[#e8a050]/10',      icon: <Crown size={14} />, border: 'border-[#e8a050]/20' },
 };
 
 function CopyButton({ text }: { text: string }) {
@@ -30,7 +30,7 @@ function CopyButton({ text }: { text: string }) {
   const copy = () => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   return (
     <button onClick={copy} className="ml-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all text-zinc-400 hover:text-white">
-      {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+      {copied ? <Check size={14} className="text-[#4a8b6e]" /> : <Copy size={14} />}
     </button>
   );
 }
@@ -101,8 +101,8 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-4">
-        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
-        <p className="text-zinc-500 font-bold uppercase tracking-[0.2em] text-[10px]">Synchronizing Identity Node...</p>
+        <Spinner size={40} />
+        <p className="text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] text-[10px]">Synchronizing Identity Node...</p>
       </div>
     );
   }
@@ -112,16 +112,17 @@ export default function ProfilePage() {
   return (
     <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-1000">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b border-white/5">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b border-[#3e1b0d]/30">
         <div className="flex items-center gap-8">
           <div className="relative group">
-            <div className="absolute inset-0 bg-indigo-500/20 rounded-[32px] blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
-            <div className="relative w-24 h-24 rounded-[32px] bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center border border-white/20 shadow-2xl group-hover:scale-105 transition-transform duration-500 overflow-hidden">
-               <User className="w-12 h-12 text-white/90 drop-shadow-lg" />
+            <div className="absolute inset-0 rounded-xl blur-2xl opacity-0 group-hover:opacity-60 transition-all duration-700" style={{ background: 'radial-gradient(circle, rgba(184,115,51,0.3), transparent)' }} />
+            <div className="relative w-24 h-24 rounded-xl border-2 border-[#3e1b0d] flex items-center justify-center shadow-[0_8px_25px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,240,200,0.1)] group-hover:scale-105 transition-transform duration-500 overflow-hidden"
+              style={{ background: 'radial-gradient(circle at 35% 30%, #2a1a11, #0d0805)' }}>
+               <User className="w-12 h-12 text-[#c9a84c]/80 drop-shadow-lg" />
             </div>
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl font-black text-white tracking-tighter">
+            <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter">
               {user?.display_name || user?.email?.split('@')[0]}
             </h1>
             <div className="flex flex-wrap items-center gap-3">
@@ -135,7 +136,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-        <Button variant="secondary" onClick={handleLogout} className="bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20 text-rose-500 font-black h-12 px-8 rounded-2xl">
+        <Button variant="secondary" onClick={handleLogout} className="bg-[#8b2252]/10 hover:bg-[#8b2252]/20 border-[#6b1c23]/30 text-[#8b2252] font-black h-12 px-8 rounded-2xl">
           <LogOut className="w-4 h-4 mr-2" />
           TERMINATE SESSION
         </Button>
@@ -154,10 +155,10 @@ export default function ProfilePage() {
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
               className={cn(
-                "w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-black transition-all border",
-                activeTab === t.id 
-                  ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-lg shadow-indigo-500/5" 
-                  : "bg-transparent border-transparent text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
+                "w-full flex items-center gap-4 px-6 py-4 rounded-sm text-[10px] font-black uppercase tracking-widest transition-all border",
+                activeTab === t.id
+                  ? "glass-card border-[#b87333]/30 text-[#c9a84c]"
+                  : "bg-transparent border-transparent text-[var(--text-muted)] hover:bg-[#b87333]/5 hover:text-[var(--text-secondary)]"
               )}
             >
               <t.icon className="w-5 h-5" />
@@ -172,8 +173,8 @@ export default function ProfilePage() {
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
               <Card variant="glass" className="p-10 space-y-8">
                 <div className="space-y-2">
-                  <h2 className="text-xl font-black text-white flex items-center gap-3">
-                    <Settings className="w-5 h-5 text-indigo-400" />
+                  <h2 className="text-xl font-black text-[var(--text-primary)] flex items-center gap-3">
+                    <Settings className="w-5 h-5 text-[#c9a84c]" />
                     Identity Protocol
                   </h2>
                   <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Update your node identification and credentials.</p>
@@ -181,21 +182,21 @@ export default function ProfilePage() {
 
                 <div className="space-y-6">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Universal ID (Email)</label>
-                    <div className="flex items-center gap-4 px-6 py-4 bg-black/40 border border-white/5 rounded-2xl text-zinc-400 font-bold">
-                       <Mail className="w-4 h-4 text-zinc-700" />
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Universal ID (Email)</label>
+                    <div className="flex items-center gap-4 px-6 py-4 bg-black/40 border-2 border-[#3e1b0d]/40 rounded-sm text-[var(--text-secondary)] font-bold">
+                       <Mail className="w-4 h-4 text-[var(--text-muted)]" />
                        {user?.email}
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Alias / Display Name</label>
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Alias / Display Name</label>
                     <div className="flex gap-4">
                       <input 
                         value={displayName}
                         onChange={e => setDisplayName(e.target.value)}
                         placeholder="Human Alias"
-                        className="flex-1 px-6 py-4 bg-black/50 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/50 text-white font-bold transition-all"
+                        className="flex-1 px-6 py-4 bg-black/50 border-2 border-[#3e1b0d]/60 rounded-sm outline-none focus:border-[#b87333]/60 text-[var(--text-primary)] font-bold transition-all"
                       />
                       <Button onClick={handleSaveProfile} disabled={savingName} className="h-14 px-8 rounded-2xl">
                         {savingName ? <Loader2 className="animate-spin" /> : 'Save Alias'}
@@ -205,10 +206,10 @@ export default function ProfilePage() {
                 </div>
               </Card>
 
-              <Card variant="glass" className="p-10 border-indigo-500/20 bg-indigo-500/[0.02]">
+              <Card variant="glass" className="p-10 border-[#b87333]/20 bg-[#b87333]/[0.02]">
                  <div className="flex items-center justify-between">
                    <div className="space-y-2">
-                     <h3 className="text-lg font-black text-white flex items-center gap-3">
+                     <h3 className="text-lg font-black text-[var(--text-primary)] flex items-center gap-3">
                         <Badge className={cn("p-1.5 rounded-lg", badge.color)}>
                            {badge.icon}
                         </Badge>
@@ -217,7 +218,7 @@ export default function ProfilePage() {
                      <p className="text-xs text-zinc-500 font-medium">Your account is currently running on the {user?.plan} infrastructure.</p>
                    </div>
                    {user?.plan === 'free' && (
-                     <Button className="bg-indigo-600 hover:bg-indigo-500 h-12 px-8 rounded-2xl font-black">
+                     <Button className="industrial-copper h-12 px-8 rounded-2xl font-black">
                         UPGRADE NODE
                      </Button>
                    )}
@@ -229,29 +230,29 @@ export default function ProfilePage() {
           {activeTab === 'security' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Current Active Sessions</p>
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Current Active Sessions</p>
                 <Button variant="secondary" onClick={revokeAllOtherSessions} className="text-[10px] h-8 font-black uppercase tracking-widest bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border-transparent">
                   Purge Other Nodes
                 </Button>
               </div>
               {sessions.map(s => (
-                <Card key={s.id} variant="glass" className={cn("p-6 flex items-center justify-between group", s.is_current && "border-indigo-500/30 bg-indigo-500/5")}>
+                <Card key={s.id} variant="glass" className={cn("p-6 flex items-center justify-between group", s.is_current && "border-[#c9a84c]/30 bg-[#c9a84c]/5")}>
                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-zinc-500">
+                      <div className="w-12 h-12 rounded-sm border-2 border-[#3e1b0d]/60 flex items-center justify-center text-[var(--text-muted)]">
                         <Monitor className="w-6 h-6" />
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
-                           <span className="text-sm font-black text-zinc-200 font-mono tracking-tighter truncate max-w-xs">{s.user_agent || 'Unknown Identity'}</span>
-                           {s.is_current && <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] font-black px-2 py-0.5 rounded-lg">PRIMARY NODE</Badge>}
+                           <span className="text-sm font-black text-[var(--text-primary)] font-mono tracking-tighter truncate max-w-xs">{s.user_agent || 'Unknown Identity'}</span>
+                           {s.is_current && <Badge className="bg-[#4a8b6e]/10 text-[#4a8b6e] border-[#4a8b6e]/20 text-[9px] font-black px-2 py-0.5 rounded-lg">PRIMARY NODE</Badge>}
                         </div>
-                        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                            {new Date(s.created_at).toLocaleString()} • IP: {s.ip_address || '---'}
                         </p>
                       </div>
                    </div>
                    {!s.is_current && (
-                     <button onClick={() => revokeSession(s.id)} className="p-3 rounded-xl bg-white/5 hover:bg-rose-500/10 text-zinc-500 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100">
+                     <button onClick={() => revokeSession(s.id)} className="p-3 rounded-sm border border-transparent hover:border-[#3e1b0d]/40 text-[var(--text-muted)] hover:text-[#8b2252] transition-all opacity-0 group-hover:opacity-100">
                         <Trash2 className="w-4 h-4" />
                      </button>
                    )}
@@ -264,7 +265,7 @@ export default function ProfilePage() {
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
               <Card variant="glass" className="p-10 space-y-6">
                 <div className="space-y-2">
-                   <h2 className="text-xl font-black text-white">Issue API Access Token</h2>
+                   <h2 className="text-xl font-black text-[var(--text-primary)]">Issue API Access Token</h2>
                    <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Automate your identity across external services.</p>
                 </div>
                 <div className="flex gap-4">
@@ -272,7 +273,7 @@ export default function ProfilePage() {
                     value={newTokenName}
                     onChange={e => setNewTokenName(e.target.value)}
                     placeholder="Token Label (e.g. CLI-Access)"
-                    className="flex-1 px-6 py-4 bg-black/50 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/50 text-white font-bold"
+                    className="flex-1 px-6 py-4 bg-black/50 border-2 border-[#3e1b0d]/60 rounded-sm outline-none focus:border-[#b87333]/60 text-[var(--text-primary)] font-bold transition-all"
                   />
                   <Button onClick={handleGenerateToken} disabled={!newTokenName.trim()} className="h-14 px-8 rounded-2xl font-black">
                     GENERATE
@@ -280,18 +281,18 @@ export default function ProfilePage() {
                 </div>
 
                 {newTokenSecret && (
-                  <div className="mt-8 p-6 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-4">
+                  <div className="mt-8 p-6 bg-[#e67e22]/8 border border-[#e67e22]/25 rounded-2xl space-y-4">
                     <div className="flex items-start gap-4">
-                      <div className="p-2 rounded-lg bg-amber-500/20 text-amber-500">
+                      <div className="p-2 rounded-lg bg-[#e67e22]/15 text-[#e67e22]">
                         <Zap className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs text-amber-400 font-black uppercase tracking-widest">Sensitive Secret Key</p>
-                        <p className="text-[10px] text-amber-600 font-bold leading-relaxed">This key will only be shown once. Secure it in your cryptographic vault immediately.</p>
+                        <p className="text-xs text-[#e67e22] font-black uppercase tracking-widest">Sensitive Secret Key</p>
+                        <p className="text-[10px] text-[#e67e22]/70 font-bold leading-relaxed">This key will only be shown once. Secure it in your cryptographic vault immediately.</p>
                       </div>
                     </div>
                     <div className="flex items-center bg-black/60 border border-white/5 rounded-xl p-4">
-                       <code className="flex-1 font-mono text-emerald-400 text-sm overflow-hidden text-ellipsis">{newTokenSecret}</code>
+                       <code className="flex-1 font-mono text-[#c9a84c] text-sm overflow-hidden text-ellipsis">{newTokenSecret}</code>
                        <CopyButton text={newTokenSecret} />
                     </div>
                     <Button variant="secondary" onClick={() => setNewTokenSecret(null)} className="w-full h-10 border-transparent bg-white/5 font-black text-[10px] uppercase">Acknowledged & Secured</Button>
@@ -300,22 +301,22 @@ export default function ProfilePage() {
               </Card>
 
               <div className="space-y-4">
-                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Issued Tokens</p>
-                {tokens.length === 0 && <p className="text-center py-10 text-zinc-600 text-sm italic">No active tokens found in this node.</p>}
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Issued Tokens</p>
+                {tokens.length === 0 && <p className="text-center py-10 text-[var(--text-muted)] text-sm italic">No active tokens found in this node.</p>}
                 {tokens.map(t => (
                   <Card key={t.id} variant="glass" className="p-6 flex items-center justify-between group">
                     <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-center text-indigo-400">
+                      <div className="w-12 h-12 rounded-sm border-2 border-[#3e1b0d]/60 flex items-center justify-center text-[#c9a84c]">
                         <Key className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-black text-white">{t.name}</p>
-                        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+                        <p className="text-sm font-black text-[var(--text-primary)]">{t.name}</p>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                            ct_{t.token_prefix}•••••••• • Issued {new Date(t.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <button onClick={() => revokeApiToken(t.id)} className="p-3 rounded-xl bg-white/5 hover:bg-rose-500/10 text-zinc-400 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100">
+                    <button onClick={() => revokeApiToken(t.id)} className="p-3 rounded-sm border border-transparent hover:border-[#3e1b0d]/40 text-[var(--text-muted)] hover:text-[#8b2252] transition-all opacity-0 group-hover:opacity-100">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </Card>

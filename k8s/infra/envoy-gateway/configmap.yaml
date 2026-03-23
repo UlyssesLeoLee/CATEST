@@ -1,0 +1,305 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-gateway-config
+  namespace: catest
+data:
+  envoy.yaml: |
+    static_resources:
+      listeners:
+        - name: listener_0
+          address:
+            socket_address:
+              address: 0.0.0.0
+              port_value: 33088
+          filter_chains:
+            - filters:
+                - name: envoy.filters.network.http_connection_manager
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                    stat_prefix: ingress_http
+                    codec_type: AUTO
+                    upgrade_configs:
+                      - upgrade_type: websocket
+                    http_filters:
+                      - name: envoy.filters.http.lua
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                          default_source_code:
+                            inline_string: |
+                              -- Cascade _next requests through all backends
+                              function envoy_on_request(handle)
+                              end
+                              function envoy_on_response(handle)
+                              end
+                      - name: envoy.filters.http.router
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                    route_config:
+                      name: local_route
+                      virtual_hosts:
+                        - name: gateway
+                          domains: ["*"]
+                          routes:
+                            # ── Frontend apps: strip prefix, proxy to backend ──
+                            - match:
+                                prefix: "/workspace/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: web-workspace
+                            - match:
+                                path: "/workspace"
+                              redirect:
+                                path_redirect: "/workspace/"
+                            - match:
+                                prefix: "/rag/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: web-rag
+                            - match:
+                                path: "/rag"
+                              redirect:
+                                path_redirect: "/rag/"
+                            - match:
+                                prefix: "/review/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: web-review
+                            - match:
+                                path: "/review"
+                              redirect:
+                                path_redirect: "/review/"
+                            - match:
+                                prefix: "/team/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: web-team
+                            - match:
+                                path: "/team"
+                              redirect:
+                                path_redirect: "/team/"
+
+                            # ── API backends ──
+                            - match:
+                                prefix: "/api/hub/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-hub
+                            - match:
+                                prefix: "/api/review/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-review
+                            - match:
+                                prefix: "/api/workspace/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-workspace
+                            - match:
+                                prefix: "/api/intelligence/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-intelligence
+
+                            # ── _next/static assets: aggregate cluster cascades all backends ──
+                            - match:
+                                prefix: "/_next/"
+                              route:
+                                cluster: aggregate-next
+                                retry_policy:
+                                  retry_on: "5xx,reset,connect-failure,retriable-status-codes"
+                                  retriable_status_codes: [404]
+                                  num_retries: 4
+                                  per_try_timeout: 3s
+
+                            # ── Static assets ──
+                            - match:
+                                path: "/icon.png"
+                              route:
+                                cluster: web-base
+                            - match:
+                                path: "/favicon.ico"
+                              route:
+                                cluster: web-base
+
+                            # ── Default: web-base (Hub) ──
+                            - match:
+                                prefix: "/"
+                              route:
+                                cluster: web-base
+
+      clusters:
+        - name: web-base
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: web-base
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-base.catest.svc.cluster.local
+                          port_value: 33000
+
+        - name: web-workspace
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: web-workspace
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-workspace.catest.svc.cluster.local
+                          port_value: 33001
+
+        - name: web-rag
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: web-rag
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-rag.catest.svc.cluster.local
+                          port_value: 33002
+
+        - name: web-review
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: web-review
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-review.catest.svc.cluster.local
+                          port_value: 33003
+
+        - name: web-team
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: web-team
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-team.catest.svc.cluster.local
+                          port_value: 33004
+
+        # Aggregate cluster for _next/ static assets — tries all 5 backends
+        - name: aggregate-next
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: aggregate-next
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-base.catest.svc.cluster.local
+                          port_value: 33000
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-workspace.catest.svc.cluster.local
+                          port_value: 33001
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-rag.catest.svc.cluster.local
+                          port_value: 33002
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-review.catest.svc.cluster.local
+                          port_value: 33003
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-web-team.catest.svc.cluster.local
+                          port_value: 33004
+          health_checks:
+            - timeout: 2s
+              interval: 10s
+              unhealthy_threshold: 3
+              healthy_threshold: 1
+              http_health_check:
+                path: "/"
+
+        # API clusters
+        - name: api-hub
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-hub
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-hub.catest.svc.cluster.local
+                          port_value: 33080
+
+        - name: api-review
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-review
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-review.catest.svc.cluster.local
+                          port_value: 33081
+
+        - name: api-workspace
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-workspace
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-workspace.catest.svc.cluster.local
+                          port_value: 33082
+
+        - name: api-intelligence
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-intelligence
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-intelligence.catest.svc.cluster.local
+                          port_value: 33083
+
+    admin:
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 9901

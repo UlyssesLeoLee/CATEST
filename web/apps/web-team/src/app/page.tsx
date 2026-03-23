@@ -226,7 +226,7 @@ export default function TeamPage() {
       <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite Team Member">
         {inviteSuccess ? (
           <div className="flex flex-col items-center gap-4 py-6">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+            <CheckCircle2 className="w-12 h-12 text-[#4a8b6e]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Invitation sent successfully!</p>
           </div>
         ) : (
@@ -272,7 +272,7 @@ export default function TeamPage() {
       <Modal open={teamOpen} onClose={() => setTeamOpen(false)} title="Create New Team">
         {createSuccess ? (
           <div className="flex flex-col items-center gap-4 py-6">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+            <CheckCircle2 className="w-12 h-12 text-[#4a8b6e]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Team &quot;{teamName}&quot; created!</p>
           </div>
         ) : (

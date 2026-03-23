@@ -18,19 +18,22 @@ import {
   User, ShieldCheck, Key, LogOut, Plus, Trash2,
   Loader2, Copy, Check, Monitor, Zap, Crown
 } from 'lucide-react';
+import { Card, Button, Badge, Spinner, cn } from "@catest/ui";
 
-const PLAN_BADGE: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  free:       { label: 'Free',       color: 'bg-slate-700 text-slate-300',         icon: <Zap size={12} /> },
-  pro:        { label: 'Pro',        color: 'bg-indigo-500/20 text-indigo-300',    icon: <ShieldCheck size={12} /> },
-  enterprise: { label: 'Enterprise', color: 'bg-amber-500/20 text-amber-300',      icon: <Crown size={12} /> },
+const PLAN_BADGE: Record<string, { label: string; variant: "info" | "success" | "warning" | "danger"; icon: React.ReactNode }> = {
+  free:       { label: 'Free',       variant: 'info',    icon: <Zap size={12} /> },
+  pro:        { label: 'Pro',        variant: 'success', icon: <ShieldCheck size={12} /> },
+  enterprise: { label: 'Enterprise', variant: 'warning', icon: <Crown size={12} /> },
 };
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const copy = () => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   return (
-    <button onClick={copy} className="ml-2 p-1 text-slate-400 hover:text-slate-200 transition-colors" title="Copy">
-      {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+    <button onClick={copy} className="ml-2 p-1.5 rounded-sm border border-[#3e1b0d]/60 text-[#c9a84c]/60 hover:text-[#c9a84c] transition-colors"
+      style={{ background: 'linear-gradient(135deg, rgba(26,15,10,0.8), rgba(13,8,5,0.9))' }}
+      title="Copy">
+      {copied ? <Check size={14} className="text-[#4a8b6e]" /> : <Copy size={14} />}
     </button>
   );
 }
@@ -64,8 +67,6 @@ export default function AccountPage() {
     setLoading(false);
   }, []);
 
-  // Load data without triggering cascading renders:
-  // We await `load` in a separate effect body to keep state updates async
   useEffect(() => {
     void load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,8 +91,8 @@ export default function AccountPage() {
   const handleRevokeAll = async () => { await revokeAllOtherSessions(); load(); };
 
   if (loading) return (
-    <div className="h-screen bg-slate-950 flex items-center justify-center">
-      <Loader2 size={40} className="animate-spin text-indigo-400" />
+    <div className="h-screen flex items-center justify-center">
+      <Spinner size={40} />
     </div>
   );
 
@@ -99,51 +100,55 @@ export default function AccountPage() {
   const badge = PLAN_BADGE[plan] ?? PLAN_BADGE.free;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur border-b border-slate-800 px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2 font-semibold text-lg">
+    <div className="min-h-screen text-[var(--text-primary)]">
+      {/* Top Bar — forged metal header */}
+      <header className="sticky top-0 z-10 glass-panel border-b border-[#3e1b0d]/40 px-6 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-2 font-black text-lg text-[var(--text-brass)] uppercase tracking-wider">
           <Image src="/icon.png" alt="CATEST" width={24} height={24} className="object-contain" />
           CATEST
         </div>
         <div className="flex items-center gap-6 text-sm">
-          <a href="/workspace" className="text-slate-400 hover:text-slate-200 transition-colors">Workspace</a>
-          <a href="/rag" className="text-slate-400 hover:text-slate-200 transition-colors">RAG</a>
-          <button onClick={handleLogout} className="flex items-center gap-1 text-slate-400 hover:text-red-400 transition-colors">
-            <LogOut size={15} />Logout
+          <a href="/workspace" className="text-[var(--text-secondary)] hover:text-[var(--text-brass)] transition-colors font-bold uppercase tracking-widest text-[10px]">Workspace</a>
+          <a href="/rag" className="text-[var(--text-secondary)] hover:text-[var(--text-brass)] transition-colors font-bold uppercase tracking-widest text-[10px]">RAG</a>
+          <button onClick={handleLogout} className="flex items-center gap-1 text-[#8b2252] hover:text-[#c9384a] transition-colors font-bold uppercase tracking-widest text-[10px]">
+            <LogOut size={13} />Logout
           </button>
         </div>
       </header>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
-        {/* Profile Hero */}
+        {/* Profile Hero — forged metal avatar */}
         <div className="flex items-center gap-5 mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 grid place-items-center shadow-xl shadow-indigo-500/20 text-2xl font-bold">
+          <div className="w-16 h-16 rounded-xl border-2 border-[#3e1b0d] flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,240,200,0.1)] text-2xl font-black text-[var(--text-brass)]"
+            style={{ background: 'radial-gradient(circle at 35% 30%, #2a1a11, #0d0805)' }}>
             {user?.display_name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?'}
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{user?.display_name || user?.email}</h1>
+            <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{user?.display_name || user?.email}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-slate-400 text-sm">{user?.email}</span>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-transparent ${badge.color}`}>
-                {badge.icon}{badge.label}
-              </span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300 capitalize">{user?.role}</span>
+              <span className="text-[var(--text-secondary)] text-xs font-bold">{user?.email}</span>
+              <Badge variant={badge.variant}>
+                {badge.icon}<span className="ml-1">{badge.label}</span>
+              </Badge>
+              <Badge variant="info">{user?.role}</Badge>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-slate-800 mb-8">
+        {/* Tabs — engraved metal tab bar */}
+        <div className="flex gap-1 border-b border-[#3e1b0d]/40 mb-8">
           {[
-            { id: 'profile' as const, icon: <User size={15} />, label: 'Profile' },
-            { id: 'sessions' as const, icon: <Monitor size={15} />, label: `Sessions (${sessions.length})` },
-            { id: 'tokens' as const, icon: <Key size={15} />, label: `API Tokens (${tokens.length})` },
+            { id: 'profile' as const, icon: <User size={13} />, label: 'Profile' },
+            { id: 'sessions' as const, icon: <Monitor size={13} />, label: `Sessions (${sessions.length})` },
+            { id: 'tokens' as const, icon: <Key size={13} />, label: `API Tokens (${tokens.length})` },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                tab === t.id ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}>
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border-b-2 -mb-px transition-all",
+                tab === t.id
+                  ? "border-[#c9a84c] text-[#c9a84c]"
+                  : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              )}>
               {t.icon}{t.label}
             </button>
           ))}
@@ -152,55 +157,51 @@ export default function AccountPage() {
         {/* ── Profile Tab ────────────────────────────────────── */}
         {tab === 'profile' && (
           <div className="space-y-6">
-            <section className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
-              <h2 className="font-semibold mb-4">Profile Settings</h2>
+            <Card variant="glass" className="p-6">
+              <h2 className="font-black text-sm uppercase tracking-widest text-[var(--text-brass)] mb-4">Profile Settings</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1.5">Display Name</label>
+                  <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-1.5">Display Name</label>
                   <div className="flex gap-2">
                     <input
                       value={displayName}
                       onChange={e => setDisplayName(e.target.value)}
                       placeholder="Your name"
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="flex-1 bg-black/50 border-2 border-[#3e1b0d]/60 rounded-sm px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#b87333]/60 transition-colors"
+                      style={{ boxShadow: 'inset 0 3px 8px rgba(0,0,0,0.5)' }}
                     />
-                    <button onClick={handleSaveName} disabled={savingName}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2">
+                    <Button onClick={handleSaveName} disabled={savingName} size="sm">
                       {savingName ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                       Save
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1.5">Email</label>
-                  <p className="bg-slate-800 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-400">{user?.email}</p>
+                  <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-1.5">Email</label>
+                  <p className="bg-black/40 border-2 border-[#3e1b0d]/40 rounded-sm px-3 py-2 text-sm text-[var(--text-secondary)]"
+                    style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)' }}>{user?.email}</p>
                 </div>
               </div>
-            </section>
+            </Card>
 
-            <section className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
-              <h2 className="font-semibold mb-4">License</h2>
+            <Card variant="glass" className="p-6">
+              <h2 className="font-black text-sm uppercase tracking-widest text-[var(--text-brass)] mb-4">License</h2>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium ${badge.color}`}>
-                    {badge.icon} {badge.label} Plan
-                  </div>
+                  <Badge variant={badge.variant}>
+                    {badge.icon}<span className="ml-1">{badge.label} Plan</span>
+                  </Badge>
                   {user?.license_expires_at && (
-                    <p className="text-xs text-slate-500 mt-2">
+                    <p className="text-[10px] text-[var(--text-muted)] mt-2 font-bold">
                       Expires: {new Date(user.license_expires_at).toLocaleDateString()}
                     </p>
                   )}
-                  {!user?.license_expires_at && plan !== 'free' && (
-                    <p className="text-xs text-slate-500 mt-2">No expiry date</p>
-                  )}
                 </div>
                 {plan === 'free' && (
-                  <button className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-lg text-sm font-medium text-white shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-opacity">
-                    Upgrade to Pro
-                  </button>
+                  <Button variant="copper" size="sm">Upgrade to Pro</Button>
                 )}
               </div>
-            </section>
+            </Card>
           </div>
         )}
 
@@ -208,30 +209,29 @@ export default function AccountPage() {
         {tab === 'sessions' && (
           <div className="space-y-4">
             <div className="flex justify-end">
-              <button onClick={handleRevokeAll}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-colors">
-                <LogOut size={14} /> Revoke All Other Sessions
-              </button>
+              <Button variant="secondary" size="sm" onClick={handleRevokeAll}>
+                <LogOut size={13} className="mr-1" /> Revoke All Other Sessions
+              </Button>
             </div>
             {sessions.map(s => (
-              <div key={s.id} className={`bg-slate-900 border rounded-xl p-4 flex items-center justify-between ${s.is_current ? 'border-indigo-500/40' : 'border-slate-800'}`}>
+              <Card key={s.id} variant="glass" className={cn("p-4 flex items-center justify-between group", s.is_current && "border-[#c9a84c]/30")}>
                 <div>
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Monitor size={15} className="text-slate-400" />
-                    <span className="font-mono text-xs text-slate-400 truncate max-w-md">{s.user_agent || 'Unknown client'}</span>
-                    {s.is_current && <span className="px-1.5 py-0.5 rounded text-xs bg-indigo-500/20 text-indigo-400 font-medium">Current</span>}
+                  <div className="flex items-center gap-2 text-sm font-bold">
+                    <Monitor size={13} className="text-[var(--text-muted)]" />
+                    <span className="font-mono text-[10px] text-[var(--text-secondary)] truncate max-w-md">{s.user_agent || 'Unknown client'}</span>
+                    {s.is_current && <Badge variant="success">Current</Badge>}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1 font-bold">
                     Created: {new Date(s.created_at).toLocaleString()} · Expires: {new Date(s.expires_at).toLocaleDateString()}
                   </p>
                 </div>
                 {!s.is_current && (
                   <button onClick={() => handleRevokeSession(s.id)}
-                    className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10">
-                    <Trash2 size={15} />
+                    className="p-2 text-[var(--text-muted)] hover:text-[#8b2252] transition-colors rounded-sm border border-transparent hover:border-[#3e1b0d]/40">
+                    <Trash2 size={14} />
                   </button>
                 )}
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -239,56 +239,55 @@ export default function AccountPage() {
         {/* ── API Tokens Tab ─────────────────────────────────── */}
         {tab === 'tokens' && (
           <div className="space-y-4">
-            {/* Create new token */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <h3 className="font-medium mb-3 text-sm">Create New API Token</h3>
+            <Card variant="glass" className="p-6">
+              <h3 className="font-black text-sm uppercase tracking-widest text-[var(--text-brass)] mb-3">Create New API Token</h3>
               <div className="flex gap-2">
                 <input
                   value={newTokenName}
                   onChange={e => setNewTokenName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleGenerateToken()}
                   placeholder="Token description (e.g. CI Pipeline)"
-                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 bg-black/50 border-2 border-[#3e1b0d]/60 rounded-sm px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#b87333]/60 transition-colors"
+                  style={{ boxShadow: 'inset 0 3px 8px rgba(0,0,0,0.5)' }}
                 />
-                <button onClick={handleGenerateToken} disabled={!newTokenName.trim()}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors">
-                  <Plus size={14} /> Generate
-                </button>
+                <Button onClick={handleGenerateToken} disabled={!newTokenName.trim()} size="sm">
+                  <Plus size={14} className="mr-1" /> Generate
+                </Button>
               </div>
 
-              {/* Show raw token exactly once */}
               {newTokenSecret && (
-                <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                  <p className="text-xs text-amber-400 font-medium mb-2">⚠ Copy this token now — it will never be shown again!</p>
-                  <div className="flex items-center font-mono text-xs bg-slate-950 rounded px-3 py-2">
-                    <span className="flex-1 break-all text-green-400">{newTokenSecret}</span>
+                <div className="mt-4 p-4 rounded-sm border-2 border-[#e67e22]/30"
+                  style={{ background: 'linear-gradient(135deg, rgba(230,126,34,0.08), rgba(13,8,5,0.9))' }}>
+                  <p className="text-[10px] text-[#e67e22] font-black uppercase tracking-widest mb-2">Copy this token now — it will never be shown again!</p>
+                  <div className="flex items-center bg-black/60 border border-[#3e1b0d]/40 rounded-sm px-3 py-2">
+                    <code className="flex-1 font-mono text-xs text-[#4a8b6e] break-all">{newTokenSecret}</code>
                     <CopyButton text={newTokenSecret} />
                   </div>
-                  <button onClick={() => setNewTokenSecret(null)} className="mt-2 text-xs text-slate-500 hover:text-slate-300">Dismiss</button>
+                  <button onClick={() => setNewTokenSecret(null)} className="mt-2 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-bold uppercase tracking-widest">Dismiss</button>
                 </div>
               )}
-            </div>
+            </Card>
 
             {tokens.length === 0 && (
-              <p className="text-center text-slate-500 py-8 text-sm">No API tokens yet. Create one above.</p>
+              <p className="text-center text-[var(--text-muted)] py-8 text-xs font-bold uppercase tracking-widest">No API tokens yet. Create one above.</p>
             )}
             {tokens.map(t => (
-              <div key={t.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+              <Card key={t.id} variant="glass" className="p-4 flex items-center justify-between group">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Key size={14} className="text-slate-400" />
-                    <span className="font-medium text-sm">{t.name}</span>
+                    <Key size={13} className="text-[var(--text-muted)]" />
+                    <span className="font-black text-sm text-[var(--text-primary)]">{t.name}</span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 font-mono">
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1 font-mono font-bold">
                     ct_{t.token_prefix}••••••• · Created {new Date(t.created_at).toLocaleDateString()}
                     {t.last_used_at && ` · Last used ${new Date(t.last_used_at).toLocaleDateString()}`}
                   </p>
                 </div>
                 <button onClick={() => handleRevokeToken(t.id)}
-                  className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10">
-                  <Trash2 size={15} />
+                  className="p-2 text-[var(--text-muted)] hover:text-[#8b2252] transition-colors rounded-sm border border-transparent hover:border-[#3e1b0d]/40 opacity-0 group-hover:opacity-100">
+                  <Trash2 size={14} />
                 </button>
-              </div>
+              </Card>
             ))}
           </div>
         )}

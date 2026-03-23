@@ -206,7 +206,7 @@ export default function RagPage() {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="flex flex-col min-h-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
       {/* ── Search Header ──────────────────────────────────── */}
       <div className="px-8 py-8 rounded-3xl glass-panel mb-[var(--section-gap)]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -241,8 +241,42 @@ export default function RagPage() {
         </div>
       </div>
 
+      {/* ── Cypher Query Panel ────────────────────────────── */}
+      <div className="glass-panel rounded-2xl p-5 mb-[var(--section-gap)]">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-1.5 rounded-lg border border-[#b87333]/20"
+            style={{ background: 'linear-gradient(135deg, rgba(184,115,51,0.15), rgba(0,0,0,0.4))' }}>
+            <Terminal className="w-4 h-4 text-[var(--text-brass)]" />
+          </div>
+          <h3 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">Cypher Console</h3>
+          <div className="flex-1" />
+          <span className="text-[9px] text-[var(--text-muted)]/60 font-mono">Neo4j Bolt://localhost:7687</span>
+        </div>
+        <div className="flex gap-3 items-end">
+          <div className="flex-1 relative">
+            <textarea
+              rows={2}
+              placeholder="MATCH (n:CodeSnippet)-[:REFERENCES]->(m) WHERE n.score > 0.85 RETURN n, m LIMIT 25"
+              className="w-full font-mono text-xs leading-relaxed resize-none rounded-xl px-4 py-3 text-[#e8d5b5] placeholder-[#8a7b6a]/40 focus:outline-none transition-all"
+              style={{
+                background: '#0a0704',
+                border: '1px solid rgba(184,115,51,0.2)',
+                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,240,200,0.03)',
+              }}
+            />
+            {/* Terminal scanline effect */}
+            <div className="absolute inset-0 pointer-events-none rounded-xl overflow-hidden opacity-[0.03]"
+              style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)' }} />
+          </div>
+          <Button size="md" variant="copper">
+            <Cpu className="w-3 h-3 mr-1.5" />
+            Execute
+          </Button>
+        </div>
+      </div>
+
       {/* ── Main Grid Layout ───────────────────────────────── */}
-      <div className="flex flex-1 gap-[var(--section-gap)] min-h-0">
+      <div className="flex flex-1 gap-[var(--section-gap)] min-h-0" style={{ minHeight: '500px' }}>
         {/* Left: Search Results */}
         <section className="flex-[var(--phi)] flex flex-col gap-6 min-h-0">
           <div className="flex items-center justify-between">
@@ -336,7 +370,7 @@ export default function RagPage() {
       <Modal open={indexOpen} onClose={() => setIndexOpen(false)} title="Index Documents">
         {indexSuccess ? (
           <div className="flex flex-col items-center gap-4 py-6">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+            <CheckCircle2 className="w-12 h-12 text-[#4a8b6e]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Document indexed successfully!</p>
           </div>
         ) : (

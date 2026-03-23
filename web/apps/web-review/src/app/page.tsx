@@ -2,10 +2,12 @@
 
 import { ReviewEditorPluginGroup } from "@/plugins/ReviewEditorPluginGroup";
 import { SuggestionsPluginGroup }  from "@/plugins/SuggestionsPluginGroup";
+import { ExportPluginGroup }       from "@/plugins/ExportPluginGroup";
 import { PluginGroupRenderer }      from "@catest/ui/plugins";
 import { Card, Badge, Button, getAppUrl } from "@catest/ui";
 import {
   FileCheck,
+  FileOutput,
   Sparkles,
   History,
   Share2,
@@ -36,7 +38,7 @@ export default function ReviewPage() {
           </Card>
         </section>
 
-        {/* Right pane: AI Suggestions */}
+        {/* Right pane: AI Suggestions + Export */}
         <aside className="flex-1 shrink-0 flex flex-col gap-4 min-h-0 max-w-[24rem]">
           <Card variant="glass" className="min-h-0 flex-1 flex flex-col border-[var(--verdigris)]/20 bg-[var(--verdigris)]/[0.02]">
             <div className="px-6 py-4 border-b border-[var(--verdigris)]/10 bg-[var(--verdigris)]/5 flex items-center justify-between">
@@ -53,6 +55,21 @@ export default function ReviewPage() {
               <p className="text-[10px] text-[var(--verdigris)]/60 font-medium italic text-center">
                 Refining suggestions based on your recent activity...
               </p>
+            </div>
+          </Card>
+
+          {/* Export .catest panel */}
+          <Card variant="glass" className="flex flex-col border-[#b87333]/20 bg-[#b87333]/[0.02]">
+            <div className="px-6 py-4 border-b border-[#b87333]/15 flex items-center justify-between"
+              style={{ background: 'linear-gradient(180deg, rgba(184,115,51,0.06), transparent)' }}>
+              <h2 className="text-xs font-bold text-[var(--text-brass)] uppercase tracking-widest flex items-center gap-2">
+                <FileOutput className="w-3.5 h-3.5" />
+                Export Review
+              </h2>
+              <Badge className="bg-[#b87333]/15 text-[var(--text-brass)] border-[#b87333]/20 text-[9px] px-1.5 py-0">.catest</Badge>
+            </div>
+            <div className="p-4 overflow-auto">
+              <PluginGroupRenderer group={ExportPluginGroup} />
             </div>
           </Card>
         </aside>

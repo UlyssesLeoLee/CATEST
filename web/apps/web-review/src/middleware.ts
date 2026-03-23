@@ -16,8 +16,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!token) {
-    const loginUrl = new URL('/login', `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || 33000}`);
-    return NextResponse.redirect(loginUrl);
+    const isSaaS = process.env.NEXT_PUBLIC_SAAS_MODE === 'true';
+    const base = isSaaS ? request.url : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || 33000}`;
+    return NextResponse.redirect(new URL('/login', base));
   }
 
   try {
@@ -27,8 +28,9 @@ export async function middleware(request: NextRequest) {
     await jwtVerify(token, key, { algorithms: ['HS256'] });
     return NextResponse.next();
   } catch (err) {
-    const loginUrl = new URL('/login', `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || 33000}`);
-    return NextResponse.redirect(loginUrl);
+    const isSaaS = process.env.NEXT_PUBLIC_SAAS_MODE === 'true';
+    const base = isSaaS ? request.url : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || 33000}`;
+    return NextResponse.redirect(new URL('/login', base));
   }
 }
 

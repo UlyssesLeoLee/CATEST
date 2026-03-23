@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
   expires_at    timestamptz NOT NULL DEFAULT now() + INTERVAL '10 minutes'
 );
 
-CREATE INDEX IF NOT EXISTS idx_verification_email ON verification_codes (email, purpose);
+ALTER TABLE verification_codes ADD CONSTRAINT uq_verification_email UNIQUE (email);
 
 CREATE TABLE IF NOT EXISTS user_sessions (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
   expires_at    timestamptz NOT NULL DEFAULT now() + INTERVAL '10 minutes'
 );
 
-CREATE INDEX IF NOT EXISTS idx_verification_email ON verification_codes (email, purpose);
+ALTER TABLE verification_codes ADD CONSTRAINT uq_verification_email UNIQUE (email);
 -- 6. Teams & Organizations (SaaS Collaboration)
 CREATE TABLE IF NOT EXISTS teams (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

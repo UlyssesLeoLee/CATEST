@@ -3,10 +3,25 @@
   "configurations": [
     {
       "name": "web-base",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "web-base", "run", "dev"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/leo19/AppData/Roaming/npm/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-base", "run", "dev"],
       "port": 33000,
       "cwd": "web",
+      "autoPort": false
+    },
+    {
+      "name": "web-review",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/leo19/AppData/Roaming/npm/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-review", "run", "dev"],
+      "port": 33003,
+      "cwd": "web",
+      "autoPort": false
+    },
+    {
+      "name": "gateway",
+      "runtimeExecutable": "kubectl",
+      "runtimeArgs": ["port-forward", "svc/nginx-gateway", "33088:33088", "-n", "catest"],
+      "port": 33088,
       "autoPort": false
     }
   ]

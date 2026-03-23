@@ -87,6 +87,22 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* ─── Engraved copper icon style ─────────────────────────────────────
+   All Lucide SVG icons get an embossed-into-metal look:
+   inset shadow simulates depth, warm copper stroke color,
+   subtle text-shadow creates the "stamped into plate" effect.
+   ──────────────────────────────────────────────────────────────────── */
+svg.lucide,
+[data-lucide],
+.lucide {
+  filter:
+    drop-shadow(0 -1px 0 rgba(0,0,0,0.85))
+    drop-shadow(0 1.5px 0 rgba(255,220,160,0.18))
+    drop-shadow(0 -0.5px 1px rgba(0,0,0,0.5))
+    drop-shadow(0 0.5px 0.5px rgba(255,200,120,0.08));
+  stroke-width: 1.6;
+}
+
 /* ───────────────────────────────────────────
    CURSOR — hide system cursor for custom one
    ─────────────────────────────────────────── */
@@ -143,6 +159,51 @@ button.btn-sm, .btn-sm {
 input, textarea, select {
   padding: 0.5rem 0.875rem;
   font-size: 0.8rem;
+}
+
+/* Range sliders — copper pipe style */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #0d0805, #1a0e08, #0d0805);
+  border: 1px solid rgba(184,115,51,0.15);
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.6);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e8c878, #b87333, #5a3518);
+  border: 1.5px solid #3e1b0d;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,240,200,0.3);
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: radial-gradient(circle at 35% 30%, #f0e4d0, #c9a84c, #8b5a2b);
+  box-shadow: 0 2px 8px rgba(184,115,51,0.4), inset 0 1px 0 rgba(255,240,200,0.4);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e8c878, #b87333, #5a3518);
+  border: 1.5px solid #3e1b0d;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,240,200,0.3);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #0d0805, #1a0e08, #0d0805);
+  border: 1px solid rgba(184,115,51,0.15);
 }
 
 /* Text color inheritance in glass panels */
@@ -232,41 +293,41 @@ input, textarea, select {
   100% { transform: translate(0, 0) rotate(360deg); opacity: 0.4; }
 }
 
-/* Smoke particles */
+/* Smoke particles — no scaling, stay small */
 @keyframes smoke-particle-1 {
-  0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
-  10%  { opacity: 0.7; }
-  40%  { transform: translate(80px, -30px) scale(1.5); opacity: 0.3; }
-  70%  { transform: translate(160px, -10px) scale(2); opacity: 0.1; }
-  100% { transform: translate(250px, -40px) scale(2.5); opacity: 0; }
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 0.5; }
+  40%  { transform: translate(80px, -30px); opacity: 0.2; }
+  70%  { transform: translate(160px, -10px); opacity: 0.08; }
+  100% { transform: translate(250px, -40px); opacity: 0; }
 }
 
 @keyframes smoke-particle-2 {
-  0%   { transform: translate(0, 0) scale(0.8); opacity: 0; }
-  15%  { opacity: 0.5; }
-  50%  { transform: translate(-60px, -50px) scale(1.8); opacity: 0.2; }
-  100% { transform: translate(-120px, -80px) scale(2.2); opacity: 0; }
+  0%   { transform: translate(0, 0); opacity: 0; }
+  15%  { opacity: 0.35; }
+  50%  { transform: translate(-60px, -50px); opacity: 0.15; }
+  100% { transform: translate(-120px, -80px); opacity: 0; }
 }
 
 @keyframes smoke-particle-3 {
-  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
-  20%  { opacity: 0.6; }
-  60%  { transform: translate(40px, 60px) scale(1.6); opacity: 0.15; }
-  100% { transform: translate(100px, 120px) scale(2); opacity: 0; }
+  0%   { transform: translate(0, 0); opacity: 0; }
+  20%  { opacity: 0.4; }
+  60%  { transform: translate(40px, 60px); opacity: 0.1; }
+  100% { transform: translate(100px, 120px); opacity: 0; }
 }
 
 @keyframes smoke-ring {
-  0%   { transform: scale(0.3); opacity: 0; border-width: 3px; }
-  20%  { opacity: 0.5; }
-  60%  { transform: scale(1.2); opacity: 0.15; border-width: 1px; }
-  100% { transform: scale(2); opacity: 0; border-width: 0.5px; }
+  0%   { transform: scale(0.8); opacity: 0; border-width: 2px; }
+  20%  { opacity: 0.4; }
+  60%  { transform: scale(1.1); opacity: 0.12; border-width: 1px; }
+  100% { transform: scale(1.3); opacity: 0; border-width: 0.5px; }
 }
 
 @keyframes true-particle-drift {
-  0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
-  15%  { opacity: 0.7; }
-  75%  { opacity: 0.1; }
-  100% { transform: translate(var(--tx), var(--ty)) scale(2.5); opacity: 0; }
+  0%   { transform: translate(0, 0) scale(1); opacity: 0; }
+  15%  { opacity: 0.5; }
+  75%  { opacity: 0.08; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(1); opacity: 0; }
 }
 
 @keyframes ember-float {
@@ -294,9 +355,9 @@ input, textarea, select {
 }
 
 @keyframes steam-puff {
-  0% { transform: scale(0.2) translateY(0); opacity: 0; filter: blur(2px); }
-  20% { opacity: 0.6; filter: blur(4px); }
-  100% { transform: scale(2.5) translateY(-40px); opacity: 0; filter: blur(12px); }
+  0% { transform: scale(0.8) translateY(0); opacity: 0; filter: blur(2px); }
+  20% { opacity: 0.4; filter: blur(3px); }
+  100% { transform: scale(1) translateY(-25px); opacity: 0; filter: blur(5px); }
 }
 
 @keyframes boiler-flicker {
@@ -331,9 +392,9 @@ input, textarea, select {
 /* Dense steam particle field animation */
 @keyframes steam-field-drift {
   0%   { transform: translate(0, 0) scale(1); opacity: 0; }
-  10%  { opacity: var(--particle-max-opacity, 0.5); }
-  80%  { opacity: 0.05; }
-  100% { transform: translate(var(--drift-x, 60px), var(--drift-y, -80px)) scale(var(--end-scale, 2)); opacity: 0; }
+  10%  { opacity: var(--particle-max-opacity, 0.3); }
+  80%  { opacity: 0.03; }
+  100% { transform: translate(var(--drift-x, 60px), var(--drift-y, -80px)) scale(1); opacity: 0; }
 }
 
 /* Gas lamp flicker — irregular warm glow pulsing */
@@ -402,8 +463,15 @@ input, textarea, select {
 
 /* Button-specific constraints — use .industrial-copper-btn on button elements */
 .industrial-copper-btn {
-  overflow: hidden;
+  overflow: visible;
   max-height: 80px;
+}
+
+/* Clip shine animation inside button bounds */
+.industrial-copper-btn::before,
+.industrial-copper-btn::after {
+  border-radius: inherit;
+  clip-path: inset(0 round inherit);
 }
 
 .industrial-copper::before {
@@ -419,11 +487,9 @@ input, textarea, select {
 .industrial-copper::after {
   content: "";
   position: absolute;
-  inset: -100%;
-  background: var(--metal-specular);
-  animation: shine 8s infinite linear;
+  inset: 0;
+  border-radius: inherit;
   pointer-events: none;
-  opacity: 0.6;
 }
 
 /* Master Industrial Plate — enhanced with burgundy undertone */
@@ -445,8 +511,14 @@ input, textarea, select {
 
 /* Button-specific constraints — use .master-industrial-plate-btn on button elements */
 .master-industrial-plate-btn {
-  overflow: hidden;
+  overflow: visible;
   max-height: 80px;
+}
+
+/* Clip decorative layers inside button bounds */
+.master-industrial-plate-btn::before {
+  border-radius: inherit;
+  clip-path: inset(0 round inherit);
 }
 
 .master-industrial-plate::before {
@@ -461,13 +533,15 @@ input, textarea, select {
 .cast-iron-shabby {
   background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cast-iron-shabby::after {
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
+  clip-path: inset(0 round inherit);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   opacity: 0.25;
   mix-blend-mode: overlay;
@@ -487,22 +561,43 @@ input, textarea, select {
   filter: drop-shadow(0 2px 2px rgba(0,0,0,0.8));
 }
 
-/* Hollow Vapor Variant */
+/* Industrial Secondary — dark iron plate with subtle grain */
+.industrial-secondary {
+  background:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #201508 0%, #1a1108 40%, #150e06 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,200,0.06),
+    inset 0 -1px 2px rgba(0,0,0,0.4),
+    0 2px 6px rgba(0,0,0,0.5) !important;
+}
+
+.industrial-secondary:hover {
+  background:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #2a1a11 0%, #221610 40%, #1a1008 100%) !important;
+}
+
+/* Hollow Vapor Variant — rounded organic glow, no rectangle */
 .hollow-vapor {
-  background: transparent !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 15px var(--vapor-glow);
+  background: rgba(14, 11, 8, 0.3) !important;
+  border: 1.5px solid rgba(200, 190, 175, 0.25);
+  border-radius: 20px;
+  box-shadow:
+    0 0 12px rgba(200,168,76,0.08),
+    inset 0 1px 0 rgba(255,240,200,0.05);
   position: relative;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   overflow: visible !important;
 }
 
 .hollow-vapor::before {
   content: "";
   position: absolute;
-  inset: -8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  filter: blur(4px);
+  inset: -6px;
+  border: 1px solid rgba(200, 190, 175, 0.1);
+  border-radius: 26px;
+  filter: blur(5px);
   animation: vapor-drift-1 4s infinite ease-in-out;
 }
 
@@ -703,19 +798,19 @@ input, textarea, select {
    ═══════════════════════════════════════════ */
 
 .glass-card {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(107, 28, 35, 0.04) 0%, transparent 50%),
-    rgba(14, 11, 8, 0.7);
-  backdrop-filter: blur(12px);
+  background: rgba(14, 11, 8, 0.55);
+  backdrop-filter: blur(16px) saturate(1.2);
   border: 1px solid rgba(184, 115, 51, 0.15);
+  border-top-color: rgba(255, 240, 200, 0.1);
+  border-bottom-color: rgba(0, 0, 0, 0.3);
   border-radius: var(--card-radius);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.06),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 4px 12px rgba(0,0,0,0.5),
-    0 12px 40px rgba(0,0,0,0.4);
+    inset 0 1px 0 rgba(255, 240, 200, 0.06),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0,0,0,0.2),
+    0 8px 24px rgba(0,0,0,0.3);
   transition: all 0.4s ease;
 }
 
@@ -723,54 +818,49 @@ input, textarea, select {
   content: '';
   position: absolute;
   inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 10% 10%, rgba(255,255,255,0.03) 0%, transparent 40%),
-    radial-gradient(circle at 90% 90%, rgba(255,255,255,0.02) 0%, transparent 40%);
-  opacity: 0.6;
-  mix-blend-mode: soft-light;
 }
 
 .glass-card:hover {
   transform: translateY(-1px);
   border-color: rgba(184, 115, 51, 0.35);
+  border-top-color: rgba(255, 240, 200, 0.2);
   box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.12),
-    0 8px 24px rgba(0,0,0,0.6),
-    0 0 20px rgba(184,115,51,0.06),
-    0 0 40px rgba(107, 28, 35, 0.04);
+    inset 0 1px 0 rgba(255, 240, 200, 0.15),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.25),
+    0 4px 16px rgba(0,0,0,0.5),
+    0 12px 32px rgba(0,0,0,0.4),
+    0 0 25px rgba(184,115,51,0.06),
+    0 0 50px rgba(107, 28, 35, 0.03);
 }
 
 .glass-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.06) 50%, transparent 55%);
-  background-size: 200% 200%;
+  border-radius: inherit;
+  overflow: hidden;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease;
   z-index: 2;
 }
 
-.glass-card:hover::before {
-  opacity: 1;
-  animation: subtle-glint 4s ease-in-out;
-}
-
 .glass-panel {
-  background:
-    radial-gradient(ellipse at 50% 120%, rgba(255, 107, 26, 0.02) 0%, transparent 60%),
-    rgba(14, 11, 8, 0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(184, 115, 51, 0.2);
+  background: rgba(14, 11, 8, 0.5);
+  backdrop-filter: blur(20px) saturate(1.15);
+  border: 1px solid rgba(184, 115, 51, 0.15);
+  border-top-color: rgba(255, 240, 200, 0.08);
+  border-bottom-color: rgba(0, 0, 0, 0.3);
   border-radius: var(--panel-radius);
   position: relative;
   overflow: hidden;
   padding: 1rem 1.25rem;
   box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.08),
-    0 10px 30px rgba(0,0,0,0.6);
+    inset 0 1px 0 rgba(255, 240, 200, 0.06),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+    0 4px 12px rgba(0,0,0,0.4),
+    0 10px 30px rgba(0,0,0,0.5);
 }
 
 /* ═══════════════════════════════════════════
@@ -819,16 +909,16 @@ input, textarea, select {
 
 .fog-layer-1 {
   inset: -10% -5% auto -5%;
-  height: 35%;
-  background: radial-gradient(ellipse at 30% 0%, rgba(200,180,140,0.06) 0%, transparent 70%);
-  animation: vapor-drift-1 25s infinite ease-in-out;
+  height: 30%;
+  background: radial-gradient(ellipse at 30% 0%, rgba(200,180,140,0.05) 0%, transparent 65%);
+  animation: vapor-drift-1 20s infinite ease-in-out;
 }
 
 .fog-layer-2 {
   inset: auto -5% -10% -5%;
-  height: 30%;
-  background: radial-gradient(ellipse at 70% 100%, rgba(200,180,140,0.05) 0%, transparent 70%);
-  animation: vapor-drift-2 30s infinite ease-in-out;
+  height: 25%;
+  background: radial-gradient(ellipse at 70% 100%, rgba(200,180,140,0.04) 0%, transparent 65%);
+  animation: vapor-drift-2 25s infinite ease-in-out;
 }
 
 .fog-layer-3 {
@@ -871,7 +961,7 @@ input, textarea, select {
 .bg-grain {
   position: fixed;
   inset: 0;
-  opacity: 0.04;
+  opacity: 0.025;
   pointer-events: none;
   z-index: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
@@ -896,6 +986,13 @@ input, textarea, select {
   background-size: 100px 100px, 150px 150px, 200px 200px;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Override glass-panel overflow:hidden for scroll containers */
+.steam-scroll.glass-panel,
+.steam-scroll.glass-card {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 .steam-scroll::-webkit-scrollbar {
@@ -1107,11 +1204,11 @@ input, textarea, select {
 
 .steam-smoke-ring {
   position: absolute;
-  inset: -12px;
+  inset: -16px;
   pointer-events: none;
   z-index: 10;
   overflow: visible;
-  opacity: 0.7;
+  opacity: 0.85;
   transition: opacity 0.4s ease;
 }
 
@@ -1119,70 +1216,28 @@ input, textarea, select {
   opacity: 1;
 }
 
-.steam-fog-layer {
+/* Organic steam haze — single elliptical glow, no rectangular edges */
+.steam-haze {
   position: absolute;
+  inset: -20px;
   pointer-events: none;
   z-index: 5;
-  opacity: 0.5;
-  transition: opacity 0.4s ease;
-}
-
-.btn-steam-wrap:hover .steam-fog-layer {
-  opacity: 0.9;
-}
-
-.steam-fog-top {
-  top: -14px;
-  left: -5%;
-  right: -5%;
-  height: 22px;
   border-radius: 50%;
-  background: radial-gradient(ellipse 80% 100% at center, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.06) 40%, transparent 75%);
-  filter: blur(6px);
-  animation: steam-fog-drift-h 4s ease-in-out infinite alternate;
+  background: radial-gradient(ellipse 80% 70% at center, rgba(200,190,175,0.12) 0%, rgba(180,170,155,0.04) 50%, transparent 80%);
+  filter: blur(10px);
+  opacity: 0.6;
+  transition: opacity 0.5s ease;
+  animation: steam-haze-breathe 5s ease-in-out infinite alternate;
 }
 
-.steam-fog-bottom {
-  bottom: -14px;
-  left: -5%;
-  right: -5%;
-  height: 22px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse 80% 100% at center, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 40%, transparent 75%);
-  filter: blur(6px);
-  animation: steam-fog-drift-h 5s ease-in-out infinite alternate-reverse;
+.btn-steam-wrap:hover .steam-haze {
+  opacity: 1;
 }
 
-.steam-fog-left {
-  left: -14px;
-  top: -10%;
-  bottom: -10%;
-  width: 22px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse 100% 80% at center, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.04) 40%, transparent 75%);
-  filter: blur(5px);
-  animation: steam-fog-drift-v 4.5s ease-in-out infinite alternate;
-}
-
-.steam-fog-right {
-  right: -14px;
-  top: -10%;
-  bottom: -10%;
-  width: 22px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse 100% 80% at center, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.04) 40%, transparent 75%);
-  filter: blur(5px);
-  animation: steam-fog-drift-v 5.5s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes steam-fog-drift-h {
-  0% { transform: translateX(-3px) scaleX(0.9); }
-  100% { transform: translateX(3px) scaleX(1.1); }
-}
-
-@keyframes steam-fog-drift-v {
-  0% { transform: translateY(-2px) scaleY(0.9); }
-  100% { transform: translateY(2px) scaleY(1.1); }
+@keyframes steam-haze-breathe {
+  0% { transform: scale(0.92) rotate(-1deg); }
+  50% { transform: scale(1.05) rotate(0.5deg); }
+  100% { transform: scale(0.97) rotate(1deg); }
 }
 
 /* ═══════════════════════════════════════════
@@ -1196,8 +1251,485 @@ input, textarea, select {
   .master-industrial-plate::before,
   .gas-lamp-glow,
   .steam-smoke-ring svg *,
-  .steam-fog-layer {
+  .steam-haze {
     animation: none !important;
   }
   .steam-smoke-ring { display: none; }
+}
+
+/* ═══════════════════════════════════════════
+   ENHANCED SCROLLBAR — steampunk pipe aesthetic
+   Applied globally to all scrollable areas
+   ═══════════════════════════════════════════ */
+
+/* Global scrollbar for all elements */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #0d0805, #1a0e08, #0d0805);
+  border: 1px solid rgba(184,115,51,0.15);
+  border-radius: 5px;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+}
+
+*::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(180deg, #d4956a 0%, #b87333 20%, #8b5a2b 50%, #b87333 80%, #d4956a 100%);
+  border-radius: 5px;
+  border: 1px solid rgba(26,15,10,0.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    inset 0 -1px 0 rgba(0,0,0,0.4),
+    0 0 6px rgba(184,115,51,0.3);
+  min-height: 40px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, #e8b080 0%, #c9a84c 20%, #b87333 50%, #c9a84c 80%, #e8b080 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 0 10px rgba(201,168,76,0.4);
+}
+
+*::-webkit-scrollbar-corner {
+  background: #0d0805;
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b87333 #0d0805;
+}
+
+/* ═══════════════════════════════════════════
+   MOBILE RESPONSIVE — touch-optimized layout
+   ═══════════════════════════════════════════ */
+
+/* Mobile: restore system cursor, add bottom nav space */
+@media (max-width: 767px) {
+  /* Restore system cursor on touch devices */
+  .appshell-root,
+  .appshell-root *,
+  .appshell-root *::before,
+  .appshell-root *::after {
+    cursor: auto !important;
+  }
+
+  /* Add bottom padding for the fixed bottom tab bar */
+  .appshell-root > main .steam-scroll > div:last-child {
+    padding-bottom: 4.5rem;
+  }
+
+  /* Reduce fog layers on mobile */
+  .fog-layer-3, .fog-layer-4 {
+    display: none;
+  }
+
+  /* Smaller scrollbar on mobile */
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: none;
+    box-shadow: none;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   WABI-SABI 侘寂 — Weathering, Decay & Patina
+   The beauty of impermanence and imperfection.
+   Rust stains, water damage, chipped edges,
+   peeling layers, and the passage of time.
+   ═══════════════════════════════════════════ */
+
+/* ── Sidebar / industrial-copper: rust streaks & water stains ── */
+.industrial-copper {
+  /* Overlay rust drip streaks */
+  background-image:
+    /* Rust drip from top — vertical stain */
+    linear-gradient(180deg, rgba(139,69,19,0.12) 0%, rgba(139,69,19,0.04) 30%, transparent 50%),
+    /* Water damage blotch — lower left */
+    radial-gradient(ellipse at 15% 85%, rgba(74,139,110,0.06) 0%, transparent 25%),
+    /* Aged darkening at edges */
+    linear-gradient(90deg, rgba(0,0,0,0.15) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.15) 100%);
+  background-repeat: no-repeat;
+  background-size: 20px 60%, 40% 30%, 100% 100%;
+  background-position: 75% 0%, 0% 100%, 0% 0%;
+}
+
+/* Pseudo-element rust spots overlay on sidebar */
+.industrial-copper > .wabi-sabi-rust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+/* ── Navigation items: worn edges, faded active states ── */
+.appshell-root nav a {
+  position: relative;
+}
+
+/* Subtle edge wear on nav items — tiny scratches at borders */
+.appshell-root aside nav a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139,69,19,0.08), transparent);
+  pointer-events: none;
+}
+
+/* ── Glass panels: hairline cracks & edge darkening ── */
+.glass-panel {
+  /* Edge darkening — accumulated grime at borders */
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.08),
+    inset 3px 3px 8px rgba(0,0,0,0.12),
+    inset -2px -2px 6px rgba(0,0,0,0.08),
+    0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* ── Glass cards: water stain + corner wear merged into main ::after ── */
+/* (aging details now integrated into the primary .glass-card::after rule above) */
+
+/* ── Copper pipes: verdigris + rust drip enhancement ── */
+.copper-pipe-v {
+  background:
+    /* Verdigris patina — irregular green patches */
+    radial-gradient(ellipse at 50% 20%, rgba(74,139,110,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 70%, rgba(74,139,110,0.08) 0%, transparent 50%),
+    /* Base pipe metal */
+    linear-gradient(to right, #3e1b0d 0%, #b87333 40%, #c9a84c 50%, #b87333 60%, #3e1b0d 100%);
+}
+
+/* ── Pipe joints: heavy wear & oxidation ── */
+.pipe-joint {
+  background:
+    /* Oxidation ring */
+    radial-gradient(circle at 50% 50%, transparent 40%, rgba(74,139,110,0.1) 50%, transparent 55%),
+    radial-gradient(circle at 30% 30%, #c9a84c 0%, #8b5a2b 60%, #1a1108 100%);
+}
+
+/* ── Rivets: uneven aging — some more worn than others ── */
+.chipped-rivet:nth-child(odd) {
+  background: radial-gradient(circle at 35% 35%, #d0c0a0 0%, #a88040 25%, #5a4020 60%, #1a1008 100%);
+  opacity: 0.85;
+}
+
+.chipped-rivet:nth-child(even) {
+  background: radial-gradient(circle at 25% 25%, #c0b090 0%, #907040 30%, #4a3018 65%, #0d0805 100%);
+  box-shadow:
+    0 1px 1px rgba(0,0,0,0.9),
+    0 2px 3px rgba(0,0,0,0.6),
+    inset 0 0.5px 0.5px rgba(255,255,255,0.2),
+    inset 0 -1px 1px rgba(0,0,0,0.5);
+}
+
+/* ── Header bar: soot stains & age darkening ── */
+.appshell-root header.glass-panel {
+  /* Soot deposit at top edge */
+  border-top-color: rgba(26,15,10,0.4);
+}
+
+/* ── Wabi-sabi rust drip animation — slow oxidation spread ── */
+@keyframes rust-spread {
+  0%, 100% { opacity: 0.04; }
+  30% { opacity: 0.08; }
+  70% { opacity: 0.06; }
+}
+
+/* ── Wabi-sabi CSS overlay class — apply to containers for weathering ── */
+.wabi-sabi-overlay {
+  position: relative;
+}
+
+.wabi-sabi-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    /* Rust drip streaks — top down */
+    linear-gradient(178deg, rgba(139,69,19,0.06) 0%, transparent 15%),
+    linear-gradient(175deg, transparent 60%, rgba(139,69,19,0.04) 70%, transparent 80%),
+    /* Corner darkening — grime accumulation */
+    radial-gradient(circle at 0% 0%, rgba(0,0,0,0.1) 0%, transparent 25%),
+    radial-gradient(circle at 100% 100%, rgba(0,0,0,0.08) 0%, transparent 20%),
+    /* Verdigris blotch */
+    radial-gradient(ellipse at 85% 15%, rgba(74,139,110,0.05) 0%, transparent 20%);
+  mix-blend-mode: multiply;
+}
+
+/* ═══════════════════════════════════════════
+   STEAMPUNK UTILITY CLASSES — Replace all flat design
+   Design principles: Metal, Sparks, Steam ONLY
+   ═══════════════════════════════════════════ */
+
+/* ─── Status Badges (replace emerald/indigo/zinc flat badges) ─── */
+.sp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 2px;
+  position: relative;
+}
+
+.sp-badge-success {
+  background: linear-gradient(135deg, #2a3a2a 0%, #1a2e1a 100%);
+  border: 1px solid rgba(74, 139, 110, 0.4);
+  color: #7fb89a;
+  box-shadow: inset 0 1px 0 rgba(127, 184, 154, 0.1), 0 1px 3px rgba(0,0,0,0.4);
+  text-shadow: 0 0 6px rgba(74, 139, 110, 0.4);
+}
+
+.sp-badge-warning {
+  background: linear-gradient(135deg, #3a2a1a 0%, #2e1e0e 100%);
+  border: 1px solid rgba(184, 115, 51, 0.4);
+  color: var(--copper-light);
+  box-shadow: inset 0 1px 0 rgba(184, 115, 51, 0.1), 0 1px 3px rgba(0,0,0,0.4);
+  text-shadow: 0 0 6px rgba(184, 115, 51, 0.3);
+}
+
+.sp-badge-danger {
+  background: linear-gradient(135deg, #3a1a1a 0%, #2e0e0e 100%);
+  border: 1px solid rgba(180, 60, 40, 0.4);
+  color: #d4816a;
+  box-shadow: inset 0 1px 0 rgba(180, 60, 40, 0.1), 0 1px 3px rgba(0,0,0,0.4);
+  text-shadow: 0 0 6px rgba(180, 60, 40, 0.3);
+}
+
+.sp-badge-info {
+  background: linear-gradient(135deg, #1a2a3a 0%, #0e1e2e 100%);
+  border: 1px solid rgba(100, 140, 180, 0.3);
+  color: #8ab4d4;
+  box-shadow: inset 0 1px 0 rgba(100, 140, 180, 0.08), 0 1px 3px rgba(0,0,0,0.4);
+  text-shadow: 0 0 6px rgba(100, 140, 180, 0.3);
+}
+
+.sp-badge-neutral {
+  background: linear-gradient(135deg, #2a2520 0%, #1a1510 100%);
+  border: 1px solid rgba(107, 101, 96, 0.4);
+  color: var(--steel);
+  box-shadow: inset 0 1px 0 rgba(107, 101, 96, 0.1), 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.sp-badge-live {
+  background: linear-gradient(135deg, #2a3a2a 0%, #1a2e1a 100%);
+  border: 1px solid rgba(74, 139, 110, 0.5);
+  color: #7fb89a;
+  box-shadow: inset 0 1px 0 rgba(74, 139, 110, 0.1), 0 1px 3px rgba(0,0,0,0.4);
+  animation: sp-pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes sp-pulse-glow {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(74, 139, 110, 0.1), 0 1px 3px rgba(0,0,0,0.4); }
+  50% { box-shadow: inset 0 1px 0 rgba(74, 139, 110, 0.2), 0 1px 6px rgba(74, 139, 110, 0.2); }
+}
+
+/* ─── Gas Lamp Indicator Dots (replace flat colored dots) ─── */
+.sp-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.sp-indicator-on {
+  background: radial-gradient(circle, #a8e6a0 0%, #4a8b6e 60%, #2a4a3a 100%);
+  box-shadow: 0 0 4px rgba(74, 139, 110, 0.6), 0 0 8px rgba(74, 139, 110, 0.3);
+}
+
+.sp-indicator-warn {
+  background: radial-gradient(circle, #f0d080 0%, #b87333 60%, #5a3518 100%);
+  box-shadow: 0 0 4px rgba(184, 115, 51, 0.6), 0 0 8px rgba(184, 115, 51, 0.3);
+}
+
+.sp-indicator-off {
+  background: radial-gradient(circle, #6b6560 0%, #3e3630 60%, #1a1510 100%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.sp-indicator-danger {
+  background: radial-gradient(circle, #e0a090 0%, #b44028 60%, #4a1a10 100%);
+  box-shadow: 0 0 4px rgba(180, 60, 40, 0.6), 0 0 8px rgba(180, 60, 40, 0.3);
+}
+
+/* ─── Flat Buttons → Metal Buttons ─── */
+.sp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.sp-btn-primary {
+  background: linear-gradient(180deg, #3a2a1a 0%, #2a1a0a 50%, #1a0f05 100%);
+  border: 1px solid rgba(184, 115, 51, 0.5);
+  color: var(--copper-light);
+  box-shadow: inset 0 1px 0 rgba(255, 200, 100, 0.1), 0 2px 6px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+.sp-btn-primary:hover {
+  background: linear-gradient(180deg, #4a3a2a 0%, #3a2a1a 50%, #2a1a0a 100%);
+  border-color: rgba(184, 115, 51, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 200, 100, 0.15), 0 2px 8px rgba(184, 115, 51, 0.2);
+}
+
+.sp-btn-secondary {
+  background: linear-gradient(180deg, #1a1510 0%, #120e08 100%);
+  border: 1px solid rgba(107, 101, 96, 0.4);
+  color: var(--steel);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 2px 4px rgba(0,0,0,0.4);
+}
+.sp-btn-secondary:hover {
+  border-color: rgba(184, 115, 51, 0.4);
+  color: var(--copper-light);
+}
+
+.sp-btn-danger {
+  background: linear-gradient(180deg, #3a1a1a 0%, #2e0e0e 100%);
+  border: 1px solid rgba(180, 60, 40, 0.4);
+  color: #d4816a;
+  box-shadow: inset 0 1px 0 rgba(180, 60, 40, 0.08), 0 2px 4px rgba(0,0,0,0.4);
+}
+.sp-btn-danger:hover {
+  border-color: rgba(180, 60, 40, 0.6);
+  box-shadow: inset 0 1px 0 rgba(180, 60, 40, 0.12), 0 2px 6px rgba(180, 60, 40, 0.15);
+}
+
+.sp-btn-success {
+  background: linear-gradient(180deg, #2a3a2a 0%, #1a2e1a 100%);
+  border: 1px solid rgba(74, 139, 110, 0.4);
+  color: #7fb89a;
+  box-shadow: inset 0 1px 0 rgba(74, 139, 110, 0.08), 0 2px 4px rgba(0,0,0,0.4);
+}
+.sp-btn-success:hover {
+  border-color: rgba(74, 139, 110, 0.6);
+  box-shadow: inset 0 1px 0 rgba(74, 139, 110, 0.12), 0 2px 6px rgba(74, 139, 110, 0.15);
+}
+
+/* ─── Metal Input Fields ─── */
+.sp-input {
+  background: linear-gradient(180deg, #0a0806 0%, #0e0b08 100%);
+  border: 1px solid rgba(107, 101, 96, 0.3);
+  color: var(--foreground);
+  border-radius: 3px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(0,0,0,0.2);
+  transition: border-color 0.2s;
+}
+.sp-input:focus {
+  outline: none;
+  border-color: rgba(184, 115, 51, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 0 0 1px rgba(184, 115, 51, 0.2);
+}
+
+/* ─── Metal Card/Panel (replace zinc/slate backgrounds) ─── */
+.sp-card {
+  background: linear-gradient(180deg, rgba(14, 11, 8, 0.8) 0%, rgba(10, 8, 6, 0.9) 100%);
+  border: 1px solid rgba(107, 101, 96, 0.2);
+  border-radius: var(--card-radius);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 2px 8px rgba(0,0,0,0.4);
+  transition: border-color 0.3s;
+}
+.sp-card:hover {
+  border-color: rgba(184, 115, 51, 0.3);
+}
+
+/* ─── Metal Container (replace bg-zinc-900/bg-slate-900) ─── */
+.sp-container {
+  background: rgba(14, 11, 8, 0.6);
+  border: 1px solid rgba(62, 27, 13, 0.3);
+  border-radius: var(--panel-radius);
+}
+
+/* ─── Metal Divider ─── */
+.sp-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(184, 115, 51, 0.2), transparent);
+  border: none;
+}
+
+/* ─── Steampunk Text Colors (replace zinc/slate/indigo text) ─── */
+.sp-text-primary { color: var(--foreground); }
+.sp-text-secondary { color: var(--steel); }
+.sp-text-accent { color: var(--copper-light); }
+.sp-text-muted { color: rgba(107, 101, 96, 0.8); }
+.sp-text-success { color: #7fb89a; text-shadow: 0 0 6px rgba(74, 139, 110, 0.3); }
+.sp-text-danger { color: #d4816a; text-shadow: 0 0 6px rgba(180, 60, 40, 0.3); }
+.sp-text-info { color: #8ab4d4; text-shadow: 0 0 6px rgba(100, 140, 180, 0.3); }
+
+/* ─── Metal Tab Buttons ─── */
+.sp-tab {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--steel);
+}
+.sp-tab:hover {
+  color: var(--copper-light);
+  border-color: rgba(184, 115, 51, 0.2);
+}
+.sp-tab-active {
+  background: linear-gradient(180deg, #2a1a0a 0%, #1a0f05 100%);
+  border: 1px solid rgba(184, 115, 51, 0.4);
+  color: var(--copper-light);
+  box-shadow: inset 0 1px 0 rgba(255, 200, 100, 0.08), 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* ─── Metal Footer/Header Bars ─── */
+.sp-bar {
+  background: linear-gradient(180deg, rgba(14, 11, 8, 0.8) 0%, rgba(10, 8, 6, 0.9) 100%);
+  border: 1px solid rgba(62, 27, 13, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ─── Loading Backgrounds ─── */
+.sp-loading-bg {
+  background: var(--background);
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --side-pane-ratio: 30%;
+  }
 }

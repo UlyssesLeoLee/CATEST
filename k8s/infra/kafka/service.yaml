@@ -5,7 +5,7 @@ metadata:
   namespace: catest
 spec:
   ports:
-    - port: 39092
+    - port: 9092
       targetPort: 9092
       name: internal
     - port: 39092

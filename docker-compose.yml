@@ -116,41 +116,9 @@ services:
     networks:
       - catest-net
 
-  # Ingestion Service
-  ingestion:
-    image: catest-ingestion
-    build:
-      context: .
-      dockerfile: Dockerfile.ingestion
-    environment:
-      - DATABASE_URL=postgres://catest:password@postgres:5432/catest_ingestion
-      - KAFKA_BROKER=kafka:9092
-      - STORAGE_ROOT=/data/catest
-    volumes:
-      - "${HOST_STORAGE_PATH:-//LS220D088/webaxs/Ceph}:/data/catest"
-    depends_on:
-      - postgres
-      - kafka
-    networks:
-      - catest-net
-
-  # Parser Service
-  parser:
-    image: catest-parser
-    build:
-      context: .
-      dockerfile: Dockerfile.parser
-    environment:
-      - DATABASE_URL=postgres://catest:password@postgres:5432/catest_parser
-      - KAFKA_BROKER=kafka:9092
-      - STORAGE_ROOT=/data/catest
-    volumes:
-      - "//LS220D088/webaxs/Ceph:/data/catest"
-    depends_on:
-      - postgres
-      - kafka
-    networks:
-      - catest-net
+  # Note: Ingestion and Parser services are now built separately
+  # Use: cargo build --bin catest-ingestion / cargo build --bin catest-parser
+  # Or deploy via Kubernetes with: ./k8s-restart.ps1
 
 
 volumes:

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy-gateway
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: envoy-gateway
+  template:
+    metadata:
+      labels:
+        app: envoy-gateway
+    spec:
+      containers:
+        - name: envoy
+          image: envoyproxy/envoy:v1.31-latest
+          ports:
+            - containerPort: 33088
+            - containerPort: 9901
+          volumeMounts:
+            - name: config
+              mountPath: /etc/envoy/envoy.yaml
+              subPath: envoy.yaml
+          command: ["envoy"]
+          args: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "warn"]
+      volumes:
+        - name: config
+          configMap:
+            name: envoy-gateway-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy-gateway
+  namespace: catest
+spec:
+  type: LoadBalancer
+  selector:
+    app: envoy-gateway
+  ports:
+    - name: http
+      port: 33088
+      targetPort: 33088
+    - name: admin
+      port: 9901
+      targetPort: 9901

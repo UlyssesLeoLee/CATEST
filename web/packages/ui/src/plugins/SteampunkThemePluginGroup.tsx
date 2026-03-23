@@ -22,63 +22,64 @@ import type { PluginGroup, Plugin } from "./index";
 /* ─── Steam Particle Field Plugin (120 particles, 4 depth layers) ───── */
 
 function SteamParticleFieldPlugin() {
-  const PARTICLE_COUNT = 120;
-  const particles = React.useMemo(() => {
-    return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
-      const layer = i % 4;
-      const zone = i % 5;
-      let startX: number, startY: number;
-      switch (zone) {
-        case 0: startX = Math.random() * 60 + 20; startY = Math.random() * 10 + 88; break;
-        case 1: startX = Math.random() * 8; startY = Math.random() * 50 + 25; break;
-        case 2: startX = Math.random() * 8 + 92; startY = Math.random() * 50 + 30; break;
-        case 3: startX = Math.random() * 5 + 28; startY = Math.random() * 80 + 10; break;
-        default: startX = Math.random() * 80 + 10; startY = Math.random() * 60 + 20;
-      }
+  // Cloud-cluster approach: 6 emission vents, each spawns a tight cloud puff
+  // Each cloud = 1 parent div with multiple tiny sub-particles inside
+  // Total DOM elements: 6 clouds × 5 sub-particles = 30
+  const clouds = React.useMemo(() => {
+    const vents = [
+      { x: 8,  y: 90, driftX: 15,  driftY: -90 },
+      { x: 30, y: 94, driftX: -10, driftY: -100 },
+      { x: 55, y: 96, driftX: 5,   driftY: -85 },
+      { x: 78, y: 92, driftX: -20, driftY: -95 },
+      { x: 95, y: 88, driftX: -30, driftY: -80 },
+      { x: 3,  y: 55, driftX: 25,  driftY: -60 },
+    ];
 
-      return {
-        id: i,
-        startX, startY,
-        driftX: (Math.random() - 0.5) * 250,
-        driftY: -Math.random() * 180 - 40,
-        size: layer === 0 ? Math.random() * 16 + 8
-            : layer === 1 ? Math.random() * 35 + 18
-            : layer === 2 ? Math.random() * 55 + 35
-            : Math.random() * 90 + 60,
-        opacity: layer === 0 ? 0.55 : layer === 1 ? 0.3 : layer === 2 ? 0.12 : 0.06,
-        duration: Math.random() * 6 + 5 + layer * 2,
-        delay: Math.random() * 10,
-        blur: layer === 0 ? 3 : layer === 1 ? 7 : layer === 2 ? 14 : 24,
-        color: [
-          "rgba(255,255,255,",
-          "rgba(220,210,190,",
-          "rgba(201,168,76,",
-          "rgba(184,115,51,",
-        ][layer],
-      };
+    return vents.map((vent, vi) => {
+      const dur = 8 + (vi % 3) * 3;
+      const delay = vi * 1.5;
+      // Sub-particles tightly clustered within 6px of cloud center
+      const subs = Array.from({ length: 5 }, (_, si) => ({
+        ox: Math.sin(si * 2.3 + vi) * 4,
+        oy: Math.cos(si * 1.7 + vi) * 3,
+        size: 3 + (si % 3),  // 3-5px
+        opacity: 0.2 + (si % 3) * 0.06,
+      }));
+      return { ...vent, dur, delay, subs };
     });
   }, []);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[2] overflow-hidden">
-      {particles.map((p) => (
+      {clouds.map((cloud, ci) => (
         <div
-          key={p.id}
-          className="absolute rounded-full mix-blend-screen"
+          key={ci}
+          className="absolute"
           style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.startX}%`,
-            top: `${p.startY}%`,
-            background: `radial-gradient(circle, ${p.color}${p.opacity}) 0%, transparent 70%)`,
-            filter: `blur(${p.blur}px)`,
-            animation: `steam-field-drift ${p.duration}s ease-in-out infinite ${p.delay}s`,
-            "--drift-x": `${p.driftX}px`,
-            "--drift-y": `${p.driftY}px`,
-            "--end-scale": `${1.5 + Math.random()}`,
-            "--particle-max-opacity": `${p.opacity}`,
+            left: `${cloud.x}%`,
+            top: `${cloud.y}%`,
+            animation: `steam-field-drift ${cloud.dur}s ease-in-out infinite ${cloud.delay}s`,
+            "--drift-x": `${cloud.driftX}px`,
+            "--drift-y": `${cloud.driftY}px`,
+            "--particle-max-opacity": "0.25",
           } as React.CSSProperties}
-        />
+        >
+          {cloud.subs.map((sub, si) => (
+            <div
+              key={si}
+              className="absolute rounded-full"
+              style={{
+                width: sub.size,
+                height: sub.size,
+                left: sub.ox,
+                top: sub.oy,
+                background: `radial-gradient(circle, rgba(215,205,192,${sub.opacity}) 0%, transparent 70%)`,
+                filter: 'blur(3px)',
+                mixBlendMode: 'screen',
+              }}
+            />
+          ))}
+        </div>
       ))}
     </div>
   );
@@ -137,8 +138,6 @@ function AmbientFogPlugin() {
       <div className="bg-grid fixed inset-0 pointer-events-none opacity-30 z-0" />
       <div className="fog-layer-1" />
       <div className="fog-layer-2" />
-      <div className="fog-layer-3" />
-      <div className="fog-layer-4" />
       <div className="bg-vignette" />
       <div className="bg-grain" />
     </>
@@ -208,7 +207,7 @@ function BoilerGlowPlugin() {
 /* ─── Ember Particles — forge sparks with varied hues ──────────────── */
 
 function EmberParticlesPlugin() {
-  const EMBER_COUNT = 40;
+  const EMBER_COUNT = 20;
   const embers = React.useMemo(() => {
     return Array.from({ length: EMBER_COUNT }, (_, i) => {
       // Varied emission: forge (bottom), pipe joints (sides), scattered
@@ -319,13 +318,12 @@ function GasLampAmbientPlugin() {
 /* ─── Drifting Steam Clouds — large fog banks that drift slowly ─────── */
 
 function DriftingSteamCloudsPlugin() {
+  // Reduced: 4 clouds (was 6), smaller sizes for lighter rendering
   const clouds = React.useMemo(() => [
-    { x: -10, y: 15, w: 500, h: 120, opacity: 0.04, dur: 45, delay: 0 },
-    { x: 110, y: 35, w: 600, h: 100, opacity: 0.035, dur: 55, delay: 5 },
-    { x: -15, y: 60, w: 450, h: 90, opacity: 0.03, dur: 40, delay: 12 },
-    { x: 105, y: 80, w: 550, h: 130, opacity: 0.04, dur: 50, delay: 8 },
-    { x: -20, y: 45, w: 400, h: 80, opacity: 0.025, dur: 60, delay: 20 },
-    { x: 110, y: 10, w: 350, h: 100, opacity: 0.03, dur: 42, delay: 15 },
+    { x: -10, y: 20, w: 300, h: 80, opacity: 0.03, dur: 50, delay: 0 },
+    { x: 110, y: 40, w: 350, h: 70, opacity: 0.025, dur: 60, delay: 8 },
+    { x: -15, y: 65, w: 280, h: 60, opacity: 0.02, dur: 45, delay: 16 },
+    { x: 105, y: 80, w: 320, h: 75, opacity: 0.025, dur: 55, delay: 12 },
   ], []);
 
   return (
@@ -407,5 +405,5 @@ const driftingSteamClouds: Plugin = {
 export const SteampunkThemePluginGroup: PluginGroup = {
   id: "steampunk-theme",
   name: "Steampunk Theme",
-  plugins: [ambientFog, steamParticles, textureDecor, boilerGlow, emberParticles, heatShimmer, gasLampAmbient, driftingSteamClouds],
+  plugins: [ambientFog, steamParticles, textureDecor, emberParticles, heatShimmer, driftingSteamClouds],
 };

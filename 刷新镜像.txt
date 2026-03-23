@@ -1,0 +1,5 @@
+@('web-base','web-workspace','web-rag','web-review','web-team') | ForEach-Object { ./hot-reload-web.ps1 -K8s -App $_ }
+
+
+查看进度
+Get-Content "C:\Users\leo19\AppData\Local\Temp\claude\E--CATEST\c8b591fb-4d3b-4674-95a9-7eefb2143b23\tasks\bqpt9jqan.output" -Tail 10

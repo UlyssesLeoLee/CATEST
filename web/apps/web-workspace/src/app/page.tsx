@@ -121,7 +121,7 @@ export default function WorkspacePage() {
       <Modal open={deployOpen} onClose={() => setDeployOpen(false)} title="Deploy New Node">
         {deploySuccess ? (
           <div className="flex flex-col items-center gap-4 py-6">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+            <CheckCircle2 className="w-12 h-12 text-[#4a8b6e]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Node deployed & registered to pipeline!</p>
           </div>
         ) : (

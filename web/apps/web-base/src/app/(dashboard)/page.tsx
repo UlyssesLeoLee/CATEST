@@ -44,7 +44,7 @@ export default function HubPage() {
             Good Morning, <span className="text-[var(--text-brass)]">{userName}</span>
           </h1>
           <p className="text-[var(--text-secondary)] text-sm font-medium">
-            System status is <span className="text-emerald-400">optimal</span>. You have 3 projects pending review.
+            System status is <span className="text-[#4a8b6e]">optimal</span>. You have 3 projects pending review.
           </p>
         </div>
 
@@ -66,20 +66,27 @@ export default function HubPage() {
       {/* ── Quick Actions Grid ──────────────────────────────── */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Upload Docs", icon: Plus, color: "text-[var(--text-brass)]", bg: "bg-[#c9a84c]/10", href: getAppUrl('workspace', '/upload') },
-          { label: "Team Access", icon: Users, color: "text-[var(--copper-light)]", bg: "bg-[#d4956a]/10", href: getAppUrl('team') },
-          { label: "Security Audit", icon: Shield, color: "text-[var(--verdigris)]", bg: "bg-[#4a8b6e]/10", href: getAppUrl('review') },
-          { label: "Fast Analyze", icon: Zap, color: "text-[var(--text-ember)]", bg: "bg-[#e8a050]/10", href: getAppUrl('rag') },
+          { label: "Upload Docs", icon: Plus, color: "text-[var(--text-brass)]", href: getAppUrl('workspace', '/upload') },
+          { label: "Team Access", icon: Users, color: "text-[var(--copper-light)]", href: getAppUrl('team') },
+          { label: "Security Audit", icon: Shield, color: "text-[var(--verdigris)]", href: getAppUrl('review') },
+          { label: "Fast Analyze", icon: Zap, color: "text-[var(--text-ember)]", href: getAppUrl('rag') },
         ].map((action, i) => (
           <button
             key={i}
             onClick={() => window.location.href = action.href}
-            className="flex items-center gap-3 p-4 rounded-2xl glass-card hover:border-[#b87333]/40 transition-all group"
+            className="flex items-center gap-3 p-4 rounded-sm glass-card hover:border-[#b87333]/40 transition-all group"
           >
-            <div className={cn("p-2.5 rounded-xl group-hover:scale-110 transition-transform", action.bg, action.color)}>
+            <div className={cn(
+              "p-2.5 rounded-sm group-hover:scale-110 transition-transform border border-[#3e1b0d]/60",
+              action.color
+            )}
+            style={{
+              background: 'radial-gradient(circle at 35% 30%, #2a1a11, #0d0805)',
+              boxShadow: 'inset 0 1px 0 rgba(255,240,200,0.08), 0 2px 6px rgba(0,0,0,0.6)',
+            }}>
               <action.icon className="w-4 h-4" />
             </div>
-            <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--text-brass)] transition-colors">{action.label}</span>
+            <span className="text-sm font-black text-[var(--text-primary)] group-hover:text-[var(--text-brass)] transition-colors uppercase tracking-wider text-[10px]">{action.label}</span>
           </button>
         ))}
       </section>
@@ -102,7 +109,7 @@ export default function HubPage() {
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold mb-1.5">{stat.label}</p>
                 <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight drop-shadow-md">{stat.value}</h3>
-                <p className="text-[10px] text-emerald-400 font-bold mt-1 bg-emerald-500/10 w-fit px-1.5 py-0.5 rounded border border-emerald-500/20 shadow-sm">{stat.trend}</p>
+                <p className="text-[10px] text-[#4a8b6e] font-bold mt-1 bg-[#4a8b6e]/10 w-fit px-1.5 py-0.5 rounded-sm border border-[#4a8b6e]/20 shadow-sm">{stat.trend}</p>
               </div>
               <div className="p-3 rounded-2xl border border-[#b87333]/30 text-[#c9a84c] group-hover:text-[var(--text-primary)] transition-all duration-300 backdrop-blur-sm"
                 style={{ background: 'linear-gradient(135deg, rgba(184,115,51,0.15), rgba(0,0,0,0.4))' }}>
@@ -193,7 +200,7 @@ export default function HubPage() {
                   <div className="flex-1 flex items-center justify-between">
                     <span className="text-xs text-[var(--text-primary)] font-bold">{svc.name}</span>
                     <span className={cn("text-[10px] font-black uppercase tracking-widest",
-                      svc.status === "nominal" ? "text-emerald-400" : svc.status === "warning" ? "text-[var(--gas-lamp)]" : "text-[var(--burgundy-light)]"
+                      svc.status === "nominal" ? "text-[#4a8b6e]" : svc.status === "warning" ? "text-[var(--gas-lamp)]" : "text-[var(--burgundy-light)]"
                     )}>{svc.status === "nominal" ? "Healthy" : svc.status === "warning" ? "Syncing" : "Alert"}</span>
                   </div>
                 </div>

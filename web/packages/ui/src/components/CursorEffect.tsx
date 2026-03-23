@@ -1,24 +1,39 @@
 "use client";
 import { useEffect, useRef } from "react";
 
-interface Particle {
+interface SmokeParticle {
   x: number;
   y: number;
   vx: number;
   vy: number;
   life: number;
+  maxLife: number;
   size: number;
-  copper: boolean; // copper or brass
+  rotation: number;
+  rotSpeed: number;
+}
+
+interface SparkParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  brightness: number; // 0-1
 }
 
 export function CursorEffect() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const outerRingRef = useRef<HTMLDivElement>(null);
-  const particlesRef = useRef<Particle[]>([]);
+  const smokeRef = useRef<SmokeParticle[]>([]);
+  const sparksRef = useRef<SparkParticle[]>([]);
   const rafRef = useRef<number | undefined>(undefined);
   const cursorPos = useRef({ x: -200, y: -200 });
-  const outerPos = useRef({ x: -200, y: -200 });
+  const prevPos = useRef({ x: -200, y: -200 });
+  const isHoveringRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -37,75 +52,175 @@ export function CursorEffect() {
     window.addEventListener("resize", resize);
 
     const onMouseMove = (e: MouseEvent) => {
+      prevPos.current = { ...cursorPos.current };
       cursorPos.current = { x: e.clientX, y: e.clientY };
-      outerPos.current = { x: e.clientX, y: e.clientY };
 
       cursor.style.left = `${e.clientX}px`;
       cursor.style.top = `${e.clientY}px`;
       outerRing.style.left = `${e.clientX}px`;
       outerRing.style.top = `${e.clientY}px`;
 
-      // Check if hovering over interactive element (button, a, select, input, .glass-card)
       const target = e.target as HTMLElement;
-      const isInteractive = target.closest('button, a, select, input, .glass-card, [role="button"]');
-      
-      // Spawn more steam particles if over interactive element (pressure release)
-      const count = isInteractive ? (Math.floor(Math.random() * 5) + 6) : (Math.floor(Math.random() * 2) + 1);
-      
-      for (let i = 0; i < count; i++) {
-        particlesRef.current.push({
-          x: e.clientX + (Math.random() - 0.5) * 6,
-          y: e.clientY + (Math.random() - 0.5) * 6,
-          vx: (Math.random() - 0.5) * (isInteractive ? 2.5 : 0.8),
-          vy: -(Math.random() * (isInteractive ? 3.0 : 1.5) + 0.3),
-          life: isInteractive ? 1.2 : 0.8,
-          size: Math.random() * (isInteractive ? 4.0 : 2.0) + 1.5,
-          copper: false,
+      const isInteractive = !!target.closest('button, a, select, input, .glass-card, [role="button"]');
+      isHoveringRef.current = isInteractive;
+
+      // Calculate movement speed
+      const dx = e.clientX - prevPos.current.x;
+      const dy = e.clientY - prevPos.current.y;
+      const speed = Math.sqrt(dx * dx + dy * dy);
+
+      // Smoke particles — dense, tiny, fog-like for interactive; wispy trail otherwise
+      const smokeCount = isInteractive
+        ? Math.floor(Math.random() * 8) + 14  // dense cluster
+        : Math.max(1, Math.floor(speed * 0.3));
+
+      for (let i = 0; i < smokeCount; i++) {
+        const spread = isInteractive ? 18 : 4;
+        const maxLife = isInteractive ? 1.4 : 0.6;
+        // Gaussian-ish distribution for natural fog clustering
+        const gx = (Math.random() + Math.random() + Math.random()) / 3 - 0.5;
+        const gy = (Math.random() + Math.random() + Math.random()) / 3 - 0.5;
+        smokeRef.current.push({
+          x: e.clientX + gx * spread,
+          y: e.clientY + gy * spread,
+          vx: (Math.random() - 0.5) * (isInteractive ? 0.8 : 0.6) + dx * 0.015,
+          vy: -(Math.random() * (isInteractive ? 0.9 : 1.0) + 0.1),
+          life: maxLife,
+          maxLife,
+          size: isInteractive
+            ? Math.random() * 1.2 + 0.3  // tiny: 0.3 - 1.5 (dense fog particles)
+            : Math.random() * 2.0 + 0.8,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.08,
         });
       }
-      if (particlesRef.current.length > 200) {
-        particlesRef.current = particlesRef.current.slice(-200);
+
+      // Spark particles — tiny bright hot embers
+      const sparkCount = isInteractive
+        ? Math.floor(Math.random() * 4) + 3
+        : (speed > 3 ? Math.floor(Math.random() * 2) : 0);
+
+      for (let i = 0; i < sparkCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const vel = Math.random() * (isInteractive ? 4 : 2) + 1;
+        sparksRef.current.push({
+          x: e.clientX + (Math.random() - 0.5) * 6,
+          y: e.clientY + (Math.random() - 0.5) * 6,
+          vx: Math.cos(angle) * vel + dx * 0.05,
+          vy: Math.sin(angle) * vel - Math.random() * 1.5,
+          life: 0.6 + Math.random() * 0.4,
+          maxLife: 0.6 + Math.random() * 0.4,
+          size: Math.random() * 1.5 + 0.5,
+          brightness: 0.7 + Math.random() * 0.3,
+        });
       }
+
+      // Cap particles
+      if (smokeRef.current.length > 300) smokeRef.current = smokeRef.current.slice(-300);
+      if (sparksRef.current.length > 150) sparksRef.current = sparksRef.current.slice(-150);
     };
 
-    // Outer ring lazily follows cursor (lerp)
-    const animate = () => {
-        // outer ring tracks with cursor (no lerp, it's part of the same cursor unit)
+    let lastTime = performance.now();
 
-      // Draw particles
+    const animate = (now: number) => {
+      const dt = Math.min((now - lastTime) / 16.67, 3); // normalize to ~60fps
+      lastTime = now;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particlesRef.current = particlesRef.current.filter((p) => p.life > 0);
 
-      for (const p of particlesRef.current) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy *= 0.96;
+      // ── Draw smoke particles ──
+      smokeRef.current = smokeRef.current.filter((p) => p.life > 0);
+
+      // Use additive-style blending for fog cohesion
+      ctx.globalCompositeOperation = "screen";
+
+      for (const p of smokeRef.current) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
         p.vx *= 0.96;
-        p.vy -= 0.01; // gentle upward float
-        p.size *= 1.01; // very slow expansion
-        p.life -= 0.06; // fast decay — vanishes quickly
+        p.vy *= 0.96;
+        p.vy -= 0.012 * dt; // gentle upward drift
+        p.size += 0.08 * dt; // expand into wispy fog
+        p.life -= 0.035 * dt;
+        p.rotation += p.rotSpeed * dt;
 
-        const alpha = Math.max(0, p.life);
-        // Pure White Steam Emission
-        const r = 255;
-        const g = 255;
-        const b = 255;
+        const t = 1 - (p.life / p.maxLife); // 0 → 1 progress
+        // Smoke opacity: soft fade in, long fade out — never too bright
+        const peakAlpha = 0.18;
+        const alpha = p.life < 0.15
+          ? p.life / 0.15 * peakAlpha
+          : t < 0.1
+            ? (t / 0.1) * peakAlpha
+            : peakAlpha * (1 - (t - 0.1) / 0.9);
 
-        // Outer glow ring (very subtle diffuse halo)
-        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.0);
-        grd.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.15})`);
-        grd.addColorStop(0.6, `rgba(${r},${g},${b},${alpha * 0.04})`);
-        grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+
+        // Very soft fog blob — wide gradient, warm-tinted steam
+        const outerR = p.size * 3.5;
+        const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, outerR);
+        grd.addColorStop(0, `rgba(210,200,185,${alpha * 0.7})`);
+        grd.addColorStop(0.2, `rgba(195,185,170,${alpha * 0.5})`);
+        grd.addColorStop(0.5, `rgba(175,165,150,${alpha * 0.25})`);
+        grd.addColorStop(0.8, `rgba(160,150,135,${alpha * 0.08})`);
+        grd.addColorStop(1, `rgba(150,140,125,0)`);
+
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 2.0, 0, Math.PI * 2);
+        // Irregular ellipse — varying aspect ratio per particle
+        const aspect = 0.55 + (p.rotation % 1) * 0.4; // 0.55 - 0.95
+        ctx.ellipse(0, 0, outerR, outerR * aspect, 0, 0, Math.PI * 2);
         ctx.fillStyle = grd;
         ctx.fill();
 
-        // Core particle (small, semi-transparent)
+        ctx.restore();
+      }
+
+      // Reset compositing for sparks
+      ctx.globalCompositeOperation = "source-over";
+
+      // ── Draw spark particles ──
+      sparksRef.current = sparksRef.current.filter((p) => p.life > 0);
+
+      for (const p of sparksRef.current) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 0.08 * dt; // gravity pulls sparks down
+        p.vx *= 0.98;
+        p.life -= 0.035 * dt;
+
+        const alpha = Math.min(1, p.life / (p.maxLife * 0.3)) * p.brightness;
+
+        // Hot core — white/yellow center
+        const coreR = p.size * 0.6;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.25})`;
+        ctx.arc(p.x, p.y, coreR, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,245,220,${alpha})`;
         ctx.fill();
+
+        // Warm glow halo — orange/copper
+        const glowR = p.size * 2.0;
+        const sparkGrd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+        sparkGrd.addColorStop(0, `rgba(255,183,77,${alpha * 0.6})`);
+        sparkGrd.addColorStop(0.4, `rgba(230,126,34,${alpha * 0.3})`);
+        sparkGrd.addColorStop(1, `rgba(184,115,51,0)`);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+        ctx.fillStyle = sparkGrd;
+        ctx.fill();
+
+        // Spark trail — short line in direction of motion
+        const trailLen = Math.sqrt(p.vx * p.vx + p.vy * p.vy) * 1.5;
+        if (trailLen > 0.5) {
+          const nx = -p.vx / trailLen;
+          const ny = -p.vy / trailLen;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x + nx * trailLen * 2, p.y + ny * trailLen * 2);
+          ctx.strokeStyle = `rgba(255,200,100,${alpha * 0.4})`;
+          ctx.lineWidth = p.size * 0.4;
+          ctx.stroke();
+        }
       }
 
       rafRef.current = requestAnimationFrame(animate);

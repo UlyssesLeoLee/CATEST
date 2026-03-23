@@ -13,8 +13,10 @@ export { AppShell }      from "./components/AppShell";
 export { SearchInput }   from "./components/SearchInput";
 
 // Steampunk visual effects
+export { CursorEffect }  from "./components/CursorEffect";
 export * from './components/SteamEmission';
 export * from './components/SteampunkDecor';
+export { ScrollValve } from "./components/ScrollValve";
 export { SoundProvider, useSound } from "./components/SoundSystem";
 
 // Theme plugin group — apps use this for consistent steampunk atmosphere
