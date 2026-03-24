@@ -33,6 +33,14 @@ spec:
               value: "http://catest-hub:33080"
             - name: NEXT_PUBLIC_REVIEW_URL
               value: "http://catest-review:33081"
+            - name: REVIEW_DATABASE_URL
+              value: "postgres://catest:password@postgres.catest.svc.cluster.local:34321/catest_review"
+            - name: CATEST_AI_API_KEY
+              value: "sk-your-api-key-here"
+            - name: CATEST_AI_BASE_URL
+              value: "https://api.openai.com/v1"
+            - name: CATEST_AI_MODEL
+              value: "gpt-4o-mini"
 ---
 apiVersion: v1
 kind: Service

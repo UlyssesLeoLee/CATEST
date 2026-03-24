@@ -40,3 +40,41 @@ CREATE TABLE IF NOT EXISTS review_comments (
     parent_comment_id UUID REFERENCES review_comments(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- Translation Memory (TM) — stores verified source↔comment pairs
+-- ═══════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS translation_memory (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tm_name TEXT NOT NULL DEFAULT 'default',       -- Memory bank name
+    source_text TEXT NOT NULL,
+    target_text TEXT NOT NULL,
+    context TEXT,                                   -- Optional: file path, function name, etc.
+    quality_score REAL DEFAULT 1.0,                -- 0.0~1.0
+    usage_count INT DEFAULT 1,
+    created_by UUID,                               -- user who confirmed
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tm_source ON translation_memory USING gin(to_tsvector('simple', source_text));
+CREATE INDEX IF NOT EXISTS idx_tm_name ON translation_memory(tm_name);
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- Terminology Base (TB) — domain-specific terms and conventions
+-- ═══════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS terminology_base (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tb_name TEXT NOT NULL DEFAULT 'default',        -- Termbase name
+    source_term TEXT NOT NULL,
+    target_term TEXT NOT NULL,
+    definition TEXT,                                -- Term definition/explanation
+    domain TEXT,                                    -- e.g. 'security', 'auth', 'api'
+    forbidden BOOLEAN DEFAULT false,               -- Mark as "do not use"
+    created_by UUID,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tb_source ON terminology_base USING gin(to_tsvector('simple', source_term));
+CREATE INDEX IF NOT EXISTS idx_tb_name ON terminology_base(tb_name);

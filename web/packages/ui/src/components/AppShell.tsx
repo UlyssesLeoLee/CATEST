@@ -56,6 +56,7 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
   const { play } = useSound();
   const profileHref = `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || "33000"}/profile`;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   return (
@@ -163,118 +164,232 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
       )}
 
       {/* ══════════════════════════════════════════════════════════
-          DESKTOP SIDEBAR — hidden on mobile
+          DESKTOP SIDEBAR — hidden on mobile, collapsible
           ══════════════════════════════════════════════════════════ */}
-      <aside className="hidden md:flex w-[var(--side-pane-ratio)] max-w-[400px] min-w-[280px] m-[calc(1rem*var(--phi-inv))] mr-0 rounded-2xl industrial-copper flex-col shrink-0 relative z-30 overflow-hidden" style={{ maxHeight: 'none', height: 'auto' }}>
+      <aside className={cn(
+        "hidden md:flex m-[calc(1rem*var(--phi-inv))] mr-0 rounded-2xl industrial-copper flex-col shrink-0 relative z-30 overflow-hidden transition-all duration-500 ease-in-out",
+        sidebarCollapsed ? "w-[60px] min-w-[60px] max-w-[60px]" : "w-[var(--side-pane-ratio)] max-w-[400px] min-w-[280px]"
+      )} style={{ maxHeight: 'none', height: 'auto' }}>
+        {/* ── Collapse/Expand toggle — top edge, steam-wrapped ── */}
+        <button
+          onClick={() => { setSidebarCollapsed(!sidebarCollapsed); play('impact'); }}
+          title={sidebarCollapsed ? "Expand sidebar (show navigation)" : "Collapse sidebar (more workspace)"}
+          className={cn(
+            "absolute top-3 z-50 group transition-all duration-500",
+            sidebarCollapsed ? "right-1/2 translate-x-1/2" : "right-3"
+          )}
+        >
+          <div className="relative">
+            {/* Steam ring — animated glow pulse */}
+            <div className="absolute -inset-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle, rgba(184,115,51,0.25) 0%, rgba(255,179,71,0.1) 40%, transparent 70%)',
+                animation: 'pulse 2s ease-in-out infinite',
+              }} />
+            {/* Steam wisps — top and bottom */}
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-3 pointer-events-none opacity-0 group-hover:opacity-60 transition-opacity duration-500"
+              style={{
+                background: 'radial-gradient(ellipse at 50% 100%, rgba(200,180,140,0.3) 0%, transparent 70%)',
+                filter: 'blur(2px)',
+                animation: 'float-up 2s ease-out infinite',
+              }} />
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-2 pointer-events-none opacity-0 group-hover:opacity-40 transition-opacity duration-500"
+              style={{
+                background: 'radial-gradient(ellipse at 50% 0%, rgba(200,180,140,0.2) 0%, transparent 70%)',
+                filter: 'blur(1.5px)',
+              }} />
+            {/* Main button — brass valve look */}
+            <div className="w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 relative overflow-hidden"
+              style={{
+                borderColor: 'rgba(184,115,51,0.5)',
+                background: 'linear-gradient(145deg, #2a1a0e, #0d0805)',
+                boxShadow: '0 0 12px rgba(184,115,51,0.2), inset 0 1px 0 rgba(201,168,76,0.15), inset 0 -1px 2px rgba(0,0,0,0.5)',
+              }}>
+              {/* Metal grain texture */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 28 28">
+                <defs>
+                  <filter id="toggle-grain">
+                    <feTurbulence type="fractalNoise" baseFrequency="2" numOctaves="3" stitchTiles="stitch" />
+                    <feDiffuseLighting surfaceScale="0.8" lightingColor="#c9a84c">
+                      <feDistantLight azimuth="135" elevation="55" />
+                    </feDiffuseLighting>
+                  </filter>
+                </defs>
+                <rect width="28" height="28" filter="url(#toggle-grain)" opacity="0.1" rx="14" />
+              </svg>
+              <ChevronRight className={cn(
+                "w-3.5 h-3.5 relative z-10 transition-all duration-500 group-hover:scale-110",
+                sidebarCollapsed
+                  ? "rotate-0 text-[#c9a84c] drop-shadow-[0_0_4px_rgba(201,168,76,0.6)]"
+                  : "rotate-180 text-[var(--text-muted)] group-hover:text-[#c9a84c] group-hover:drop-shadow-[0_0_4px_rgba(201,168,76,0.4)]"
+              )} />
+            </div>
+            {/* Brass ring highlight */}
+            <div className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                border: '1px solid transparent',
+                backgroundImage: 'linear-gradient(135deg, rgba(212,184,84,0.3), transparent 50%, rgba(184,115,51,0.2))',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'border-box',
+                WebkitMaskImage: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                WebkitMaskComposite: 'xor',
+                maskComposite: 'exclude',
+                padding: '1px',
+              }} />
+          </div>
+        </button>
+
         {/* Brass rivets — all four corners */}
         {['top-3 left-3', 'top-3 right-3', 'bottom-3 left-3', 'bottom-3 right-3'].map((pos, i) => (
           <div key={i} className={`absolute ${pos} w-2 h-2 rounded-full bg-gradient-to-br from-[#d4b854] to-[#8b5a2b] shadow-[0_0_4px_rgba(184,115,51,0.4)] z-10`} />
         ))}
 
-        {/* Victorian corner filigree — top-left & bottom-right */}
-        <div className="absolute top-5 left-5 w-5 h-5 pointer-events-none z-10">
-          <div className="absolute top-0 left-0 w-4 h-px bg-[#917b3c]/30" />
-          <div className="absolute top-0 left-0 w-px h-4 bg-[#917b3c]/30" />
-        </div>
-        <div className="absolute bottom-5 right-5 w-5 h-5 pointer-events-none z-10">
-          <div className="absolute bottom-0 right-0 w-4 h-px bg-[#917b3c]/30" />
-          <div className="absolute bottom-0 right-0 w-px h-4 bg-[#917b3c]/30" />
-        </div>
-        {/* Additional corner filigree — top-right & bottom-left */}
-        <div className="absolute top-5 right-5 w-5 h-5 pointer-events-none z-10">
-          <div className="absolute top-0 right-0 w-4 h-px bg-[#917b3c]/20" />
-          <div className="absolute top-0 right-0 w-px h-4 bg-[#917b3c]/20" />
-        </div>
-        <div className="absolute bottom-5 left-5 w-5 h-5 pointer-events-none z-10">
-          <div className="absolute bottom-0 left-0 w-4 h-px bg-[#917b3c]/20" />
-          <div className="absolute bottom-0 left-0 w-px h-4 bg-[#917b3c]/20" />
-        </div>
+        {/* Victorian corner filigree — top-left & bottom-right (hidden when collapsed) */}
+        {!sidebarCollapsed && (
+          <>
+            <div className="absolute top-5 left-5 w-5 h-5 pointer-events-none z-10">
+              <div className="absolute top-0 left-0 w-4 h-px bg-[#917b3c]/30" />
+              <div className="absolute top-0 left-0 w-px h-4 bg-[#917b3c]/30" />
+            </div>
+            <div className="absolute bottom-5 right-5 w-5 h-5 pointer-events-none z-10">
+              <div className="absolute bottom-0 right-0 w-4 h-px bg-[#917b3c]/30" />
+              <div className="absolute bottom-0 right-0 w-px h-4 bg-[#917b3c]/30" />
+            </div>
+            <div className="absolute top-5 right-5 w-5 h-5 pointer-events-none z-10">
+              <div className="absolute top-0 right-0 w-4 h-px bg-[#917b3c]/20" />
+              <div className="absolute top-0 right-0 w-px h-4 bg-[#917b3c]/20" />
+            </div>
+            <div className="absolute bottom-5 left-5 w-5 h-5 pointer-events-none z-10">
+              <div className="absolute bottom-0 left-0 w-4 h-px bg-[#917b3c]/20" />
+              <div className="absolute bottom-0 left-0 w-px h-4 bg-[#917b3c]/20" />
+            </div>
+          </>
+        )}
 
-        {/* ── Sidebar decorative gears & steam ── */}
-        <CopperGear size={50} speed={45} className="absolute -top-4 -right-4 z-0 opacity-15" />
-        <CopperGear size={30} speed={30} reverse className="absolute top-8 -right-2 z-0 opacity-10" />
-        <SteamValve size={22} speed={35} className="absolute top-[55%] -left-2 z-0 opacity-12" />
-        <CopperGear size={40} speed={55} className="absolute -bottom-3 -left-3 z-0 opacity-12" />
-        <CopperGear size={24} speed={35} reverse className="absolute bottom-10 -right-1 z-0 opacity-10" />
-        {/* Sidebar steam leaks */}
-        <SteamLeak className="absolute top-[25%] -right-2 scale-75 opacity-20 rotate-180" />
-        <SteamLeak className="absolute bottom-[35%] -left-2 scale-50 opacity-15 rotate-45" />
+        {/* ── Sidebar decorative gears & steam (hidden when collapsed) ── */}
+        {!sidebarCollapsed && (
+          <>
+            <CopperGear size={50} speed={45} className="absolute -top-4 -right-4 z-0 opacity-15" />
+            <CopperGear size={30} speed={30} reverse className="absolute top-8 -right-2 z-0 opacity-10" />
+            <SteamValve size={22} speed={35} className="absolute top-[55%] -left-2 z-0 opacity-12" />
+            <CopperGear size={40} speed={55} className="absolute -bottom-3 -left-3 z-0 opacity-12" />
+            <CopperGear size={24} speed={35} reverse className="absolute bottom-10 -right-1 z-0 opacity-10" />
+            <SteamLeak className="absolute top-[25%] -right-2 scale-75 opacity-20 rotate-180" />
+            <SteamLeak className="absolute bottom-[35%] -left-2 scale-50 opacity-15 rotate-45" />
+          </>
+        )}
 
-        {/* Furnace underglow — warm glow at sidebar bottom */}
+        {/* Furnace underglow */}
         <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-0"
           style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(255,107,26,0.06) 0%, rgba(184,115,51,0.03) 40%, transparent 70%)' }} />
 
-        {/* ── Wabi-sabi 侘寂: Weathering & decay overlays ── */}
-        {/* Rust drip streaks — water damage running down from top */}
-        <div className="absolute top-0 right-[22%] w-[3px] h-[35%] pointer-events-none z-[1] opacity-60"
-          style={{ background: 'linear-gradient(180deg, rgba(139,69,19,0.25) 0%, rgba(139,69,19,0.08) 60%, transparent 100%)', filter: 'blur(0.5px)' }} />
-        <div className="absolute top-0 right-[55%] w-[2px] h-[22%] pointer-events-none z-[1] opacity-40"
-          style={{ background: 'linear-gradient(180deg, rgba(160,82,45,0.20) 0%, rgba(160,82,45,0.05) 70%, transparent 100%)', filter: 'blur(0.3px)' }} />
-        <div className="absolute top-[15%] left-[8%] w-[2px] h-[18%] pointer-events-none z-[1] opacity-35"
-          style={{ background: 'linear-gradient(180deg, rgba(139,69,19,0.15) 0%, transparent 100%)' }} />
+        {/* ── Wabi-sabi overlays (hidden when collapsed) ── */}
+        {!sidebarCollapsed && (
+          <>
+            <div className="absolute top-0 right-[22%] w-[3px] h-[35%] pointer-events-none z-[1] opacity-60"
+              style={{ background: 'linear-gradient(180deg, rgba(139,69,19,0.25) 0%, rgba(139,69,19,0.08) 60%, transparent 100%)', filter: 'blur(0.5px)' }} />
+            <div className="absolute top-0 right-[55%] w-[2px] h-[22%] pointer-events-none z-[1] opacity-40"
+              style={{ background: 'linear-gradient(180deg, rgba(160,82,45,0.20) 0%, rgba(160,82,45,0.05) 70%, transparent 100%)', filter: 'blur(0.3px)' }} />
+            <div className="absolute top-[15%] left-[8%] w-[2px] h-[18%] pointer-events-none z-[1] opacity-35"
+              style={{ background: 'linear-gradient(180deg, rgba(139,69,19,0.15) 0%, transparent 100%)' }} />
+            <div className="absolute top-[40%] left-[5%] w-12 h-8 rounded-full pointer-events-none z-[1] opacity-30"
+              style={{ background: 'radial-gradient(ellipse, rgba(74,139,110,0.2) 0%, transparent 70%)', filter: 'blur(3px)' }} />
+            <div className="absolute bottom-[25%] right-[10%] w-8 h-6 rounded-full pointer-events-none z-[1] opacity-25"
+              style={{ background: 'radial-gradient(ellipse, rgba(62,120,95,0.15) 0%, transparent 65%)', filter: 'blur(2px)' }} />
+            <div className="absolute top-0 left-0 w-16 h-16 pointer-events-none z-[1]"
+              style={{ background: 'radial-gradient(circle at 0% 0%, rgba(0,0,0,0.15) 0%, transparent 70%)' }} />
+            <div className="absolute bottom-0 right-0 w-20 h-20 pointer-events-none z-[1]"
+              style={{ background: 'radial-gradient(circle at 100% 100%, rgba(0,0,0,0.12) 0%, transparent 60%)' }} />
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-[1] opacity-[0.07]" preserveAspectRatio="none" viewBox="0 0 100 300">
+              <path d="M 72 0 L 70 25 L 73 40 L 68 55 L 71 70" stroke="rgba(0,0,0,0.8)" strokeWidth="0.3" fill="none" />
+              <path d="M 15 120 L 18 140 L 14 155 L 20 170" stroke="rgba(0,0,0,0.6)" strokeWidth="0.2" fill="none" />
+              <path d="M 85 200 L 82 220 L 86 235 L 80 250" stroke="rgba(0,0,0,0.5)" strokeWidth="0.25" fill="none" />
+            </svg>
+          </>
+        )}
 
-        {/* Verdigris (green patina) blotches — oxidation over time */}
-        <div className="absolute top-[40%] left-[5%] w-12 h-8 rounded-full pointer-events-none z-[1] opacity-30"
-          style={{ background: 'radial-gradient(ellipse, rgba(74,139,110,0.2) 0%, transparent 70%)', filter: 'blur(3px)' }} />
-        <div className="absolute bottom-[25%] right-[10%] w-8 h-6 rounded-full pointer-events-none z-[1] opacity-25"
-          style={{ background: 'radial-gradient(ellipse, rgba(62,120,95,0.15) 0%, transparent 65%)', filter: 'blur(2px)' }} />
-
-        {/* Edge grime — dark accumulation at corners */}
-        <div className="absolute top-0 left-0 w-16 h-16 pointer-events-none z-[1]"
-          style={{ background: 'radial-gradient(circle at 0% 0%, rgba(0,0,0,0.15) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-0 right-0 w-20 h-20 pointer-events-none z-[1]"
-          style={{ background: 'radial-gradient(circle at 100% 100%, rgba(0,0,0,0.12) 0%, transparent 60%)' }} />
-
-        {/* Hairline cracks — stress fractures in the metal surface */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-[1] opacity-[0.07]" preserveAspectRatio="none" viewBox="0 0 100 300">
-          <path d="M 72 0 L 70 25 L 73 40 L 68 55 L 71 70" stroke="rgba(0,0,0,0.8)" strokeWidth="0.3" fill="none" />
-          <path d="M 15 120 L 18 140 L 14 155 L 20 170" stroke="rgba(0,0,0,0.6)" strokeWidth="0.2" fill="none" />
-          <path d="M 85 200 L 82 220 L 86 235 L 80 250" stroke="rgba(0,0,0,0.5)" strokeWidth="0.25" fill="none" />
-        </svg>
-
-        {/* Soot deposit at bottom — furnace residue */}
+        {/* Soot deposit at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-6 pointer-events-none z-[1]"
           style={{ background: 'linear-gradient(0deg, rgba(10,6,3,0.25) 0%, transparent 100%)' }} />
 
         {/* Brand Header */}
-        <div className="p-7 pb-5 relative z-10">
+        <div className={cn("relative z-10 transition-all duration-500", sidebarCollapsed ? "p-2 pb-2" : "p-7 pb-5")}>
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
+            <div className={cn(
+              "rounded-xl flex items-center justify-center shrink-0 overflow-hidden transition-all duration-500",
+              sidebarCollapsed ? "w-9 h-9" : "w-11 h-11"
+            )}
               style={{
                 background: 'linear-gradient(135deg, #1a1408, #0d0a04)',
                 border: '1px solid rgba(184,115,51,0.4)',
                 boxShadow: '0 0 15px rgba(184,115,51,0.15), inset 0 1px 0 rgba(201,168,76,0.1)'
               }}>
-               <img src="/icon.png" alt="CATEST" className="w-6 h-6 object-contain" />
+               <img src="/icon.png" alt="CATEST" className={cn("object-contain transition-all duration-500", sidebarCollapsed ? "w-5 h-5" : "w-6 h-6")} />
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xl font-black tracking-tight text-[var(--text-primary)] truncate" style={{ textShadow: '0 0 20px rgba(184,115,51,0.2)' }}>
-                CATEST
+            {!sidebarCollapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="text-xl font-black tracking-tight text-[var(--text-primary)] truncate" style={{ textShadow: '0 0 20px rgba(184,115,51,0.2)' }}>
+                  CATEST
+                </div>
+                <div className="text-[9px] uppercase tracking-[0.25em] text-[var(--brass)] font-bold truncate flex items-center gap-1">
+                  <Cog className="w-2.5 h-2.5 animate-spin" style={{ animationDuration: '8s' }} />
+                  Engine v4.2
+                </div>
               </div>
-              <div className="text-[9px] uppercase tracking-[0.25em] text-[var(--brass)] font-bold truncate flex items-center gap-1">
-                <Cog className="w-2.5 h-2.5 animate-spin" style={{ animationDuration: '8s' }} />
-                Engine v4.2
-              </div>
-            </div>
-            {/* Mini gauge in header */}
-            <PressureGauge size={34} value={92} max={100} className="shrink-0 opacity-60" />
+            )}
+            {!sidebarCollapsed && <PressureGauge size={34} value={92} max={100} className="shrink-0 opacity-60" />}
           </div>
         </div>
 
-        {/* Victorian ornament divider with gear centerpiece */}
-        <div className="mx-6 mb-2 relative flex items-center">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/40 to-transparent" />
-          <CopperGear size={14} speed={20} className="mx-1 opacity-40" />
-          <div className="mx-1 w-1.5 h-1.5 rotate-45 border border-[#917b3c]/30 bg-[#0e0b08]" />
-          <CopperGear size={14} speed={20} reverse className="mx-1 opacity-40" />
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/40 to-transparent" />
-        </div>
+        {/* Victorian ornament divider (hidden when collapsed) */}
+        {!sidebarCollapsed && (
+          <div className="mx-6 mb-2 relative flex items-center">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/40 to-transparent" />
+            <CopperGear size={14} speed={20} className="mx-1 opacity-40" />
+            <div className="mx-1 w-1.5 h-1.5 rotate-45 border border-[#917b3c]/30 bg-[#0e0b08]" />
+            <CopperGear size={14} speed={20} reverse className="mx-1 opacity-40" />
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/40 to-transparent" />
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="mx-2 mb-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/30 to-transparent" />
+        )}
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-3 space-y-2 overflow-y-auto custom-scrollbar relative min-w-0 z-10">
+        <nav className={cn(
+          "flex-1 py-2 space-y-1 overflow-y-auto custom-scrollbar relative min-w-0 z-10 transition-all duration-500",
+          sidebarCollapsed ? "px-1.5" : "px-4 space-y-2 py-3"
+        )}>
           {apps.map((app, index) => {
             const Icon = app.icon;
             const isActive = activeApp === app.id;
+
+            if (sidebarCollapsed) {
+              return (
+                <a
+                  key={app.id}
+                  href={app.href}
+                  onClick={() => play('impact')}
+                  title={app.name}
+                  className={cn(
+                    "group flex items-center justify-center w-full py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden",
+                    isActive
+                      ? "bg-gradient-to-b from-[#b87333]/15 to-[#c9a84c]/5 border border-[#b87333]/40 shadow-[0_0_12px_rgba(184,115,51,0.12)]"
+                      : "border border-transparent hover:bg-[#b87333]/8 hover:border-[#b87333]/15"
+                  )}
+                >
+                  {isActive && (
+                    <div className="absolute inset-y-2 left-0 w-0.5 rounded-full shadow-[0_0_6px_rgba(255,179,71,0.5)]"
+                      style={{ background: 'linear-gradient(to bottom, #d4b854, #b87333)' }} />
+                  )}
+                  <Icon className={cn(
+                    "w-[18px] h-[18px] transition-all duration-300",
+                    isActive ? "text-[var(--text-brass)] drop-shadow-[0_0_8px_rgba(212,184,84,0.5)]" : "text-[var(--text-muted)] group-hover:text-[#c9a84c]"
+                  )} />
+                </a>
+              );
+            }
+
             return (
               <a
                 key={app.id}
@@ -337,46 +452,60 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
             );
           })}
 
-          {/* Decorative valve between nav and pressure gauge */}
-          <div className="flex items-center justify-center py-2 opacity-30">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/30 to-transparent" />
-            <SteamValve size={16} speed={30} className="mx-2" />
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/30 to-transparent" />
-          </div>
+          {/* Decorative valve (hidden when collapsed) */}
+          {!sidebarCollapsed && (
+            <div className="flex items-center justify-center py-2 opacity-30">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/30 to-transparent" />
+              <SteamValve size={16} speed={30} className="mx-2" />
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#b87333]/30 to-transparent" />
+            </div>
+          )}
         </nav>
 
-        {/* System pressure gauge */}
-        <div className="px-5 py-3 relative z-10">
-          <PressureValveIndicator value={92} label="System Pressure" status="nominal" />
-        </div>
+        {/* System pressure gauge (hidden when collapsed) */}
+        {!sidebarCollapsed && (
+          <div className="px-5 py-3 relative z-10">
+            <PressureValveIndicator value={92} label="System Pressure" status="nominal" />
+          </div>
+        )}
 
         {/* Sidebar Footer — User Card */}
-        <div className="p-4 pt-2 mt-auto border-t border-[#b87333]/10 relative z-10">
-          <a
-            href={profileHref}
-            className="flex items-center gap-4 p-4 rounded-xl bg-[#0d0a04]/40 border border-[#b87333]/10 hover:border-[#b87333]/30 hover:bg-[#b87333]/5 transition-all cursor-pointer group min-w-0"
-          >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-[#3e1b0d]/60 group-hover:border-[#b87333]/40 transition-all shrink-0 relative overflow-hidden"
-              style={{ background: 'linear-gradient(145deg, #1a1008, #0d0805)', boxShadow: 'inset 0 1px 0 rgba(255,240,200,0.06), inset 0 -1px 2px rgba(0,0,0,0.4)' }}>
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 40 40">
-                <defs><filter id="user-grain"><feTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="3" stitchTiles="stitch" /><feDiffuseLighting surfaceScale="1" lightingColor="#8b7355"><feDistantLight azimuth="135" elevation="55" /></feDiffuseLighting></filter></defs>
-                <rect width="40" height="40" filter="url(#user-grain)" opacity="0.08" rx="8" />
-              </svg>
-              <User className="w-5 h-5 text-[#c9a84c] relative z-10" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[var(--text-primary)] truncate">{user?.displayName || user?.email?.split('@')[0] || "Operator"}</p>
-              <p className="text-[9px] font-semibold text-[var(--text-muted)] uppercase tracking-widest truncate">{user?.email || "System Node"}</p>
-            </div>
-            <Settings className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[#c9a84c] transition-colors shrink-0 group-hover:animate-spin" style={{ animationDuration: '3s' }} />
-          </a>
+        <div className={cn("mt-auto border-t border-[#b87333]/10 relative z-10 transition-all duration-500", sidebarCollapsed ? "p-1.5 pt-1.5" : "p-4 pt-2")}>
+          {sidebarCollapsed ? (
+            <a
+              href={profileHref}
+              title={user?.displayName || user?.email?.split('@')[0] || "Operator"}
+              className="flex items-center justify-center py-2 rounded-xl bg-[#0d0a04]/40 border border-[#b87333]/10 hover:border-[#b87333]/30 hover:bg-[#b87333]/5 transition-all"
+            >
+              <User className="w-4.5 h-4.5 text-[#c9a84c]" />
+            </a>
+          ) : (
+            <a
+              href={profileHref}
+              className="flex items-center gap-4 p-4 rounded-xl bg-[#0d0a04]/40 border border-[#b87333]/10 hover:border-[#b87333]/30 hover:bg-[#b87333]/5 transition-all cursor-pointer group min-w-0"
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-[#3e1b0d]/60 group-hover:border-[#b87333]/40 transition-all shrink-0 relative overflow-hidden"
+                style={{ background: 'linear-gradient(145deg, #1a1008, #0d0805)', boxShadow: 'inset 0 1px 0 rgba(255,240,200,0.06), inset 0 -1px 2px rgba(0,0,0,0.4)' }}>
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 40 40">
+                  <defs><filter id="user-grain"><feTurbulence type="fractalNoise" baseFrequency="1.5" numOctaves="3" stitchTiles="stitch" /><feDiffuseLighting surfaceScale="1" lightingColor="#8b7355"><feDistantLight azimuth="135" elevation="55" /></feDiffuseLighting></filter></defs>
+                  <rect width="40" height="40" filter="url(#user-grain)" opacity="0.08" rx="8" />
+                </svg>
+                <User className="w-5 h-5 text-[#c9a84c] relative z-10" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-[var(--text-primary)] truncate">{user?.displayName || user?.email?.split('@')[0] || "Operator"}</p>
+                <p className="text-[9px] font-semibold text-[var(--text-muted)] uppercase tracking-widest truncate">{user?.email || "System Node"}</p>
+              </div>
+              <Settings className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[#c9a84c] transition-colors shrink-0 group-hover:animate-spin" style={{ animationDuration: '3s' }} />
+            </a>
+          )}
         </div>
       </aside>
 
       {/* ══════════════════════════════════════════════════════════
-          CENTRAL PIPING SYSTEM — desktop only
+          CENTRAL PIPING SYSTEM — desktop only (hidden when collapsed)
           ══════════════════════════════════════════════════════════ */}
-      <div className="hidden md:flex flex-col h-screen pt-4 pb-4 relative z-20">
+      <div className={cn("hidden md:flex flex-col h-screen pt-4 pb-4 relative z-20 transition-all duration-500", sidebarCollapsed && "opacity-0 w-0 overflow-hidden pointer-events-none")}>
         {/* Wabi-sabi: verdigris drip on pipe column */}
         <div className="absolute left-[2px] top-[25%] w-[6px] h-[8%] pointer-events-none z-[1] opacity-40"
           style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(74,139,110,0.25) 0%, transparent 70%)', filter: 'blur(1px)' }} />

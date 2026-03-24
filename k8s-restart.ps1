@@ -31,6 +31,7 @@ $K8s = Join-Path $PSScriptRoot 'k8s'
 
 # ── Service Registry ─────────────────────────────────────────────────────────
 $Services = @{
+    postgres  = @{ Deploy = $null;                   Image = 'ghcr.io/ulyssesleolee/catest-postgres:latest';      Module = 'infra'; Type = 'statefulset'; Dir = 'docker/postgres' }
     gateway   = @{ Deploy = 'catest-hub';            Image = 'ghcr.io/ulyssesleolee/catest-gateway:latest';       Module = 'rust' }
     parser    = @{ Deploy = 'catest-workspace';      Image = 'ghcr.io/ulyssesleolee/catest-parser:latest';        Module = 'rust' }
     embedding = @{ Deploy = 'catest-intelligence';   Image = 'ghcr.io/ulyssesleolee/catest-embedding:latest';     Module = 'rust' }
@@ -277,7 +278,10 @@ if ($Build) {
     foreach ($name in $Selected) {
         $spec = $Services[$name]
         Log "  Building $name -> $($spec.Image)" Cyan
-        if ($spec.Module -eq 'rust') {
+        if ($spec.Module -eq 'infra') {
+            $infraDir = Join-Path $PSScriptRoot $spec.Dir
+            docker build -t $spec.Image -f "$infraDir/Dockerfile" $infraDir
+        } elseif ($spec.Module -eq 'rust') {
             docker build -t $spec.Image --build-arg "SERVICE_NAME=catest-$name" -f $rustDockerfile $PSScriptRoot
         } else {
             docker build -t $spec.Image -f "$($spec.Dir)/Dockerfile" (Join-Path $PSScriptRoot "web")
@@ -328,6 +332,13 @@ if ($SkipInfra) {
             kube apply -f $p
         }
     }
+    # If postgres was rebuilt, restart the statefulset to pick up the new image
+    if ('postgres' -in $Selected -and ($Build -or $LoadImages)) {
+        Log "  Restarting postgres statefulset (new image with pgvector + AGE)..." Yellow
+        kubectl rollout restart statefulset/postgres -n $Namespace 2>&1 | Out-Null
+        kubectl rollout status statefulset/postgres -n $Namespace --timeout=120s 2>&1 | Out-Null
+    }
+
     # ConfigMap for DB init scripts
     Log "  postgres-init-scripts (configmap)" Cyan
     kubectl create configmap postgres-init-scripts `
@@ -359,8 +370,13 @@ if ($SkipInfra) {
             foreach ($db in @('catest_hub', 'catest_gateway', 'catest_ingestion', 'catest_intelligence', 'catest_workspace', 'catest_review')) {
                 kubectl exec -n $Namespace postgres-0 -- psql -U catest -c "CREATE DATABASE $db OWNER catest;" 2>&1 | Out-Null
             }
+            # Enable pgvector + AGE extensions on all databases
+            foreach ($db in @('catest_hub', 'catest_gateway', 'catest_ingestion', 'catest_intelligence', 'catest_workspace', 'catest_review')) {
+                kubectl exec -n $Namespace postgres-0 -- psql -U catest -d $db -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS age;" 2>&1 | Out-Null
+            }
+            Log "    pgcrypto + pgvector + AGE enabled on all databases" DarkGray
             # Create tenants table in catest_intelligence (needed by rag-modules FK references)
-            kubectl exec -n $Namespace postgres-0 -- psql -U catest -d catest_intelligence -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE TABLE IF NOT EXISTS tenants (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());" 2>&1 | Out-Null
+            kubectl exec -n $Namespace postgres-0 -- psql -U catest -d catest_intelligence -c "CREATE TABLE IF NOT EXISTS tenants (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());" 2>&1 | Out-Null
             # Run all SQL init files in order
             foreach ($sql in (Get-ChildItem "$initDir/*.sql" | Sort-Object Name)) {
                 Log "    $($sql.Name)" DarkGray

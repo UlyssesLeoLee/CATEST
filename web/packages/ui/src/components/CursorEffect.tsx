@@ -246,7 +246,7 @@ export function CursorEffect() {
           top: 0,
           left: 0,
           pointerEvents: "none",
-          zIndex: 9997,
+          zIndex: 999997,
         }}
       />
 
@@ -261,7 +261,7 @@ export function CursorEffect() {
           height: 36,
           transform: "translate(-50%, -50%)",
           pointerEvents: "none",
-          zIndex: 9998,
+          zIndex: 999998,
           border: "1px solid rgba(184, 115, 51, 0.5)",
           borderRadius: "50%",
           boxShadow: "0 0 10px rgba(184, 115, 51, 0.2)",
@@ -279,7 +279,7 @@ export function CursorEffect() {
           height: 16,
           transform: "translate(-50%, -50%)",
           pointerEvents: "none",
-          zIndex: 9999,
+          zIndex: 999999,
         }}
       >
         {/* Ring */}

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: ghcr.io/ulyssesleolee/catest-postgres:latest
           env:
             - name: POSTGRES_DB
               value: catest

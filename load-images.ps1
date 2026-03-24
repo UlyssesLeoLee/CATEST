@@ -14,6 +14,7 @@ $ErrorActionPreference = 'Stop'
 
 # Service registry (mirrored from k8s-restart.ps1)
 $Services = @{
+    postgres  = @{ Image = 'ghcr.io/ulyssesleolee/catest-postgres:latest' }
     gateway   = @{ Image = 'ghcr.io/ulyssesleolee/catest-gateway:latest' }
     parser    = @{ Image = 'ghcr.io/ulyssesleolee/catest-parser:latest' }
     embedding = @{ Image = 'ghcr.io/ulyssesleolee/catest-embedding:latest' }

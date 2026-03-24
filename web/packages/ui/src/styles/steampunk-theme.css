@@ -1548,6 +1548,18 @@ input[type="range"]::-moz-range-track {
   50% { box-shadow: inset 0 1px 0 rgba(74, 139, 110, 0.2), 0 1px 6px rgba(74, 139, 110, 0.2); }
 }
 
+/* ─── Sidebar Toggle Steam Animations ─── */
+@keyframes float-up {
+  0%   { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+  50%  { opacity: 0.4; }
+  100% { transform: translateX(-50%) translateY(-8px); opacity: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50%      { transform: scale(1.15); opacity: 0.7; }
+}
+
 /* ─── Gas Lamp Indicator Dots (replace flat colored dots) ─── */
 .sp-indicator {
   width: 6px;

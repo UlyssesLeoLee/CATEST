@@ -5,12 +5,15 @@
 #   ./k8s-build.ps1 -Only gateway,web  # Build specific images
 #   ./k8s-build.ps1 -Rust              # Build only Rust services
 #   ./k8s-build.ps1 -Web               # Build only Web apps
+#   ./k8s-build.ps1 -Infra             # Build only infra images (postgres w/ pgvector+AGE)
+#   ./k8s-build.ps1 -Only postgres     # Rebuild just PostgreSQL
 
 [CmdletBinding()]
 param(
     [string]$Only = '',
     [switch]$Rust,
-    [switch]$Web
+    [switch]$Web,
+    [switch]$Infra
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,6 +21,8 @@ $Root = $PSScriptRoot
 
 # ── Image registry ────────────────────────────────────────────────────────────
 $Images = [ordered]@{
+    # Infrastructure (custom images with extensions)
+    postgres  = @{ Tag = 'ghcr.io/ulyssesleolee/catest-postgres:latest';    Type = 'infra'; Dir = 'docker/postgres' }
     # Rust services (built from rust.Dockerfile with SERVICE_NAME arg)
     gateway   = @{ Tag = 'ghcr.io/ulyssesleolee/catest-gateway:latest';       Type = 'rust'; Bin = 'catest-gateway' }
     parser    = @{ Tag = 'ghcr.io/ulyssesleolee/catest-parser:latest';        Type = 'rust'; Bin = 'catest-parser' }
@@ -47,6 +52,8 @@ $targets = if ($Only -ne '') {
     $Images.Keys | Where-Object { $Images[$_].Type -eq 'rust' }
 } elseif ($Web) {
     $Images.Keys | Where-Object { $Images[$_].Type -eq 'web' }
+} elseif ($Infra) {
+    $Images.Keys | Where-Object { $Images[$_].Type -eq 'infra' }
 } else {
     $Images.Keys
 }
@@ -66,7 +73,11 @@ foreach ($name in $targets) {
 
     $buildSw = [System.Diagnostics.Stopwatch]::StartNew()
 
-    if ($spec.Type -eq 'rust') {
+    if ($spec.Type -eq 'infra') {
+        docker build -t $tag `
+            -f "$Root/$($spec.Dir)/Dockerfile" `
+            "$Root/$($spec.Dir)"
+    } elseif ($spec.Type -eq 'rust') {
         docker build -t $tag `
             --build-arg "SERVICE_NAME=$($spec.Bin)" `
             -f "$Root/rust.Dockerfile" `

@@ -28,6 +28,26 @@ kubectl create configmap postgres-init-scripts `
   --namespace catest `
   --dry-run=client -o yaml | kubectl apply -f -
 
+# 4b. Build custom PostgreSQL image (pgvector + AGE) if not already present
+$pgImage = 'ghcr.io/ulyssesleolee/catest-postgres:latest'
+$pgExists = docker images --quiet $pgImage 2>$null
+if (-not $pgExists) {
+    Write-Host "Building custom PostgreSQL image (pgvector + AGE)..." -ForegroundColor Yellow
+    docker build -t $pgImage -f ../docker/postgres/Dockerfile ../docker/postgres
+    if ($LASTEXITCODE -ne 0) { Write-Error "PostgreSQL image build failed"; exit 1 }
+}
+# Load into kind cluster if applicable
+$ctx = kubectl config current-context 2>&1
+if ($ctx -match 'kind' -or $ctx -match 'desktop') {
+    Write-Host "Loading PostgreSQL image into cluster..."
+    $tmpTar = Join-Path $env:TEMP "catest-postgres.tar"
+    docker save -o $tmpTar $pgImage 2>&1 | Out-Null
+    docker cp $tmpTar "desktop-control-plane:/image.tar" 2>&1 | Out-Null
+    docker exec desktop-control-plane ctr --namespace=k8s.io images import --all-platforms /image.tar 2>&1 | Out-Null
+    docker exec desktop-control-plane rm -f /image.tar 2>&1 | Out-Null
+    Remove-Item -Force $tmpTar -ErrorAction SilentlyContinue
+}
+
 # 5. Apply infrastructure components
 Write-Host "Applying Infrastructure Components..."
 kubectl apply -f infra/postgres/

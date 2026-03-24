@@ -23,8 +23,9 @@ if (Test-Path ".env") {
 
 Write-Host "🚀 Initializing CATEST Distributed Platform..." -ForegroundColor Cyan
 
-# 1. Infrastructure Boot
+# 1. Infrastructure Boot (build custom postgres with pgvector + AGE, then start all)
 Write-Host "📦 [1/4] Booting Infrastructure (Docker Compose)..." -ForegroundColor Yellow
+docker-compose build postgres
 docker-compose up -d
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Docker failed. Ensure Docker Desktop is healthy."
