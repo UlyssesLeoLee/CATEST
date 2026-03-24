@@ -20,7 +20,7 @@ spec:
       containers:
         - name: web-workspace
           image: ghcr.io/ulyssesleolee/catest-web-workspace:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
           envFrom:

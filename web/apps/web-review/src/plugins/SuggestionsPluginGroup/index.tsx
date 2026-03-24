@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { type PluginGroup } from "@catest/ui/plugins";
-import { Badge, Button, cn } from "@catest/ui";
+import { Badge, Button, cn, useCookieState, COOKIE_KEYS } from "@catest/ui";
 import {
   Sparkles,
   BookOpen,
@@ -98,7 +98,7 @@ function AnalysisTab() {
 // ── Translation Memory Tab ───────────────────────────────────────────
 function MemoryTab() {
   const [banks, setBanks] = useState<TMBank[]>([]);
-  const [selectedBank, setSelectedBank] = useState("default");
+  const [selectedBank, setSelectedBank] = useCookieState(COOKIE_KEYS.REVIEW_TM_BANK, "default");
   const [entries, setEntries] = useState<TMEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -200,7 +200,7 @@ function MemoryTab() {
 // ── Terminology Base Tab ─────────────────────────────────────────────
 function TerminologyTab() {
   const [banks, setBanks] = useState<TBBank[]>([]);
-  const [selectedBank, setSelectedBank] = useState("default");
+  const [selectedBank, setSelectedBank] = useCookieState(COOKIE_KEYS.REVIEW_TB_BANK, "default");
   const [entries, setEntries] = useState<TBEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);

@@ -20,7 +20,7 @@ spec:
       containers:
         - name: web-team
           image: ghcr.io/ulyssesleolee/catest-web-team:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3004
           envFrom:

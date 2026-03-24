@@ -14,7 +14,7 @@ spec:
         containers:
           - name: batch-worker
             image: ghcr.io/ulyssesleolee/catest-batch:latest
-            imagePullPolicy: Never
+            imagePullPolicy: IfNotPresent
             env:
               - name: BATCH_MODE
                 value: "worker"

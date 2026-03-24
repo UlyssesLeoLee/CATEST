@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { ProjectPluginGroup } from "@/plugins/ProjectPluginGroup";
+import { ImportPluginGroup } from "@/plugins/ImportPluginGroup";
 import { PluginGroupRenderer } from "@catest/ui/plugins";
 import { Card, Badge, Button, getAppUrl, VictorianDivider } from "@catest/ui";
-import { Layers, Cpu, Network, Plus, ArrowRight, X, Loader2, CheckCircle2, Server, Link, Tag } from "lucide-react";
+import { Layers, Cpu, Network, Plus, ArrowRight, X, Loader2, CheckCircle2, Server, Link, Tag, FolderUp } from "lucide-react";
 
 const GATEWAY = "http://localhost:33080";
 
@@ -109,7 +110,15 @@ export default function WorkspacePage() {
         ))}
       </div>
 
-      {/* ── Main Content ────────────────────────────────────── */}
+      {/* ── Project Files & Import ────────────────────────── */}
+      <Card variant="glass" className="bg-[#b87333]/5 border-[#b87333]/20">
+        <div className="p-1 bg-gradient-to-r from-transparent via-[#c9a84c]/10 to-transparent" />
+        <div className="p-6">
+          <PluginGroupRenderer group={ImportPluginGroup} />
+        </div>
+      </Card>
+
+      {/* ── Synchronized Repositories ─────────────────────── */}
       <Card variant="glass" className="bg-[#b87333]/5 border-[#b87333]/20">
         <div className="p-1 bg-gradient-to-r from-transparent via-[#c9a84c]/10 to-transparent" />
         <div className="p-6">

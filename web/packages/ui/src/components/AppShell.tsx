@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 
 import { APP_URLS } from "../lib/navigation";
+import { useBoolCookieState } from "../hooks/useCookieState";
+import { COOKIE_KEYS } from "../lib/cookies";
 import { CopperGear, SteamValve, MechanicalPiston, RelayStatus, SteamLeak, PressureValveIndicator, PressureGauge } from "./SteampunkDecor";
 import { ScrollValve } from "./ScrollValve";
 import { SoundProvider, useSound } from "./SoundSystem";
@@ -56,7 +58,7 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
   const { play } = useSound();
   const profileHref = `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || "33000"}/profile`;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useBoolCookieState(COOKIE_KEYS.SIDEBAR_COLLAPSED, false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   return (

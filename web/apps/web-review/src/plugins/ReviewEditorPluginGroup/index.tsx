@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { type PluginGroup } from "@catest/ui/plugins";
-import { Badge, Button, cn } from "@catest/ui";
+import { Badge, Button, cn, useCookieState, COOKIE_KEYS } from "@catest/ui";
 import {
   Check,
   X,
@@ -510,7 +510,7 @@ function exportCatest(segments: Segment[], commentData: Record<number, string>, 
 
 // ── Main Component ───────────────────────────────────────────────────
 function ReviewEditorCombined() {
-  const [commentLang, setCommentLang] = useState("en");
+  const [commentLang, setCommentLang] = useCookieState(COOKIE_KEYS.REVIEW_LANG, "en");
   const [langOpen, setLangOpen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);

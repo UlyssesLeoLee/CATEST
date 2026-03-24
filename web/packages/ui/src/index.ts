@@ -22,6 +22,10 @@ export { SoundProvider, useSound } from "./components/SoundSystem";
 // Theme plugin group — apps use this for consistent steampunk atmosphere
 export { SteampunkThemePluginGroup } from "./plugins/SteampunkThemePluginGroup";
 
+// Hooks
+export { useCookieState, useBoolCookieState } from "./hooks/useCookieState";
+
 // Utilities
 export { cn }            from "./lib/utils";
 export { getAppUrl, APP_URLS, isSaaSMode } from "./lib/navigation";
+export { getCookie, setCookie, deleteCookie, getBoolCookie, setBoolCookie, getJsonCookie, setJsonCookie, COOKIE_KEYS, COOKIE_TTL } from "./lib/cookies";

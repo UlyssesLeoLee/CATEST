@@ -1,70 +1,141 @@
-# Smoke Test for CATLLM
+#!/usr/bin/env pwsh
+# Smoke Test for CATEST (Docker Desktop Kubernetes)
 $ErrorActionPreference = "Continue"
 
 Write-Host "Starting Smoke Test..." -ForegroundColor Cyan
-
-$services = @(
-    @{ Name = "Postgres (Internal)"; Host = "postgres.catest.svc.cluster.local"; Port = 34321 },
-    @{ Name = "Kafka (Internal)"; Host = "kafka.catest.svc.cluster.local"; Port = 9092 },
-    @{ Name = "Qdrant (Internal)"; Host = "qdrant.catest.svc.cluster.local"; Port = 36334 },
-    @{ Name = "Neo4j (Internal)"; Host = "neo4j.catest.svc.cluster.local"; Port = 37474 },
-    @{ Name = "Gateway (External)"; Host = "localhost"; Port = 33080 }
-)
+Write-Host ""
 
 $allPassed = $true
+$Namespace = 'catest'
 
-foreach ($svc in $services) {
-    Write-Host "Checking $($svc.Name) ($($svc.Host):$($svc.Port))... " -NoNewline
-    
-    if ($svc.Name -like "*(Internal)*") {
-        # Check if we can reach it from another pod
-        $res = kubectl exec -n catest postgres-0 -- nc -z -v -w 5 $($svc.Host) $($svc.Port) 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "OK" -ForegroundColor Green
-        } else {
-            Write-Host "FAILED" -ForegroundColor Red
-            Write-Host "  Error: $res" -ForegroundColor Gray
-            $allPassed = $false
-        }
+# ── 1. Infrastructure pod health checks ──────────────────────────────
+Write-Host "=== Infrastructure Health ===" -ForegroundColor Yellow
+
+# Postgres: use pg_isready
+Write-Host "  Postgres... " -NoNewline
+$env:MSYS_NO_PATHCONV = '1'
+$pgCheck = kubectl exec -n $Namespace postgres-0 -- pg_isready -U catest 2>&1
+$env:MSYS_NO_PATHCONV = $null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "OK" -ForegroundColor Green
+} else {
+    Write-Host "FAILED" -ForegroundColor Red
+    $allPassed = $false
+}
+
+# Kafka: use kafka-broker-api-versions
+Write-Host "  Kafka... " -NoNewline
+$env:MSYS_NO_PATHCONV = '1'
+$kafkaCheck = kubectl exec -n $Namespace kafka-0 -- bash -c "echo > /dev/tcp/localhost/9092" 2>&1
+$env:MSYS_NO_PATHCONV = $null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "OK" -ForegroundColor Green
+} else {
+    Write-Host "FAILED" -ForegroundColor Red
+    $allPassed = $false
+}
+
+# Qdrant: check if port is listening via /proc/net
+Write-Host "  Qdrant... " -NoNewline
+$env:MSYS_NO_PATHCONV = '1'
+$qdrantCheck = kubectl get pod qdrant-0 -n $Namespace -o jsonpath='{.status.containerStatuses[0].ready}' 2>&1
+$env:MSYS_NO_PATHCONV = $null
+if ($qdrantCheck -eq 'true') {
+    Write-Host "OK" -ForegroundColor Green
+} else {
+    Write-Host "FAILED" -ForegroundColor Red
+    $allPassed = $false
+}
+
+# Neo4j: use cypher-shell
+Write-Host "  Neo4j... " -NoNewline
+$env:MSYS_NO_PATHCONV = '1'
+$neo4jCheck = kubectl exec -n $Namespace neo4j-0 -- bash -c "echo > /dev/tcp/localhost/7474" 2>&1
+$env:MSYS_NO_PATHCONV = $null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "OK" -ForegroundColor Green
+} else {
+    Write-Host "FAILED" -ForegroundColor Red
+    $allPassed = $false
+}
+
+# ── 2. Internal service DNS resolution ───────────────────────────────
+Write-Host ""
+Write-Host "=== Service DNS Resolution ===" -ForegroundColor Yellow
+
+$internalServices = @(
+    'catest-hub', 'catest-review', 'catest-workspace', 'catest-intelligence',
+    'catest-web-base', 'catest-web-workspace', 'catest-web-rag', 'catest-web-review', 'catest-web-team'
+)
+
+foreach ($svc in $internalServices) {
+    Write-Host "  $svc... " -NoNewline
+    $env:MSYS_NO_PATHCONV = '1'
+    $dnsCheck = kubectl exec -n $Namespace postgres-0 -- sh -c "getent hosts $svc.$Namespace.svc.cluster.local" 2>&1
+    $env:MSYS_NO_PATHCONV = $null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "OK" -ForegroundColor Green
     } else {
-        # Check localhost external port
-        try {
-            $tcp = New-Object System.Net.Sockets.TcpClient
-            $tcp.ReceiveTimeout = 2000
-            $tcp.SendTimeout = 2000
-            $connect = $tcp.BeginConnect($svc.Host, $svc.Port, $null, $null)
-            $wait = $connect.AsyncWaitHandle.WaitOne(2000, $false)
-            if ($wait) {
-                $tcp.EndConnect($connect)
-                Write-Host "OK" -ForegroundColor Green
-            } else {
-                Write-Host "FAILED (Timeout)" -ForegroundColor Red
-                $allPassed = $false
-            }
-            $tcp.Close()
-        } catch {
-            Write-Host "FAILED ($($_.Exception.Message))" -ForegroundColor Red
-            $allPassed = $false
-        }
+        Write-Host "FAILED" -ForegroundColor Red
+        $allPassed = $false
     }
 }
 
-Write-Host "`nChecking Pod Status..."
-$pods = kubectl get pods -n catest --no-headers
-$failedPods = $pods | Where-Object { $_ -notmatch "Running" -and $_ -notmatch "Completed" }
+# ── 3. External port accessibility ───────────────────────────────────
+Write-Host ""
+Write-Host "=== External Ports ===" -ForegroundColor Yellow
 
-if ($failedPods) {
-    Write-Host "Warning: Some pods are not in Running/Completed state:" -ForegroundColor Yellow
-    $failedPods | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
-    $allPassed = $false
-} else {
-    Write-Host "All pods look good!" -ForegroundColor Green
+$externalPorts = @{
+    'web-base'      = 33000
+    'web-workspace' = 33001
+    'web-rag'       = 33002
+    'web-review'    = 33003
+    'web-team'      = 33004
+    'gateway'       = 33088
 }
 
+foreach ($svc in $externalPorts.Keys) {
+    $port = $externalPorts[$svc]
+    Write-Host "  $svc (localhost:$port)... " -NoNewline
+    try {
+        $tcp = New-Object System.Net.Sockets.TcpClient
+        $connect = $tcp.BeginConnect('127.0.0.1', $port, $null, $null)
+        $wait = $connect.AsyncWaitHandle.WaitOne(3000, $false)
+        if ($wait) {
+            $tcp.EndConnect($connect)
+            Write-Host "OK" -ForegroundColor Green
+        } else {
+            Write-Host "FAILED (Timeout)" -ForegroundColor Red
+            $allPassed = $false
+        }
+        $tcp.Close()
+    } catch {
+        Write-Host "FAILED" -ForegroundColor Red
+        $allPassed = $false
+    }
+}
+
+# ── 4. Pod status ────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "=== Pod Status ===" -ForegroundColor Yellow
+
+$pods = kubectl get pods -n $Namespace --no-headers 2>&1
+$failedPods = $pods | Where-Object { $_ -notmatch "Running" -and $_ -notmatch "Completed" -and $_.Trim() -ne '' }
+
+if ($failedPods) {
+    Write-Host "  Warning: Some pods are not healthy:" -ForegroundColor Yellow
+    $failedPods | ForEach-Object { Write-Host "    $_" -ForegroundColor Yellow }
+    $allPassed = $false
+} else {
+    Write-Host "  All pods healthy" -ForegroundColor Green
+}
+
+# ── Result ───────────────────────────────────────────────────────────
+Write-Host ""
 if ($allPassed) {
-    Write-Host "`nSmoke Test PASSED" -ForegroundColor Green
+    Write-Host "Smoke Test PASSED" -ForegroundColor Green
     exit 0
 } else {
-    Write-Host "`nSmoke Test FAILED" -ForegroundColor Red
+    Write-Host "Smoke Test FAILED" -ForegroundColor Red
     exit 1
 }

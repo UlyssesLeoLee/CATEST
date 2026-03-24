@@ -23,7 +23,7 @@ spec:
       containers:
         - name: batch
           image: ghcr.io/ulyssesleolee/catest-batch:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 33090
               name: http

@@ -1,17 +1,10 @@
 #!/usr/bin/env pwsh
-# CATEST Kubernetes Deploy Script
+# CATEST Kubernetes Deploy Script (Docker Desktop K8s)
 # Usage:
 #   ./k8s-restart.ps1                          # Full deploy (skip build)
 #   ./k8s-restart.ps1 -Build                   # Build images then deploy
-#   ./k8s-restart.ps1 -Build -LoadImages       # Build and load images into kind/k3d
 #   ./k8s-restart.ps1 -Only gateway,web        # Deploy specific services only
 #   ./k8s-restart.ps1 -SkipInfra               # Skip infrastructure layer
-#   ./k8s-restart.ps1 -LoadImages              # Load existing images into cluster (kind/k3d)
-#
-# Troubleshooting ErrImageNeverPull:
-#   1. If images exist locally: ./k8s-restart.ps1 -LoadImages
-#   2. If need to rebuild: ./k8s-restart.ps1 -Build
-#   3. For registry auth: ./k8s-restart.ps1 -PullFromRegistry
 
 [CmdletBinding()]
 param(
@@ -19,9 +12,7 @@ param(
     [string]$Namespace = 'catest',
     [switch]$Build,               # Build Docker images before deploy
     [switch]$SkipInfra,           # Skip infrastructure (PG/Kafka/Neo4j/Qdrant/Arroyo)
-    [switch]$SkipWait,            # Skip rollout wait
-    [switch]$LoadImages,          # Load existing images into local cluster (kind/k3d)
-    [switch]$PullFromRegistry     # Use IfNotPresent instead of Never for imagePullPolicy
+    [switch]$SkipWait             # Skip rollout wait
 )
 
 Set-StrictMode -Version Latest
@@ -66,102 +57,13 @@ function Test-K8sReady {
 
 function Get-ClusterType {
     $ctx = kubectl config current-context 2>&1
-    # Docker Desktop uses kind internally — context is "kubernetes-admin@desktop"
-    if ($ctx -match 'desktop' -or $ctx -match 'kind') { return 'kind' }
-    if ($ctx -match 'k3d') { return 'k3d' }
-    if ($ctx -match 'docker-desktop') { return 'docker-desktop' }
+    if ($ctx -match 'docker-desktop' -or $ctx -match 'desktop') { return 'docker-desktop' }
     return 'unknown'
 }
 
-function Repair-Kubeconfig {
-    # Docker Desktop's kind cluster regenerates with a new port on each restart.
-    # Extract the live kubeconfig from the control-plane container and install it.
-    $cpContainer = docker ps --format '{{.Names}}' 2>$null | Select-String 'desktop-control-plane'
-    if (-not $cpContainer) { return $false }
-
-    Log "  Extracting kubeconfig from control-plane container..." Yellow
-    $port = (docker port desktop-control-plane 6443 2>$null | Select-Object -First 1) -replace '.*:', ''
-    if (-not $port) { Warn "Cannot determine K8s API port"; return $false }
-
-    $env:MSYS_NO_PATHCONV = '1'
-    $raw = docker exec desktop-control-plane cat /etc/kubernetes/admin.conf 2>&1
-    $env:MSYS_NO_PATHCONV = $null
-    if ($LASTEXITCODE -ne 0) { Warn "Cannot read admin.conf from container"; return $false }
-
-    $kubeDir = Join-Path $env:USERPROFILE '.kube'
-    $configPath = Join-Path $kubeDir 'config'
-
-    # Back up existing config if it doesn't look like our generated one
-    if (Test-Path $configPath) {
-        $existing = Get-Content $configPath -Raw -ErrorAction SilentlyContinue
-        if ($existing -and $existing -notmatch 'desktop-control-plane') {
-            $backupPath = Join-Path $kubeDir 'config.bak'
-            Copy-Item $configPath $backupPath -Force
-            Log "  Backed up existing kubeconfig to config.bak" DarkGray
-        }
-    }
-
-    # Write new config with corrected server address
-    $fixed = $raw -replace 'server: https://desktop-control-plane:6443', "server: https://127.0.0.1:$port"
-    $fixed | Out-File -FilePath $configPath -Encoding utf8 -Force
-    Log "  Installed kubeconfig (API at 127.0.0.1:$port)" Green
-    return $true
-}
-
-function Ensure-ImageLoaded {
-    # Load a Docker image into the kind/k3d node's containerd runtime.
-    # Docker Desktop's kind doesn't share the Docker daemon, so images must
-    # be explicitly imported via "docker save | ctr import".
-    param([string]$Image, [string]$ClusterType)
-
-    if ($ClusterType -eq 'docker-desktop' -or $ClusterType -eq 'unknown') { return }
-
-    $shortImage = ($Image -split '/')[-1]
-
-    # Check if image exists in local Docker
-    $localExists = docker images --quiet $Image 2>$null
-    if (-not $localExists) {
-        Warn "Image not found locally: $shortImage — build first with -Build"
-        return
-    }
-
-    # Check if already loaded inside the kind node
-    $env:MSYS_NO_PATHCONV = '1'
-    $inNode = docker exec desktop-control-plane crictl images 2>$null | Select-String ([regex]::Escape($Image))
-    $env:MSYS_NO_PATHCONV = $null
-    if ($inNode) {
-        Log "    $shortImage (already loaded)" DarkGray
-        return
-    }
-
-    if ($ClusterType -eq 'kind') {
-        Log "    Loading $shortImage ..." Cyan
-        # Pipe image tar directly into the node's containerd (same as "kind load docker-image")
-        $env:MSYS_NO_PATHCONV = '1'
-        docker save $Image | docker exec -i desktop-control-plane ctr --namespace=k8s.io images import --all-platforms - 2>&1 | Out-Null
-        $env:MSYS_NO_PATHCONV = $null
-        if ($LASTEXITCODE -ne 0) { Warn "Failed to load $shortImage into kind node" }
-    } elseif ($ClusterType -eq 'k3d') {
-        Log "    Loading $shortImage into k3d..." DarkGray
-        k3d image import $Image 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) { Warn "Failed to load $shortImage into k3d" }
-    }
-}
-
 function Diagnose-Images {
-    # Check which images are available locally AND loaded into the kind node
-    param([string]$ClusterType)
-
-    if ($ClusterType -notin @('kind', 'k3d')) {
-        Log "Image loading not needed for $ClusterType" DarkGray
-        return
-    }
-
-    # Get list of images inside the kind node
-    $env:MSYS_NO_PATHCONV = '1'
-    $nodeImages = docker exec desktop-control-plane crictl images 2>$null
-    $env:MSYS_NO_PATHCONV = $null
-
+    # Docker Desktop K8s shares the Docker daemon — local images are directly available.
+    # Just verify that the required images exist locally.
     Write-Host ""
     Log "Image Status Diagnostic:" Cyan
     $missingCount = 0
@@ -170,12 +72,8 @@ function Diagnose-Images {
         $image = $spec.Image
         $shortImage = ($image -split '/')[-1]
         $localExists = docker images --quiet $image 2>$null
-        $inNode = $nodeImages | Select-String ([regex]::Escape($image))
-        if ($inNode) {
-            Log "  OK $shortImage (in cluster)" Green
-        } elseif ($localExists) {
-            Log "  !! $shortImage (local only — needs loading)" Yellow
-            $missingCount++
+        if ($localExists) {
+            Log "  OK $shortImage (available)" Green
         } else {
             Log "  XX $shortImage (not built)" Red
             $missingCount++
@@ -184,7 +82,7 @@ function Diagnose-Images {
     Write-Host ""
 
     if ($missingCount -gt 0) {
-        Log "  $missingCount image(s) need attention. Use -LoadImages or -Build -LoadImages" Yellow
+        Log "  $missingCount image(s) missing. Use -Build to build them." Yellow
         Write-Host ""
     }
 }
@@ -192,46 +90,15 @@ function Diagnose-Images {
 function Ensure-K8sReady {
     if (Test-K8sReady) { return }
 
-    # Step 1: Try to repair kubeconfig (Docker Desktop regenerates ports on restart)
-    Log "  K8s API unreachable. Attempting kubeconfig repair..." Yellow
-    $repaired = Repair-Kubeconfig
-    if ($repaired -and (Test-K8sReady)) {
-        Log "  K8s API recovered after kubeconfig repair." Green
-        return
-    }
-
-    # Step 2: Check if control-plane container exists but K8s is still booting
-    $cpExists = docker ps --format '{{.Names}}' 2>$null | Select-String 'desktop-control-plane'
-    if ($cpExists) {
-        Log "  Control-plane container found. Waiting for K8s API to start..." Yellow
-        $timeout = 120; $elapsed = 0
-        while ($elapsed -lt $timeout) {
-            Start-Sleep -Seconds 5; $elapsed += 5
-            if (Test-K8sReady) { Log "  K8s API recovered after ${elapsed}s."; return }
-            Write-Host "  Waiting... ($elapsed/${timeout}s)" -ForegroundColor DarkGray
-        }
-    }
-
-    # Step 3: No control-plane — restart Docker Desktop
-    Log "  No K8s cluster found. Restarting Docker Desktop..." Yellow
-    Stop-Process -Name 'Docker Desktop' -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 5
-    Start-Process "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
-
+    # Docker Desktop K8s may still be starting up — wait for it
+    Log "  K8s API unreachable. Waiting for Docker Desktop Kubernetes..." Yellow
     $timeout = 180; $elapsed = 0
     while ($elapsed -lt $timeout) {
-        Start-Sleep -Seconds 10; $elapsed += 10
-        # Wait for control-plane container to appear
-        $cpUp = docker ps --format '{{.Names}}' 2>$null | Select-String 'desktop-control-plane'
-        if ($cpUp) {
-            Log "  Control-plane container detected. Extracting kubeconfig..." DarkGray
-            Start-Sleep -Seconds 15
-            Repair-Kubeconfig | Out-Null
-            if (Test-K8sReady) { Log "  K8s API recovered after ${elapsed}s."; return }
-        }
-        Write-Host "  Waiting for Docker Desktop... ($elapsed/${timeout}s)" -ForegroundColor DarkGray
+        Start-Sleep -Seconds 5; $elapsed += 5
+        if (Test-K8sReady) { Log "  K8s API recovered after ${elapsed}s." Green; return }
+        Write-Host "  Waiting... ($elapsed/${timeout}s)" -ForegroundColor DarkGray
     }
-    Fatal "K8s API did not recover within ${timeout}s. Check Docker Desktop -> Kubernetes settings."
+    Fatal "K8s API did not recover within ${timeout}s. Ensure Kubernetes is enabled in Docker Desktop settings."
 }
 
 # ── Determine which services to deploy ────────────────────────────────────────
@@ -260,14 +127,12 @@ foreach ($cmd in @('docker', 'kubectl')) {
 }
 Ensure-K8sReady
 
-# Detect cluster type for image loading
+# Detect cluster type
 $ClusterType = Get-ClusterType
 Log "  Cluster: $ClusterType" DarkGray
 
-# Diagnostic if explicitly requested or if there's an image issue
-if ($ClusterType -in @('kind', 'k3d')) {
-    Diagnose-Images -ClusterType $ClusterType
-}
+# Check local images are available
+Diagnose-Images
 
 Log "  OK" Green
 
@@ -290,19 +155,6 @@ if ($Build) {
     }
 } else {
     Log "[1/7] Skipping image build (use -Build to enable)"
-}
-
-# Load images to local K8s cluster if needed
-if ($Build -or $LoadImages) {
-    if ($ClusterType -in @('kind', 'k3d')) {
-        Log "[1b/7] Loading images to cluster..."
-        foreach ($name in $Selected) {
-            $spec = $Services[$name]
-            Ensure-ImageLoaded -Image $spec.Image -ClusterType $ClusterType
-        }
-    } elseif ($LoadImages) {
-        Warn "LoadImages only works with kind/k3d clusters, not $ClusterType"
-    }
 }
 
 # ── 2. Base resources ─────────────────────────────────────────────────────────
@@ -333,7 +185,7 @@ if ($SkipInfra) {
         }
     }
     # If postgres was rebuilt, restart the statefulset to pick up the new image
-    if ('postgres' -in $Selected -and ($Build -or $LoadImages)) {
+    if ('postgres' -in $Selected -and $Build) {
         Log "  Restarting postgres statefulset (new image with pgvector + AGE)..." Yellow
         kubectl rollout restart statefulset/postgres -n $Namespace 2>&1 | Out-Null
         kubectl rollout status statefulset/postgres -n $Namespace --timeout=120s 2>&1 | Out-Null
@@ -365,6 +217,9 @@ if ($SkipInfra) {
         Log "  Running database init scripts..." Cyan
         $initDir = Join-Path $PSScriptRoot 'scripts/initdb.d'
         if (Test-Path $initDir) {
+            # Temporarily allow non-terminating errors from kubectl/psql (NOTICE, already-exists, etc.)
+            $prevEAP = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
             # Ensure all databases exist
             $env:MSYS_NO_PATHCONV = '1'
             foreach ($db in @('catest_hub', 'catest_gateway', 'catest_ingestion', 'catest_intelligence', 'catest_workspace', 'catest_review')) {
@@ -387,6 +242,7 @@ if ($SkipInfra) {
                 kubectl exec -n $Namespace postgres-0 -- psql -U catest -d $db -c "DROP INDEX IF EXISTS idx_verification_email; DO `$`$ BEGIN ALTER TABLE verification_codes ADD CONSTRAINT uq_verification_email UNIQUE (email); EXCEPTION WHEN duplicate_table THEN NULL; END `$`$;" 2>&1 | Out-Null
             }
             $env:MSYS_NO_PATHCONV = $null
+            $ErrorActionPreference = $prevEAP
             Log "  Database initialization complete" Green
         }
     } else {
@@ -427,14 +283,23 @@ if (Test-Path $workspaceSvc) { kube apply -f $workspaceSvc }
 $envoyDir = "$K8s/infra/envoy-gateway/"
 if (Test-Path $envoyDir) {
     Log "  envoy-gateway (reverse proxy)" Cyan
-    kube apply -f $envoyDir
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $envoyOutput = kubectl apply -f $envoyDir 2>&1
+    $ErrorActionPreference = $prevEAP
+    if ($LASTEXITCODE -ne 0) {
+        Warn "Envoy Gateway resources failed to apply. CRDs may not be installed."
+        Warn "Run the following command to install Envoy Gateway CRDs, then retry:"
+        Warn "  kubectl apply --server-side -f https://github.com/envoyproxy/gateway/releases/latest/download/install.yaml"
+    }
 }
 
 # KEDA scaled objects (if present)
 $kedaDir = "$K8s/keda/"
 if (Test-Path $kedaDir) {
     Log "  keda scaled objects" Cyan
+    $prevEAP2 = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     kubectl apply -f $kedaDir 2>&1 | Out-Null
+    $ErrorActionPreference = $prevEAP2
     # KEDA may not be installed; don't fail on this
     if ($LASTEXITCODE -ne 0) { Warn "KEDA resources skipped (KEDA may not be installed)" }
 }
@@ -457,8 +322,7 @@ if ($SkipWait) {
 }
 
 # ── 6. Port forwarding ───────────────────────────────────────────────────────
-# Docker Desktop's kind LoadBalancer (envoy) proxies can become stale after restarts.
-# Set up kubectl port-forward as a reliable fallback for web services.
+# Set up kubectl port-forward as a fallback if envoy gateway ports are not reachable.
 $PortForwards = @{
     'catest-web-base'      = 33000
     'catest-web-workspace' = 33001
@@ -531,10 +395,10 @@ if ($failedPods.Count -gt 0) {
         Log "    $($fp.Name): $($fp.Status)" Red
     }
     Write-Host ""
-    $errImagePods = $failedPods | Where-Object { $_.Status -match 'ErrImageNeverPull|ImagePullBackOff' }
-    $crashPods = $failedPods | Where-Object { $_.Status -match 'CrashLoopBackOff|Error' }
+    $errImagePods = @($failedPods | Where-Object { $_.Status -match 'ErrImageNeverPull|ImagePullBackOff' })
+    $crashPods = @($failedPods | Where-Object { $_.Status -match 'CrashLoopBackOff|Error' })
     if ($errImagePods.Count -gt 0) {
-        Warn "ErrImageNeverPull: Images not loaded into cluster. Fix: ./k8s-restart.ps1 -LoadImages"
+        Warn "Image pull error: Ensure images are built locally with ./k8s-restart.ps1 -Build"
     }
     if ($crashPods.Count -gt 0) {
         Warn "CrashLoopBackOff: Check logs with: kubectl logs -n $Namespace <pod-name>"

@@ -20,7 +20,7 @@ spec:
       containers:
         - name: web-rag
           image: ghcr.io/ulyssesleolee/catest-web-rag:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3002
           envFrom:

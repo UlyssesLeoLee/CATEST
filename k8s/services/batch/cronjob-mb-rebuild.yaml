@@ -15,7 +15,7 @@ spec:
           containers:
             - name: mb-rebuild
               image: ghcr.io/ulyssesleolee/catest-batch:latest
-              imagePullPolicy: Never
+              imagePullPolicy: IfNotPresent
               command: ["/app/service"]
               env:
                 - name: BATCH_MODE

@@ -20,7 +20,7 @@ spec:
       containers:
         - name: web-review
           image: ghcr.io/ulyssesleolee/catest-web-review:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3003
           envFrom:

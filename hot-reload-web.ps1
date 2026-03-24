@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
 # CATEST Web Hot Reload Script
-# Rebuilds web app Docker images and reloads them into the Kind K8s cluster.
+# Rebuilds web app Docker images and restarts K8s deployments.
+# Docker Desktop K8s shares the Docker daemon, so rebuilt images are immediately available.
 #
 # Usage:
 #   ./hot-reload-web.ps1                    # Rebuild & reload ALL 5 web apps
@@ -81,29 +82,7 @@ foreach ($appName in $Apps) {
         continue
     }
 
-    # 2. Load into Kind cluster (save to temp file to avoid PowerShell pipe corruption)
-    Log "  Loading into cluster ..." Cyan
-    $tmpTar = Join-Path $env:TEMP "catest-$appName.tar"
-    docker save -o $tmpTar $tag 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  docker save FAILED for $appName" -ForegroundColor Red
-        continue
-    }
-    docker cp $tmpTar "desktop-control-plane:/image.tar" 2>&1 | Out-Null
-    docker exec desktop-control-plane ctr --namespace=k8s.io images import --all-platforms /image.tar 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  Image import FAILED for $appName — retrying ..." -ForegroundColor Yellow
-        Start-Sleep -Seconds 2
-        docker exec desktop-control-plane ctr --namespace=k8s.io images import --all-platforms /image.tar 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  Image import FAILED again for $appName" -ForegroundColor Red
-            continue
-        }
-    }
-    docker exec desktop-control-plane rm -f /image.tar 2>&1 | Out-Null
-    Remove-Item -Force $tmpTar -ErrorAction SilentlyContinue
-
-    # 3. Restart deployment
+    # 2. Restart deployment (Docker Desktop K8s picks up rebuilt images automatically)
     Log "  Restarting deployment/$deploy ..." Cyan
     kubectl rollout restart deployment/$deploy -n $Namespace 2>&1 | Out-Null
     kubectl rollout status deployment/$deploy -n $Namespace --timeout=120s 2>&1 | Out-Null

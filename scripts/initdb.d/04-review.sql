@@ -78,3 +78,25 @@ CREATE TABLE IF NOT EXISTS terminology_base (
 
 CREATE INDEX IF NOT EXISTS idx_tb_source ON terminology_base USING gin(to_tsvector('simple', source_term));
 CREATE INDEX IF NOT EXISTS idx_tb_name ON terminology_base(tb_name);
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- Seed data — Translation Memory (default bank)
+-- ═══════════════════════════════════════════════════════════════════════
+INSERT INTO translation_memory (tm_name, source_text, target_text, context, quality_score, usage_count) VALUES
+  ('default', 'handleRequest processes incoming HTTP calls', 'handleRequest 处理传入的 HTTP 调用', 'src/server/handler.ts', 1.0, 5),
+  ('default', 'validateInput checks user-supplied data', '验证输入检查用户提供的数据', 'src/utils/validator.ts', 0.95, 3),
+  ('default', 'initializeApp bootstraps the application', '初始化应用引导应用程序', 'src/index.ts', 0.9, 2),
+  ('default', 'parseConfig reads environment variables', '解析配置读取环境变量', 'src/config/parser.ts', 0.85, 4),
+  ('default', 'connectDatabase establishes a connection pool', '连接数据库建立连接池', 'src/db/connect.ts', 1.0, 6)
+ON CONFLICT DO NOTHING;
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- Seed data — Terminology Base (default bank)
+-- ═══════════════════════════════════════════════════════════════════════
+INSERT INTO terminology_base (tb_name, source_term, target_term, definition, domain, forbidden) VALUES
+  ('default', 'validateInput', '验证输入', 'Checks and sanitises user-supplied data before processing', 'security', false),
+  ('default', 'handleRequest', '处理请求', 'Entry point for incoming HTTP request handling', 'api', false),
+  ('default', 'eval()', '禁止使用 eval', 'Dynamic code evaluation — forbidden for security reasons', 'security', true),
+  ('default', 'middleware', '中间件', 'Interceptor in the request/response pipeline', 'api', false),
+  ('default', 'connection pool', '连接池', 'Reusable set of database connections', 'database', false)
+ON CONFLICT DO NOTHING;

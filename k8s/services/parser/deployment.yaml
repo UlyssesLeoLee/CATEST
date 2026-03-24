@@ -16,7 +16,7 @@ spec:
       containers:
         - name: parser
           image: ghcr.io/ulyssesleolee/catest-parser:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
               value: "postgres://catest:password@postgres:34321/catest_workspace"

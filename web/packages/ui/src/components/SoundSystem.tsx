@@ -1,10 +1,13 @@
 "use client";
-import React, { createContext, useContext, useCallback, useRef } from "react";
+import React, { createContext, useContext, useCallback, useRef, useState, useEffect } from "react";
+import { getBoolCookie, setBoolCookie, COOKIE_KEYS } from "../lib/cookies";
 
 type SoundType = "hammer" | "impact" | "steam" | "gear";
 
 interface SoundContextType {
   play: (type: SoundType) => void;
+  soundEnabled: boolean;
+  setSoundEnabled: (v: boolean) => void;
 }
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
@@ -116,9 +119,22 @@ function synthesize(ctx: AudioContext, type: SoundType) {
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
   const ctxRef = useRef<AudioContext | null>(null);
+  const [soundEnabled, setSoundEnabledRaw] = useState(true);
+
+  // Hydrate from cookie on mount
+  useEffect(() => {
+    const stored = getBoolCookie(COOKIE_KEYS.SOUND_ENABLED, true);
+    setSoundEnabledRaw(stored);
+  }, []);
+
+  const setSoundEnabled = useCallback((v: boolean) => {
+    setSoundEnabledRaw(v);
+    setBoolCookie(COOKIE_KEYS.SOUND_ENABLED, v, 30);
+  }, []);
 
   const play = useCallback((type: SoundType) => {
     if (typeof window === "undefined") return;
+    if (!soundEnabled) return;
 
     try {
       if (!ctxRef.current) {
@@ -132,10 +148,10 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Silently fail if Web Audio API not available
     }
-  }, []);
+  }, [soundEnabled]);
 
   return (
-    <SoundContext.Provider value={{ play }}>
+    <SoundContext.Provider value={{ play, soundEnabled, setSoundEnabled }}>
       {children}
     </SoundContext.Provider>
   );
@@ -144,7 +160,7 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
 export function useSound() {
   const context = useContext(SoundContext);
   if (!context) {
-    return { play: () => {} };
+    return { play: () => {}, soundEnabled: true, setSoundEnabled: () => {} };
   }
   return context;
 }

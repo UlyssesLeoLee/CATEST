@@ -1,9 +1,8 @@
-# Deploy CATLLM to Kubernetes locally (PowerShell version)
+# Deploy CATEST to Docker Desktop Kubernetes
 $ErrorActionPreference = "Stop"
 
-Write-Host "Deploying CATLLM to Kubernetes locally..." -ForegroundColor Cyan
+Write-Host "Deploying CATEST to Kubernetes..." -ForegroundColor Cyan
 
-# Ensure we are in the k8s directory or context
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Set-Location $scriptPath
 
@@ -21,31 +20,19 @@ kubectl apply -f rbac/service-account.yaml
 
 # 4. Create the configmap for PostgreSQL initialization scripts
 Write-Host "Creating postgres-init-scripts ConfigMap..."
-# Using dry-run to generate yaml and piping to apply to handle updates
 kubectl create configmap postgres-init-scripts `
   --from-file=00-create_databases.sh=../scripts/create_databases.sh `
   --from-file=../scripts/initdb.d `
   --namespace catest `
   --dry-run=client -o yaml | kubectl apply -f -
 
-# 4b. Build custom PostgreSQL image (pgvector + AGE) if not already present
+# 4b. Build custom PostgreSQL image if not already present
 $pgImage = 'ghcr.io/ulyssesleolee/catest-postgres:latest'
 $pgExists = docker images --quiet $pgImage 2>$null
 if (-not $pgExists) {
     Write-Host "Building custom PostgreSQL image (pgvector + AGE)..." -ForegroundColor Yellow
     docker build -t $pgImage -f ../docker/postgres/Dockerfile ../docker/postgres
     if ($LASTEXITCODE -ne 0) { Write-Error "PostgreSQL image build failed"; exit 1 }
-}
-# Load into kind cluster if applicable
-$ctx = kubectl config current-context 2>&1
-if ($ctx -match 'kind' -or $ctx -match 'desktop') {
-    Write-Host "Loading PostgreSQL image into cluster..."
-    $tmpTar = Join-Path $env:TEMP "catest-postgres.tar"
-    docker save -o $tmpTar $pgImage 2>&1 | Out-Null
-    docker cp $tmpTar "desktop-control-plane:/image.tar" 2>&1 | Out-Null
-    docker exec desktop-control-plane ctr --namespace=k8s.io images import --all-platforms /image.tar 2>&1 | Out-Null
-    docker exec desktop-control-plane rm -f /image.tar 2>&1 | Out-Null
-    Remove-Item -Force $tmpTar -ErrorAction SilentlyContinue
 }
 
 # 5. Apply infrastructure components
@@ -70,7 +57,7 @@ kubectl apply -f services/web-workspace/
 kubectl apply -f services/web-rag/
 kubectl apply -f services/web-review/
 
-# 7. Apply Ingestion Job (Cleanup old job first to force re-run)
+# 7. Apply Ingestion Job
 Write-Host "Re-triggering Ingestion Job..."
 kubectl delete job catest-ingestion -n catest --ignore-not-found=true
 kubectl apply -f services/ingestion/job.yaml
@@ -81,8 +68,8 @@ kubectl apply -f keda/scaled-objects.yaml
 kubectl apply -f keda/keda-service-ext.yaml
 kubectl apply -f keda/keda-metrics-ext.yaml
 
-# 9. Apply External LoadBalancers (mapped to 3XXXX ports)
+# 9. Apply External LoadBalancers
 Write-Host "Applying External NodePorts/LoadBalancers..."
 kubectl apply -f infra/ext-services.yaml
 
-Write-Host "`nDeployment complete! You can check the status using: kubectl get pods -n catest" -ForegroundColor Green
+Write-Host "`nDeployment complete! Check status: kubectl get pods -n catest" -ForegroundColor Green

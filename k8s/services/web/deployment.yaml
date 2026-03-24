@@ -16,7 +16,7 @@ spec:
       containers:
         - name: web
           image: ghcr.io/ulyssesleolee/catest-web:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               name: http

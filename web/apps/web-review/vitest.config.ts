@@ -9,6 +9,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    // Ensure DB schema + seed data before tests
+    globalSetup: ['src/__tests__/global-setup.ts'],
     // Only run web-review tests
     include: ['src/**/*.test.ts'],
     // Longer timeout for DB integration tests

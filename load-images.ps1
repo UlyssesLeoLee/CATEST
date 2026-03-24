@@ -1,8 +1,11 @@
 #!/usr/bin/env pwsh
-# Quick image loader for kind/k3d clusters
+# Image diagnostic tool for Docker Desktop Kubernetes
+# Docker Desktop K8s shares the Docker daemon — local images are directly available.
+# This script checks which images exist locally and are ready for deployment.
+#
 # Usage:
-#   ./load-images.ps1              # Load all built images
-#   ./load-images.ps1 -Only web    # Load specific service images
+#   ./load-images.ps1              # Check all images
+#   ./load-images.ps1 -Only web    # Check specific service images
 
 [CmdletBinding()]
 param(
@@ -29,29 +32,10 @@ $Services = @{
 
 # Helpers
 function Log { param([string]$M, [string]$C = 'Green') Write-Host $M -ForegroundColor $C }
-function Warn { param([string]$M) Write-Host "  WARN: $M" -ForegroundColor Yellow }
 function Fatal { param([string]$M) Write-Host "  FATAL: $M" -ForegroundColor Red; exit 1 }
 
 # Check prerequisites
-foreach ($cmd in @('docker', 'kubectl')) {
-    if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { Fatal "$cmd not found" }
-}
-
-# Detect cluster type
-$ctx = kubectl config current-context 2>&1
-if ($ctx -match 'kind') {
-    $ClusterType = 'kind'
-    $LoadCmd = { param($img) kind load docker-image $img }
-} elseif ($ctx -match 'k3d') {
-    $ClusterType = 'k3d'
-    $LoadCmd = { param($img) k3d image import $img }
-} else {
-    Fatal "Cluster type not detected. Only kind and k3d are supported by this script."
-}
-
-Write-Host ""
-Log "Loading images into $ClusterType cluster..."
-Write-Host ""
+if (-not (Get-Command 'docker' -ErrorAction SilentlyContinue)) { Fatal "docker not found" }
 
 # Determine which services
 $Selected = if ($Only -ne '') {
@@ -60,43 +44,36 @@ $Selected = if ($Only -ne '') {
     $Services.Keys
 }
 
-$loaded = 0
-$failed = 0
+Write-Host ""
+Log "Checking local Docker images for Docker Desktop Kubernetes..."
+Write-Host ""
+
+$available = 0
+$missing = 0
 
 foreach ($name in $Selected) {
     if (-not $Services.ContainsKey($name)) {
-        Warn "Unknown service: $name"
+        Write-Host "  WARN: Unknown service: $name" -ForegroundColor Yellow
         continue
     }
 
     $image = $Services[$name].Image
     $shortImage = $image -split '/' | Select-Object -Last 1
 
-    # Check if image exists locally
     $exists = docker images --quiet $image 2>$null
-    if (-not $exists) {
-        Warn "Skipping $shortImage (not found locally — build first with: ./k8s-restart.ps1 -Build)"
-        continue
-    }
-
-    Log "  Loading $shortImage..." Cyan
-    & $LoadCmd $image 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Log "    ✓ Loaded" Green
-        $loaded++
+    if ($exists) {
+        Log "  OK $shortImage" Green
+        $available++
     } else {
-        Log "    ✗ Failed" Red
-        $failed++
+        Log "  XX $shortImage (not built)" Red
+        $missing++
     }
 }
 
 Write-Host ""
-if ($failed -eq 0) {
-    Log "✓ Successfully loaded $loaded image(s)" Green
+if ($missing -eq 0) {
+    Log "All $available image(s) available. Docker Desktop K8s can use them directly." Green
 } else {
-    Log "✓ Loaded $loaded image(s), $failed failed" Yellow
+    Log "$available available, $missing missing. Build with: ./k8s-restart.ps1 -Build" Yellow
 }
-
-Log ""
-Log "Next step: ./k8s-restart.ps1 -SkipInfra" DarkGray
 Write-Host ""
