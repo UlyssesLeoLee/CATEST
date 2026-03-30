@@ -1,0 +1,85 @@
+# cloudflared runs as a Deployment inside the K8s cluster.
+# It creates an OUTBOUND-ONLY tunnel to Cloudflare — no inbound ports needed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:latest
+          args:
+            - tunnel
+            - --config
+            - /etc/cloudflared/config.yml
+            - run
+          volumeMounts:
+            - name: tunnel-config
+              mountPath: /etc/cloudflared/config.yml
+              subPath: config.yml
+              readOnly: true
+            - name: tunnel-credentials
+              mountPath: /etc/cloudflared/credentials.json
+              subPath: credentials.json
+              readOnly: true
+          resources:
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+      volumes:
+        - name: tunnel-config
+          configMap:
+            name: cloudflared-config
+        - name: tunnel-credentials
+          secret:
+            secretName: cloudflared-credentials
+---
+# ConfigMap from tunnel-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: catest
+data:
+  config.yml: |
+    tunnel: <TUNNEL_ID>
+    credentials-file: /etc/cloudflared/credentials.json
+    ingress:
+      - hostname: mcp.catest.yourdomain.com
+        service: http://catest-mcp-facade:34098
+        originRequest:
+          noTLSVerify: true
+      - hostname: api.catest.yourdomain.com
+        path: /orchestration/*
+        service: http://catest-intent-gateway:34090
+        originRequest:
+          noTLSVerify: true
+      - hostname: api.catest.yourdomain.com
+        path: /traces/*
+        service: http://catest-trace-audit:34097
+        originRequest:
+          noTLSVerify: true
+      - service: http_status:404
+---
+# Secret placeholder — replace with actual tunnel credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflared-credentials
+  namespace: catest
+type: Opaque
+data:
+  credentials.json: ""  # base64-encoded tunnel credentials JSON

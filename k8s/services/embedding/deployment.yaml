@@ -28,14 +28,14 @@ spec:
                   name: catest-app-secrets
                   key: QDRANT_API_KEY
 
-            - name: NEO4J_URI
-              value: "bolt://neo4j:37687"
-            - name: NEO4J_USER
-              value: "neo4j"
-            - name: NEO4J_PASSWORD
+            - name: MEMGRAPH_URI
+              value: "bolt://memgraph:37687"
+            - name: MEMGRAPH_USER
+              value: ""
+            - name: MEMGRAPH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: neo4j-secrets
-                  key: neo4j-password
+                  name: memgraph-secrets
+                  key: memgraph-password
             - name: KAFKA_BROKER
               value: "kafka:39092"

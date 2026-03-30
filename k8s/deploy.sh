@@ -26,7 +26,7 @@ kubectl create configmap postgres-init-scripts \
 echo "Applying Infrastructure Components..."
 kubectl apply -f infra/postgres/
 kubectl apply -f infra/kafka/
-kubectl apply -f infra/neo4j/
+kubectl apply -f infra/memgraph/
 kubectl apply -f infra/qdrant/
 kubectl apply -f infra/arroyo/
 
@@ -42,6 +42,8 @@ kubectl apply -f services/web-base/
 kubectl apply -f services/web-workspace/
 kubectl apply -f services/web-rag/
 kubectl apply -f services/web-review/
+kubectl apply -f services/web-tm/
+kubectl apply -f services/web-tb/
 
 # 6. Apply Ingestion Job (Cleanup old job first to force re-run)
 echo "Re-triggering Ingestion Job..."

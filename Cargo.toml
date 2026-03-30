@@ -24,7 +24,7 @@ rdkafka = { version = "0.36", features = ["ssl-vendored", "cmake-build"] }
 
 
 
-neo4rs = "0.7" # Neo4j driver
+neo4rs = "0.7" # Memgraph Bolt driver (Bolt-compatible)
 qdrant-client = "1.12"
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }

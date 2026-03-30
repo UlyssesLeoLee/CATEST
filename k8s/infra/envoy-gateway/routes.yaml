@@ -29,6 +29,11 @@ spec:
         - name: catest-web-team
           port: 33004
     - matches:
+        - path: { type: PathPrefix, value: /orchestration }
+      backendRefs:
+        - name: catest-web-orchestration
+          port: 33007
+    - matches:
         - path: { type: PathPrefix, value: / }
       backendRefs:
         - name: catest-web-base
@@ -67,3 +72,45 @@ spec:
       backendRefs:
         - name: catest-intelligence
           port: 33083
+    - matches:
+        - path: { type: PathPrefix, value: /api/ai }
+      filters:
+        - type: URLRewrite
+          urlRewrite: { path: { type: ReplacePrefixMatch, replacePrefixMatch: / } }
+      backendRefs:
+        - name: catest-ai-orchestrator
+          port: 34080
+    - matches:
+        - path: { type: PathPrefix, value: /api/vectors }
+      filters:
+        - type: URLRewrite
+          urlRewrite: { path: { type: ReplacePrefixMatch, replacePrefixMatch: / } }
+      backendRefs:
+        - name: catest-ai-vector-ops
+          port: 34085
+
+    # ─────────────── AI Orchestration Domain ─────────────────────────────
+    - matches:
+        - path: { type: PathPrefix, value: /api/orchestration }
+      filters:
+        - type: URLRewrite
+          urlRewrite: { path: { type: ReplacePrefixMatch, replacePrefixMatch: / } }
+      backendRefs:
+        - name: catest-intent-gateway
+          port: 34090
+    - matches:
+        - path: { type: PathPrefix, value: /api/traces }
+      filters:
+        - type: URLRewrite
+          urlRewrite: { path: { type: ReplacePrefixMatch, replacePrefixMatch: / } }
+      backendRefs:
+        - name: catest-trace-audit
+          port: 34097
+    - matches:
+        - path: { type: PathPrefix, value: /api/mcp-facade }
+      filters:
+        - type: URLRewrite
+          urlRewrite: { path: { type: ReplacePrefixMatch, replacePrefixMatch: / } }
+      backendRefs:
+        - name: catest-mcp-facade
+          port: 34098

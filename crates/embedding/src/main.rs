@@ -17,7 +17,7 @@ struct CleanedRagItem {
 #[tokio::main]
 async fn main() -> Result<()> {
     common::init_tracing();
-    tracing::info!("Starting AI Ingestion Worker (Qdrant + Neo4j)");
+    tracing::info!("Starting AI Ingestion Worker (Qdrant + Memgraph)");
 
     // Qdrant Setup — vector dim and collection name driven by env
     let qdrant_port = common::utils::get_env_default("QDRANT_HTTP_PORT", "36334");
@@ -41,14 +41,14 @@ async fn main() -> Result<()> {
     let manager = EmbeddingManager::new(&qdrant_url, Some(&qdrant_api_key))?;
     manager.ensure_collection("catest_rag", embed_dim).await?;
 
-    // Neo4j Setup — credentials from env
-    let neo4j_port = common::utils::get_env_default("NEO4J_BOLT_PORT", "37687");
-    let neo4j_uri = format!("bolt://localhost:{}", neo4j_port);
-    let neo4j_uri_env = common::utils::get_env_default("NEO4J_URI", &neo4j_uri);
-    let neo4j_user = common::utils::get_env_default("NEO4J_USER", "neo4j");
-    let neo4j_pass = common::utils::get_env_default("NEO4J_PASSWORD", "password");
-    let graph = Graph::new(&neo4j_uri_env, &neo4j_user, &neo4j_pass).await?;
-    tracing::info!("Connected to Neo4j @ {}", neo4j_uri_env);
+    // Memgraph Setup — credentials from env
+    let mg_port = common::utils::get_env_default("MEMGRAPH_BOLT_PORT", "37687");
+    let mg_uri = format!("bolt://localhost:{}", mg_port);
+    let mg_uri_env = common::utils::get_env_default("MEMGRAPH_URI", &mg_uri);
+    let mg_user = common::utils::get_env_default("MEMGRAPH_USER", "");
+    let mg_pass = common::utils::get_env_default("MEMGRAPH_PASSWORD", "");
+    let graph = Graph::new(&mg_uri_env, &mg_user, &mg_pass).await?;
+    tracing::info!("Connected to Memgraph @ {}", mg_uri_env);
 
     // Kafka Consumer Setup
     let kafka_port = common::utils::get_env_default("KAFKA_PORT", "39092");
@@ -97,7 +97,7 @@ async fn main() -> Result<()> {
                         .await?;
                 }
 
-                // Persistence D2: Write Semantic Graph to Neo4j
+                // Persistence D2: Write Semantic Graph to Memgraph
                 let q = query(
                     "
                 MERGE (f:File {path: $file_path})
@@ -118,9 +118,9 @@ async fn main() -> Result<()> {
                 .param("tags", extracted_tags);
 
                 if let Err(e) = graph.run(q).await {
-                    tracing::error!("Neo4j write failed: {:?}", e);
+                    tracing::error!("Memgraph write failed: {:?}", e);
                 } else {
-                    tracing::info!("Committed Knowledge Graph nodes to Neo4j");
+                    tracing::info!("Committed Knowledge Graph nodes to Memgraph");
                 }
                 Ok(())
             }

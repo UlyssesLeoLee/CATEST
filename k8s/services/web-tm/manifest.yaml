@@ -1,0 +1,48 @@
+---
+# web-tm: Deployment + Service
+# Port: 3005 -> LoadBalancer: 33005
+# Translation Memory Management Console
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-web-tm
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-web-tm
+  template:
+    metadata:
+      labels:
+        app: catest-web-tm
+    spec:
+      containers:
+        - name: web-tm
+          image: ghcr.io/ulyssesleolee/catest-web-tm:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3005
+          envFrom:
+            - secretRef:
+                name: catest-app-secrets
+          env:
+            - name: NEXT_PUBLIC_SAAS_MODE
+              value: "true"
+            - name: NEXT_PUBLIC_GATEWAY_URL
+              value: "http://catest-hub:33080"
+            - name: TM_DATABASE_URL
+              value: "postgres://catest:password@postgres:5432/catest_tm"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-web-tm
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 33005
+      targetPort: 3005
+  selector:
+    app: catest-web-tm

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-intent-gateway
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-intent-gateway
+  template:
+    metadata:
+      labels:
+        app: catest-intent-gateway
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: intent-gateway
+          image: ghcr.io/ulyssesleolee/catest-intent-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34090
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "intent-gateway"
+            - name: CATEST_AI_SERVICE_PORT
+              value: "34090"
+            - name: CATEST_AI_KAFKA_BROKER
+              value: "kafka:39092"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34090
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-intent-gateway
+  namespace: catest
+spec:
+  selector:
+    app: catest-intent-gateway
+  ports:
+    - port: 34090
+      targetPort: 34090
+      name: http

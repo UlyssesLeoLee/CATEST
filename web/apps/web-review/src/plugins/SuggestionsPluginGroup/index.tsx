@@ -24,7 +24,10 @@ import {
   Tag,
   RefreshCw,
   Loader2,
+  ExternalLink,
+  Shield,
 } from "lucide-react";
+import { getAppUrl } from "@catest/ui";
 import {
   listTMBanks,
   getTMEntries,
@@ -40,6 +43,7 @@ import {
   type TBEntry,
   type TBBank,
 } from "@/app/actions/terminology-base";
+import { getCurrentRole } from "@/lib/permissions";
 
 // ── Tab definitions ──────────────────────────────────────────────────
 type TabId = "analysis" | "memory" | "terminology" | "qa";
@@ -97,12 +101,16 @@ function AnalysisTab() {
 
 // ── Translation Memory Tab ───────────────────────────────────────────
 function MemoryTab() {
+  const [role, setRole] = useState<"admin" | "user" | "viewer" | "guest">("guest");
   const [banks, setBanks] = useState<TMBank[]>([]);
   const [selectedBank, setSelectedBank] = useCookieState(COOKIE_KEYS.REVIEW_TM_BANK, "default");
   const [entries, setEntries] = useState<TMEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [bankOpen, setBankOpen] = useState(false);
+  const isAdmin = role === "admin";
+
+  useEffect(() => { getCurrentRole().then(setRole); }, []);
 
   const loadBanks = useCallback(async () => {
     const b = await listTMBanks();
@@ -155,9 +163,17 @@ function MemoryTab() {
             </div>
           )}
         </div>
-        <button onClick={loadEntries} className="p-1.5 rounded-sm hover:bg-[#b87333]/10 transition-colors text-[var(--text-muted)] hover:text-[#c9a84c]">
-          <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
-        </button>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <a href={getAppUrl("tm")} target="_blank" rel="noopener noreferrer"
+              className="p-1.5 rounded-sm hover:bg-[#c9a84c]/10 transition-colors text-[var(--text-muted)] hover:text-[#c9a84c]" title="Manage TM">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+          <button onClick={loadEntries} className="p-1.5 rounded-sm hover:bg-[#b87333]/10 transition-colors text-[var(--text-muted)] hover:text-[#c9a84c]">
+            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+          </button>
+        </div>
       </div>
 
       {/* Entries */}
@@ -184,9 +200,11 @@ function MemoryTab() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Badge className="bg-[#4a8b6e]/10 text-[#4a8b6e] border-[#4a8b6e]/20 text-[7px] px-1 py-0">×{e.usage_count}</Badge>
-                  <button onClick={() => handleDelete(e.id)} className="p-1 rounded hover:bg-[#8b2500]/20 text-[var(--text-muted)] hover:text-[#8b2500] transition-colors">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+                  {isAdmin && (
+                    <button onClick={() => handleDelete(e.id)} className="p-1 rounded hover:bg-[#8b2500]/20 text-[var(--text-muted)] hover:text-[#8b2500] transition-colors">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -199,8 +217,13 @@ function MemoryTab() {
 
 // ── Terminology Base Tab ─────────────────────────────────────────────
 function TerminologyTab() {
+  const [role, setRole] = useState<"admin" | "user" | "viewer" | "guest">("guest");
   const [banks, setBanks] = useState<TBBank[]>([]);
   const [selectedBank, setSelectedBank] = useCookieState(COOKIE_KEYS.REVIEW_TB_BANK, "default");
+  const isAdmin = role === "admin";
+  const isEditor = role === "admin" || role === "user";
+
+  useEffect(() => { getCurrentRole().then(setRole); }, []);
   const [entries, setEntries] = useState<TBEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -278,10 +301,20 @@ function TerminologyTab() {
             </div>
           )}
         </div>
-        <button onClick={() => setShowAdd(!showAdd)}
-          className={cn("p-1.5 rounded-sm transition-colors", showAdd ? "bg-[#b87333]/20 text-[#c9a84c]" : "hover:bg-[#b87333]/10 text-[var(--text-muted)] hover:text-[#c9a84c]")}>
-          {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <a href={getAppUrl("tb")} target="_blank" rel="noopener noreferrer"
+              className="p-1.5 rounded-sm hover:bg-[#c9a84c]/10 transition-colors text-[var(--text-muted)] hover:text-[#c9a84c]" title="Manage TB">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+          {isEditor && (
+            <button onClick={() => setShowAdd(!showAdd)}
+              className={cn("p-1.5 rounded-sm transition-colors", showAdd ? "bg-[#b87333]/20 text-[#c9a84c]" : "hover:bg-[#b87333]/10 text-[var(--text-muted)] hover:text-[#c9a84c]")}>
+              {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Add term form */}
@@ -353,9 +386,11 @@ function TerminologyTab() {
                 )}
               </div>
               {e.forbidden && <Ban className="w-3 h-3 text-[#8b2500] shrink-0" />}
-              <button onClick={() => handleDelete(e.id)} className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[#8b2500]/20 text-[var(--text-muted)] hover:text-[#8b2500] transition-all">
-                <Trash2 className="w-3 h-3" />
-              </button>
+              {isAdmin && (
+                <button onClick={() => handleDelete(e.id)} className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[#8b2500]/20 text-[var(--text-muted)] hover:text-[#8b2500] transition-all">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
             </div>
           ))}
         </div>

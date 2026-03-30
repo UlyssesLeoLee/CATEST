@@ -47,10 +47,10 @@ if ($qdrantCheck -eq 'true') {
     $allPassed = $false
 }
 
-# Neo4j: use cypher-shell
-Write-Host "  Neo4j... " -NoNewline
+# Memgraph: check Bolt port
+Write-Host "  Memgraph... " -NoNewline
 $env:MSYS_NO_PATHCONV = '1'
-$neo4jCheck = kubectl exec -n $Namespace neo4j-0 -- bash -c "echo > /dev/tcp/localhost/7474" 2>&1
+$memgraphCheck = kubectl exec -n $Namespace memgraph-0 -- bash -c "echo > /dev/tcp/localhost/7687" 2>&1
 $env:MSYS_NO_PATHCONV = $null
 if ($LASTEXITCODE -eq 0) {
     Write-Host "OK" -ForegroundColor Green
@@ -65,7 +65,8 @@ Write-Host "=== Service DNS Resolution ===" -ForegroundColor Yellow
 
 $internalServices = @(
     'catest-hub', 'catest-review', 'catest-workspace', 'catest-intelligence',
-    'catest-web-base', 'catest-web-workspace', 'catest-web-rag', 'catest-web-review', 'catest-web-team'
+    'catest-web-base', 'catest-web-workspace', 'catest-web-rag', 'catest-web-review', 'catest-web-team',
+    'catest-web-tm', 'catest-web-tb', 'catest-web-orchestration'
 )
 
 foreach ($svc in $internalServices) {
@@ -81,21 +82,30 @@ foreach ($svc in $internalServices) {
     }
 }
 
-# ── 3. External port accessibility ───────────────────────────────────
+# ── 3. External port accessibility (auto-detect via port-config.ps1) ──
 Write-Host ""
 Write-Host "=== External Ports ===" -ForegroundColor Yellow
 
-$externalPorts = @{
-    'web-base'      = 33000
-    'web-workspace' = 33001
-    'web-rag'       = 33002
-    'web-review'    = 33003
-    'web-team'      = 33004
-    'gateway'       = 33088
+# Dot-source port-config.ps1 to detect working ports (native or forwarded)
+$portConfigScript = Join-Path $PSScriptRoot '..' 'port-config.ps1'
+if (Test-Path $portConfigScript) {
+    . $portConfigScript -Probe
+    # $Ports hashtable is now available: Name → working port number
+    Write-Host "  (port-config.ps1 detected ports)" -ForegroundColor DarkGray
+} else {
+    # Fallback to hardcoded defaults
+    Write-Host "  (port-config.ps1 not found, using defaults)" -ForegroundColor Yellow
+    $Ports = @{
+        'web-base' = 33000; 'web-workspace' = 33001; 'web-rag' = 33002
+        'web-review' = 33003; 'web-team' = 33004; 'web-tm' = 33005
+        'web-tb' = 33006; 'web-orchestration' = 33007; 'envoy-gateway' = 33088
+    }
 }
 
-foreach ($svc in $externalPorts.Keys) {
-    $port = $externalPorts[$svc]
+$externalChecks = @('web-base','web-workspace','web-rag','web-review','web-team','web-tm','web-tb','web-orchestration','envoy-gateway')
+foreach ($svc in $externalChecks) {
+    $port = $Ports[$svc]
+    if (-not $port) { continue }
     Write-Host "  $svc (localhost:$port)... " -NoNewline
     try {
         $tcp = New-Object System.Net.Sockets.TcpClient
@@ -115,7 +125,54 @@ foreach ($svc in $externalPorts.Keys) {
     }
 }
 
-# ── 4. Pod status ────────────────────────────────────────────────────
+# ── 4. Orchestration Domain ──────────────────────────────────────────
+Write-Host ""
+Write-Host "=== Orchestration Domain ===" -ForegroundColor Yellow
+
+# Check orchestration service pods
+$orchServices = @(
+    'catest-intent-gateway',
+    'catest-orchestrator-svc',
+    'catest-memory-service',
+    'catest-dispatch-router',
+    'catest-mcp-facade',
+    'catest-trace-audit'
+)
+
+foreach ($svc in $orchServices) {
+    $shortName = $svc -replace 'catest-', ''
+    Write-Host "  $shortName... " -NoNewline
+    $env:MSYS_NO_PATHCONV = '1'
+    $podReady = kubectl get pod -n $Namespace -l "app=$svc" -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>&1
+    $env:MSYS_NO_PATHCONV = $null
+    if ($podReady -eq 'true') {
+        Write-Host "OK" -ForegroundColor Green
+    } else {
+        Write-Host "NOT READY" -ForegroundColor Yellow
+        # Don't fail overall test — orchestration services may not be deployed yet
+    }
+}
+
+# MCP Facade healthz check
+Write-Host "  mcp-facade /healthz... " -NoNewline
+$env:MSYS_NO_PATHCONV = '1'
+$mcpPod = kubectl get pod -n $Namespace -l app=catest-mcp-facade -o jsonpath='{.items[0].metadata.name}' 2>&1
+$env:MSYS_NO_PATHCONV = $null
+if ($mcpPod -and $LASTEXITCODE -eq 0) {
+    $env:MSYS_NO_PATHCONV = '1'
+    $healthz = kubectl exec -n $Namespace $mcpPod -- curl -sf http://localhost:34098/healthz 2>&1
+    $env:MSYS_NO_PATHCONV = $null
+    if ($healthz -match 'mcp_endpoint') {
+        Write-Host "OK (MCP at /mcp)" -ForegroundColor Green
+    } else {
+        Write-Host "FAILED" -ForegroundColor Red
+        $allPassed = $false
+    }
+} else {
+    Write-Host "NOT DEPLOYED" -ForegroundColor Yellow
+}
+
+# ── 5. Pod status ────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Pod Status ===" -ForegroundColor Yellow
 
@@ -128,6 +185,36 @@ if ($failedPods) {
     $allPassed = $false
 } else {
     Write-Host "  All pods healthy" -ForegroundColor Green
+}
+
+# ── 6. Database schemas ──────────────────────────────────────────────
+Write-Host ""
+Write-Host "=== Database Schema Check ===" -ForegroundColor Yellow
+
+$dbChecks = @{
+    'catest_ingestion'     = 'snapshots'
+    'catest_hub'           = 'repositories'
+    'catest_review'        = 'review_sessions'
+    'catest_orchestration' = 'pg_tables'  # just check DB exists
+}
+
+foreach ($db in $dbChecks.Keys) {
+    $table = $dbChecks[$db]
+    Write-Host "  $db... " -NoNewline
+    $env:MSYS_NO_PATHCONV = '1'
+    if ($table -eq 'pg_tables') {
+        # Just check the database is accessible
+        $check = kubectl exec -n $Namespace postgres-0 -- psql -U catest -d $db -tAc "SELECT 1;" 2>&1
+    } else {
+        $check = kubectl exec -n $Namespace postgres-0 -- psql -U catest -d $db -tAc "SELECT 1 FROM $table LIMIT 0;" 2>&1
+    }
+    $env:MSYS_NO_PATHCONV = $null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "OK" -ForegroundColor Green
+    } else {
+        Write-Host "FAILED (missing tables?)" -ForegroundColor Red
+        $allPassed = $false
+    }
 }
 
 # ── Result ───────────────────────────────────────────────────────────

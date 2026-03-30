@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-ai-note
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-ai-note
+  template:
+    metadata:
+      labels:
+        app: catest-ai-note
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: ai-note
+          image: ghcr.io/ulyssesleolee/catest-ai-note:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34083
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "ai-note"
+            - name: CATEST_AI_SERVICE_PORT
+              value: "34083"
+            - name: CATEST_AI_RUST_GATEWAY_URL
+              value: "http://catest-hub:33080"
+            - name: CATEST_AI_QDRANT_URL
+              value: "http://qdrant:36333"
+            - name: CATEST_AI_QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: qdrant-api-key
+            - name: CATEST_AI_ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: anthropic-api-key
+            - name: CATEST_AI_LANGSMITH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: langsmith-api-key
+            - name: CATEST_AI_INFERENCE_URL
+              value: "http://inference:38080"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34083
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34083
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-ai-note
+  namespace: catest
+spec:
+  selector:
+    app: catest-ai-note
+  ports:
+    - port: 34083
+      targetPort: 34083
+      name: http

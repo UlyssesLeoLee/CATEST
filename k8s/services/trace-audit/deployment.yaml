@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-trace-audit
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-trace-audit
+  template:
+    metadata:
+      labels:
+        app: catest-trace-audit
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: trace-audit
+          image: ghcr.io/ulyssesleolee/catest-trace-audit:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34097
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "trace-audit"
+            - name: CATEST_AI_SERVICE_PORT
+              value: "34097"
+            - name: CATEST_AI_KAFKA_BROKER
+              value: "kafka:39092"
+            - name: CATEST_AI_DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_orchestration"
+            - name: CATEST_AI_LANGSMITH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: langsmith-api-key
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34097
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34097
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-trace-audit
+  namespace: catest
+spec:
+  selector:
+    app: catest-trace-audit
+  ports:
+    - port: 34097
+      targetPort: 34097
+      name: http

@@ -71,7 +71,7 @@ kubectl describe pod -n catest <pod-name>
 ./k8s-restart.ps1 -Only gateway,web,web-rag
 ```
 
-### Skip Infrastructure (DB/Kafka/Neo4j)
+### Skip Infrastructure (DB/Kafka/Memgraph)
 ```powershell
 ./k8s-restart.ps1 -SkipInfra
 ```

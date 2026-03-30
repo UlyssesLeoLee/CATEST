@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-adapter-codex
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-adapter-codex
+  template:
+    metadata:
+      labels:
+        app: catest-adapter-codex
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: adapter-codex
+          image: ghcr.io/ulyssesleolee/catest-adapter-codex:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34094
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "adapter-codex"
+            - name: CATEST_AI_KAFKA_BROKER
+              value: "kafka:39092"
+            - name: CODEX_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: codex-api-key
+                  optional: true
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34094
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34094
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-adapter-codex
+  namespace: catest
+spec:
+  selector:
+    app: catest-adapter-codex
+  ports:
+    - port: 34094
+      targetPort: 34094
+      name: http

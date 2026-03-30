@@ -190,7 +190,7 @@ export default function HubPage() {
               {[
                 { name: "Code Gateway", status: "nominal" as const, val: 85 },
                 { name: "PostgreSQL MB", status: "nominal" as const, val: 60 },
-                { name: "Neo4j Semantic", status: "warning" as const, val: 92 },
+                { name: "Memgraph Semantic", status: "warning" as const, val: 92 },
                 { name: "Qdrant TB", status: "nominal" as const, val: 40 },
               ].map((svc, i) => (
                 <div key={i} className="flex items-center gap-4 p-3 rounded-xl glass-card transition-all hover:bg-[#b87333]/10">

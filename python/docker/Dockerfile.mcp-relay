@@ -1,0 +1,4 @@
+FROM ghcr.io/ulyssesleolee/catest-ai-base:latest
+
+EXPOSE 8090
+CMD ["uvicorn", "catest_ai.mcp_relay.main:app", "--host", "0.0.0.0", "--port", "8090"]

@@ -31,19 +31,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: neo4j-ext
+  name: memgraph-ext
   namespace: catest
 spec:
   type: LoadBalancer
   ports:
-    - port: 37474
-      targetPort: 7474
-      name: http
     - port: 37687
       targetPort: 7687
       name: bolt
   selector:
-    app: neo4j
+    app: memgraph
 ---
 apiVersion: v1
 kind: Service

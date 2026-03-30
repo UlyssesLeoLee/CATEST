@@ -5,13 +5,14 @@
 #   ./k8s-restart.ps1 -Build                   # Build images then deploy
 #   ./k8s-restart.ps1 -Only gateway,web        # Deploy specific services only
 #   ./k8s-restart.ps1 -SkipInfra               # Skip infrastructure layer
+#   ./k8s-restart.ps1 -Only mcp-facade         # Deploy single orchestration service
 
 [CmdletBinding()]
 param(
     [string]$Only = '',           # Comma-separated service names to deploy (empty = all)
     [string]$Namespace = 'catest',
     [switch]$Build,               # Build Docker images before deploy
-    [switch]$SkipInfra,           # Skip infrastructure (PG/Kafka/Neo4j/Qdrant/Arroyo)
+    [switch]$SkipInfra,           # Skip infrastructure (PG/Kafka/Memgraph/Qdrant/Arroyo)
     [switch]$SkipWait             # Skip rollout wait
 )
 
@@ -22,17 +23,34 @@ $K8s = Join-Path $PSScriptRoot 'k8s'
 
 # ── Service Registry ─────────────────────────────────────────────────────────
 $Services = @{
+    # --- Infrastructure ---
     postgres  = @{ Deploy = $null;                   Image = 'ghcr.io/ulyssesleolee/catest-postgres:latest';      Module = 'infra'; Type = 'statefulset'; Dir = 'docker/postgres' }
+    # --- Rust services ---
     gateway   = @{ Deploy = 'catest-hub';            Image = 'ghcr.io/ulyssesleolee/catest-gateway:latest';       Module = 'rust' }
     parser    = @{ Deploy = 'catest-workspace';      Image = 'ghcr.io/ulyssesleolee/catest-parser:latest';        Module = 'rust' }
     embedding = @{ Deploy = 'catest-intelligence';   Image = 'ghcr.io/ulyssesleolee/catest-embedding:latest';     Module = 'rust' }
     review    = @{ Deploy = 'catest-review';         Image = 'ghcr.io/ulyssesleolee/catest-review:latest';        Module = 'rust' }
     ingestion = @{ Deploy = $null;                   Image = 'ghcr.io/ulyssesleolee/catest-ingestion:latest';     Module = 'rust';  Type = 'job' }
-    web            = @{ Deploy = 'catest-web-base';       Image = 'ghcr.io/ulyssesleolee/catest-web:latest';           Module = 'web'; Dir = 'web/apps/web-base' }
-    'web-workspace'= @{ Deploy = 'catest-web-workspace';  Image = 'ghcr.io/ulyssesleolee/catest-web-workspace:latest'; Module = 'web'; Dir = 'web/apps/web-workspace' }
-    'web-rag'      = @{ Deploy = 'catest-web-rag';        Image = 'ghcr.io/ulyssesleolee/catest-web-rag:latest';       Module = 'web'; Dir = 'web/apps/web-rag' }
-    'web-review'   = @{ Deploy = 'catest-web-review';     Image = 'ghcr.io/ulyssesleolee/catest-web-review:latest';    Module = 'web'; Dir = 'web/apps/web-review' }
-    'web-team'     = @{ Deploy = 'catest-web-team';       Image = 'ghcr.io/ulyssesleolee/catest-web-team:latest';      Module = 'web'; Dir = 'web/apps/web-team' }
+    batch     = @{ Deploy = $null;                   Image = 'ghcr.io/ulyssesleolee/catest-batch:latest';         Module = 'rust';  Type = 'job' }
+    # --- Web apps ---
+    web              = @{ Deploy = 'catest-web-base';         Image = 'ghcr.io/ulyssesleolee/catest-web:latest';              Module = 'web'; Dir = 'web/apps/web-base' }
+    'web-workspace'  = @{ Deploy = 'catest-web-workspace';    Image = 'ghcr.io/ulyssesleolee/catest-web-workspace:latest';    Module = 'web'; Dir = 'web/apps/web-workspace' }
+    'web-rag'        = @{ Deploy = 'catest-web-rag';          Image = 'ghcr.io/ulyssesleolee/catest-web-rag:latest';          Module = 'web'; Dir = 'web/apps/web-rag' }
+    'web-review'     = @{ Deploy = 'catest-web-review';       Image = 'ghcr.io/ulyssesleolee/catest-web-review:latest';       Module = 'web'; Dir = 'web/apps/web-review' }
+    'web-team'       = @{ Deploy = 'catest-web-team';         Image = 'ghcr.io/ulyssesleolee/catest-web-team:latest';         Module = 'web'; Dir = 'web/apps/web-team' }
+    'web-tm'         = @{ Deploy = 'catest-web-tm';           Image = 'ghcr.io/ulyssesleolee/catest-web-tm:latest';           Module = 'web'; Dir = 'web/apps/web-tm' }
+    'web-tb'         = @{ Deploy = 'catest-web-tb';           Image = 'ghcr.io/ulyssesleolee/catest-web-tb:latest';           Module = 'web'; Dir = 'web/apps/web-tb' }
+    'web-orchestration' = @{ Deploy = 'catest-web-orchestration'; Image = 'ghcr.io/ulyssesleolee/catest-web-orchestration:latest'; Module = 'web'; Dir = 'web/apps/web-orchestration' }
+    # --- Orchestration Domain (Python AI services) ---
+    'intent-gateway'      = @{ Deploy = 'catest-intent-gateway';      Image = 'ghcr.io/ulyssesleolee/catest-intent-gateway:latest';      Module = 'python' }
+    'orchestrator-svc'    = @{ Deploy = 'catest-orchestrator-svc';    Image = 'ghcr.io/ulyssesleolee/catest-orchestrator-svc:latest';    Module = 'python' }
+    'memory-service'      = @{ Deploy = 'catest-memory-service';      Image = 'ghcr.io/ulyssesleolee/catest-memory-service:latest';      Module = 'python' }
+    'dispatch-router'     = @{ Deploy = 'catest-dispatch-router';     Image = 'ghcr.io/ulyssesleolee/catest-dispatch-router:latest';     Module = 'python' }
+    'mcp-facade'          = @{ Deploy = 'catest-mcp-facade';          Image = 'ghcr.io/ulyssesleolee/catest-mcp-facade:latest';          Module = 'python' }
+    'trace-audit'         = @{ Deploy = 'catest-trace-audit';         Image = 'ghcr.io/ulyssesleolee/catest-trace-audit:latest';         Module = 'python' }
+    'adapter-codex'       = @{ Deploy = 'catest-adapter-codex';       Image = 'ghcr.io/ulyssesleolee/catest-adapter-codex:latest';       Module = 'python' }
+    'adapter-claude-code' = @{ Deploy = 'catest-adapter-claude-code'; Image = 'ghcr.io/ulyssesleolee/catest-adapter-claude-code:latest'; Module = 'python' }
+    'adapter-antigravity' = @{ Deploy = 'catest-adapter-antigravity'; Image = 'ghcr.io/ulyssesleolee/catest-adapter-antigravity:latest'; Module = 'python' }
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -121,7 +139,7 @@ Log "  Build     : $Build"
 Write-Host ""
 
 # ── 0. Pre-flight ─────────────────────────────────────────────────────────────
-Log "[0/7] Pre-flight check..."
+Log "[0/8] Pre-flight check..."
 foreach ($cmd in @('docker', 'kubectl')) {
     if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { Fatal "$cmd not found" }
 }
@@ -136,10 +154,11 @@ Diagnose-Images
 
 Log "  OK" Green
 
-# ── 1. Build images & load to cluster (optional) ──────────────────────────────
+# ── 1. Build images (optional) ───────────────────────────────────────────────
 if ($Build) {
-    Log "[1/7] Building Docker images..."
+    Log "[1/8] Building Docker images..."
     $rustDockerfile = Join-Path $PSScriptRoot 'rust.Dockerfile'
+    $pythonDir = Join-Path $PSScriptRoot 'python'
     foreach ($name in $Selected) {
         $spec = $Services[$name]
         Log "  Building $name -> $($spec.Image)" Cyan
@@ -148,17 +167,23 @@ if ($Build) {
             docker build -t $spec.Image -f "$infraDir/Dockerfile" $infraDir
         } elseif ($spec.Module -eq 'rust') {
             docker build -t $spec.Image --build-arg "SERVICE_NAME=catest-$name" -f $rustDockerfile $PSScriptRoot
-        } else {
-            docker build -t $spec.Image -f "$($spec.Dir)/Dockerfile" (Join-Path $PSScriptRoot "web")
+        } elseif ($spec.Module -eq 'web') {
+            $webDir = Join-Path $PSScriptRoot 'web'
+            $appDirName = ($spec.Dir -split '/')[-1]
+            docker build -t $spec.Image -f "$webDir/apps/$appDirName/Dockerfile" $webDir
+        } elseif ($spec.Module -eq 'python') {
+            # Python services use Dockerfile.<service-name> from python/docker/
+            $dockerfileName = "Dockerfile.$($name)"
+            docker build -t $spec.Image -f "$pythonDir/docker/$dockerfileName" $pythonDir
         }
         if ($LASTEXITCODE -ne 0) { Fatal "Docker build failed for $name" }
     }
 } else {
-    Log "[1/7] Skipping image build (use -Build to enable)"
+    Log "[1/8] Skipping image build (use -Build to enable)"
 }
 
 # ── 2. Base resources ─────────────────────────────────────────────────────────
-Log "[2/7] Applying base resources (namespace, secrets, RBAC)..."
+Log "[2/8] Applying base resources (namespace, secrets, RBAC)..."
 try {
     kube apply -f "$K8s/base/namespace.yaml"
 } catch {
@@ -174,16 +199,36 @@ if (Test-Path $rbacPath) { kube apply -f $rbacPath }
 
 # ── 3. Infrastructure ─────────────────────────────────────────────────────────
 if ($SkipInfra) {
-    Log "[3/7] Skipping infrastructure (use without -SkipInfra to deploy)"
+    Log "[3/8] Skipping infrastructure (use without -SkipInfra to deploy)"
 } else {
-    Log "[3/7] Deploying infrastructure (PG/Kafka/Neo4j/Qdrant/Arroyo)..."
-    foreach ($infra in @('postgres', 'kafka', 'neo4j', 'qdrant', 'arroyo')) {
+    Log "[3/8] Deploying infrastructure (PG/Kafka/Memgraph/Qdrant/Arroyo)..."
+
+    # ── 3a. Update ConfigMap BEFORE deploying postgres ────────────────────
+    # Critical: if postgres PVC is fresh (Docker restart / K8s reset), the initdb
+    # scripts from this ConfigMap run on first boot. Must be up-to-date FIRST.
+    Log "  postgres-init-scripts (configmap, updated before PG deploy)" Cyan
+    kubectl create configmap postgres-init-scripts `
+        --from-file=scripts/initdb.d `
+        --namespace $Namespace `
+        --dry-run=client -o yaml | kubectl apply -f -
+    if ($LASTEXITCODE -ne 0) { Warn "ConfigMap sync had issues" }
+
+    # ── 3b. Deploy all infra StatefulSets/Deployments ────────────────────
+    foreach ($infra in @('postgres', 'kafka', 'memgraph', 'qdrant', 'arroyo')) {
         $p = "$K8s/infra/$infra/"
         if (Test-Path $p) {
             Log "  $infra" Cyan
             kube apply -f $p
         }
     }
+
+    # FIX: Ensure postgres uses IfNotPresent (local images, no GHCR push needed)
+    Log "  Ensuring postgres imagePullPolicy=IfNotPresent..." DarkGray
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    kubectl patch statefulset postgres -n $Namespace --type='json' `
+        -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"IfNotPresent"}]' 2>&1 | Out-Null
+    $ErrorActionPreference = $prevEAP
+
     # If postgres was rebuilt, restart the statefulset to pick up the new image
     if ('postgres' -in $Selected -and $Build) {
         Log "  Restarting postgres statefulset (new image with pgvector + AGE)..." Yellow
@@ -191,19 +236,21 @@ if ($SkipInfra) {
         kubectl rollout status statefulset/postgres -n $Namespace --timeout=120s 2>&1 | Out-Null
     }
 
-    # ConfigMap for DB init scripts
-    Log "  postgres-init-scripts (configmap)" Cyan
-    kubectl create configmap postgres-init-scripts `
-        --from-file=scripts/initdb.d `
-        --namespace $Namespace `
-        --dry-run=client -o yaml | kubectl apply -f -
-    if ($LASTEXITCODE -ne 0) { Warn "ConfigMap sync had issues" }
-
     # External services
     $extSvc = "$K8s/infra/ext-services.yaml"
     if (Test-Path $extSvc) { kube apply -f $extSvc }
 
-    # Wait for PostgreSQL to be ready, then run DB init scripts
+    # Cloudflare Tunnel (orchestration domain)
+    $cfDir = "$K8s/infra/cloudflare/"
+    if (Test-Path $cfDir) {
+        Log "  cloudflare tunnel" Cyan
+        kube apply -f $cfDir
+    }
+
+    # ── 3c. Wait for PostgreSQL, then ensure databases + schemas ─────────
+    # This section is IDEMPOTENT — safe to run every time, even if initdb
+    # already ran on fresh PVC. Covers the case where PVC survived but
+    # databases were somehow lost, or new databases were added to the list.
     Log "  Waiting for PostgreSQL readiness..." DarkGray
     $pgReady = $false
     for ($i = 0; $i -lt 30; $i++) {
@@ -214,33 +261,46 @@ if ($SkipInfra) {
         Start-Sleep -Seconds 3
     }
     if ($pgReady) {
-        Log "  Running database init scripts..." Cyan
+        Log "  Ensuring all databases exist (idempotent)..." Cyan
         $initDir = Join-Path $PSScriptRoot 'scripts/initdb.d'
         if (Test-Path $initDir) {
-            # Temporarily allow non-terminating errors from kubectl/psql (NOTICE, already-exists, etc.)
             $prevEAP = $ErrorActionPreference
             $ErrorActionPreference = 'Continue'
-            # Ensure all databases exist
             $env:MSYS_NO_PATHCONV = '1'
-            foreach ($db in @('catest_hub', 'catest_gateway', 'catest_ingestion', 'catest_intelligence', 'catest_workspace', 'catest_review')) {
+
+            # All CATEST databases — single source of truth
+            $AllDatabases = @(
+                'catest_hub', 'catest_gateway', 'catest_ingestion', 'catest_intelligence',
+                'catest_workspace', 'catest_review', 'catest_tm', 'catest_tb',
+                'catest_orchestration'
+            )
+
+            # Create databases (IF NOT EXISTS via error suppression)
+            foreach ($db in $AllDatabases) {
                 kubectl exec -n $Namespace postgres-0 -- psql -U catest -c "CREATE DATABASE $db OWNER catest;" 2>&1 | Out-Null
             }
-            # Enable pgvector + AGE extensions on all databases
-            foreach ($db in @('catest_hub', 'catest_gateway', 'catest_ingestion', 'catest_intelligence', 'catest_workspace', 'catest_review')) {
+            Log "    9 databases ensured" DarkGray
+
+            # Enable extensions on all databases
+            foreach ($db in $AllDatabases) {
                 kubectl exec -n $Namespace postgres-0 -- psql -U catest -d $db -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS age;" 2>&1 | Out-Null
             }
             Log "    pgcrypto + pgvector + AGE enabled on all databases" DarkGray
+
             # Create tenants table in catest_intelligence (needed by rag-modules FK references)
             kubectl exec -n $Namespace postgres-0 -- psql -U catest -d catest_intelligence -c "CREATE TABLE IF NOT EXISTS tenants (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());" 2>&1 | Out-Null
-            # Run all SQL init files in order
+
+            # Run all SQL init files in order (all use IF NOT EXISTS / ON CONFLICT, safe to re-run)
             foreach ($sql in (Get-ChildItem "$initDir/*.sql" | Sort-Object Name)) {
                 Log "    $($sql.Name)" DarkGray
                 kubectl exec -n $Namespace postgres-0 -- psql -U catest -f "/docker-entrypoint-initdb.d/$($sql.Name)" 2>&1 | Out-Null
             }
+
             # Fix constraints required by auth (ON CONFLICT needs UNIQUE)
             foreach ($db in @('catest_hub', 'catest_gateway')) {
                 kubectl exec -n $Namespace postgres-0 -- psql -U catest -d $db -c "DROP INDEX IF EXISTS idx_verification_email; DO `$`$ BEGIN ALTER TABLE verification_codes ADD CONSTRAINT uq_verification_email UNIQUE (email); EXCEPTION WHEN duplicate_table THEN NULL; END `$`$;" 2>&1 | Out-Null
             }
+
             $env:MSYS_NO_PATHCONV = $null
             $ErrorActionPreference = $prevEAP
             Log "  Database initialization complete" Green
@@ -251,11 +311,20 @@ if ($SkipInfra) {
 }
 
 # ── 4. Application services ──────────────────────────────────────────────────
-Log "[4/7] Deploying application services..."
+Log "[4/8] Deploying application services..."
 
-# Fixed ordering: backend first, then frontend
-$applyOrder = @('gateway', 'parser', 'embedding', 'review', 'ingestion',
-                'web', 'web-workspace', 'web-rag', 'web-review', 'web-team')
+# Fixed ordering: backend first, then frontend, then orchestration
+$applyOrder = @(
+    # Core backend
+    'gateway', 'parser', 'embedding', 'review', 'ingestion',
+    # Web frontends
+    'web', 'web-workspace', 'web-rag', 'web-review', 'web-team', 'web-tm', 'web-tb',
+    'web-orchestration',
+    # Orchestration domain
+    'intent-gateway', 'orchestrator-svc', 'memory-service', 'dispatch-router',
+    'mcp-facade', 'trace-audit',
+    'adapter-codex', 'adapter-claude-code', 'adapter-antigravity'
+)
 
 foreach ($name in $applyOrder) {
     if ($name -notin $Selected) { continue }
@@ -306,9 +375,9 @@ if (Test-Path $kedaDir) {
 
 # ── 5. Rollout verification ──────────────────────────────────────────────────
 if ($SkipWait) {
-    Log "[5/7] Skipping rollout check"
+    Log "[5/8] Skipping rollout check"
 } else {
-    Log "[5/7] Waiting for rollouts..."
+    Log "[5/8] Waiting for rollouts..."
     $deployments = @()
     foreach ($name in $Selected) {
         $spec = $Services[$name]
@@ -321,52 +390,64 @@ if ($SkipWait) {
     }
 }
 
-# ── 6. Port forwarding ───────────────────────────────────────────────────────
-# Set up kubectl port-forward as a fallback if envoy gateway ports are not reachable.
-$PortForwards = @{
-    'catest-web-base'      = 33000
-    'catest-web-workspace' = 33001
-    'catest-web-rag'       = 33002
-    'catest-web-review'    = 33003
-    'catest-web-team'      = 33004
-}
-
-$needPortForward = $false
-foreach ($svc in $PortForwards.Keys) {
-    $port = $PortForwards[$svc]
-    try {
-        $test = New-Object System.Net.Sockets.TcpClient
-        $test.Connect('127.0.0.1', $port)
-        $test.Close()
-    } catch {
-        $needPortForward = $true
-        break
-    }
-}
-
-if ($needPortForward) {
-    Log "[6/7] Setting up port forwarding for web services..."
-    # Kill any stale port-forward processes
-    Get-Process -Name 'kubectl' -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -match 'port-forward' } |
-        Stop-Process -Force -ErrorAction SilentlyContinue
-
-    foreach ($svc in $PortForwards.Keys) {
-        $port = $PortForwards[$svc]
-        Log "  $svc -> localhost:$port" Cyan
-        Start-Process -WindowStyle Hidden -FilePath 'kubectl' `
-            -ArgumentList "port-forward -n $Namespace svc/$svc ${port}:${port} --address=0.0.0.0"
-    }
-    Start-Sleep -Seconds 2
+# ── 6. Port forwarding (via port-config.ps1) ────────────────────────────────
+Log "[6/8] Detecting and fixing port accessibility..."
+$portConfigScript = Join-Path $PSScriptRoot 'port-config.ps1'
+if (Test-Path $portConfigScript) {
+    . $portConfigScript -Probe
+    # $Ports and $PortStatus are now available
+    $nativeCount = @($PortStatus.Values | Where-Object { $_.Status -eq 'native' }).Count
+    $fwdCount    = @($PortStatus.Values | Where-Object { $_.Status -eq 'forwarded' }).Count
+    $deadCount   = @($PortStatus.Values | Where-Object { $_.Status -eq 'dead' }).Count
+    $downCount   = @($PortStatus.Values | Where-Object { $_.Status -eq 'down' }).Count
+    Log "  Native: $nativeCount | Forwarded: $fwdCount | Dead: $deadCount | Down: $downCount" $(
+        if ($deadCount -eq 0 -and $downCount -eq 0) { 'Green' } else { 'Yellow' }
+    )
 } else {
-    Log "[6/7] All web ports already reachable (skipping port-forward)"
+    Warn "port-config.ps1 not found — falling back to basic port check"
+    $Ports = @{}
 }
 
-# ── 7. Verification ─────────────────────────────────────────────────────────
-Log "[7/7] Verifying deployment..."
+# ── 7. Orchestration service health check ────────────────────────────────────
+Log "[7/8] Checking orchestration services..."
+$orchServices = @{
+    'intent-gateway' = 34090
+    'mcp-facade'     = 34098
+}
+$prevEAP3 = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+foreach ($svc in $orchServices.Keys) {
+    $port = $orchServices[$svc]
+    $podName = "catest-$svc"
+    $env:MSYS_NO_PATHCONV = '1'
+    $podReady = kubectl get pod -n $Namespace -l "app=$podName" -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>&1
+    $env:MSYS_NO_PATHCONV = $null
+    if ($podReady -eq 'true') {
+        Log "  $svc (:$port) -> Ready" Green
+    } else {
+        Warn "$svc (:$port) -> Not ready yet"
+    }
+}
+# MCP endpoint check (if mcp-facade is deployed)
+$env:MSYS_NO_PATHCONV = '1'
+$mcpPod = kubectl get pod -n $Namespace -l app=catest-mcp-facade -o jsonpath='{.items[0].metadata.name}' 2>&1
+$env:MSYS_NO_PATHCONV = $null
+if ($mcpPod -and $LASTEXITCODE -eq 0) {
+    $env:MSYS_NO_PATHCONV = '1'
+    $healthz = kubectl exec -n $Namespace $mcpPod -- curl -s http://localhost:34098/healthz 2>&1
+    $env:MSYS_NO_PATHCONV = $null
+    if ($healthz -match 'mcp_endpoint') {
+        Log "  MCP Server (/mcp) -> Healthy" Green
+    } else {
+        Warn "MCP Server healthz returned unexpected response"
+    }
+}
+$ErrorActionPreference = $prevEAP3
+
+# ── 8. Verification ─────────────────────────────────────────────────────────
+Log "[8/8] Verifying deployment..."
 Write-Host ""
 
-# 7a. Pod status check
+# 8a. Pod status check
 $allPods = kubectl get pods -n $Namespace --no-headers 2>&1
 $podLines = ($allPods -split "`n") | Where-Object { $_.Trim() -ne '' }
 $runningCount = 0
@@ -399,24 +480,25 @@ if ($failedPods.Count -gt 0) {
     $crashPods = @($failedPods | Where-Object { $_.Status -match 'CrashLoopBackOff|Error' })
     if ($errImagePods.Count -gt 0) {
         Warn "Image pull error: Ensure images are built locally with ./k8s-restart.ps1 -Build"
+        Warn "For Python AI services: ./python/build-images.ps1"
     }
     if ($crashPods.Count -gt 0) {
         Warn "CrashLoopBackOff: Check logs with: kubectl logs -n $Namespace <pod-name>"
     }
 }
 
-# 7b. Web port accessibility check
+# 8b. Web port accessibility check (using $Ports from port-config.ps1)
 Write-Host ""
 Log "  Web service accessibility:" Cyan
 $allPortsOk = $true
-foreach ($svc in $PortForwards.Keys) {
-    $port = $PortForwards[$svc]
-    $shortName = $svc -replace 'catest-', ''
+$webServices = @('web-base', 'web-workspace', 'web-rag', 'web-review', 'web-team', 'web-tm', 'web-tb', 'web-orchestration', 'envoy-gateway')
+foreach ($svcName in $webServices) {
+    $port = if ($Ports -and $Ports[$svcName]) { $Ports[$svcName] } else { $null }
+    if (-not $port) { continue }
     try {
         $resp = Invoke-WebRequest -Uri "http://localhost:$port/" -UseBasicParsing -MaximumRedirection 0 -TimeoutSec 5 -ErrorAction SilentlyContinue 2>&1
         $code = $resp.StatusCode
     } catch {
-        # Invoke-WebRequest throws on 3xx/4xx with -MaximumRedirection 0
         if ($_.Exception.Response) {
             $code = [int]$_.Exception.Response.StatusCode
         } else {
@@ -424,17 +506,17 @@ foreach ($svc in $PortForwards.Keys) {
         }
     }
     if ($code -gt 0) {
-        Log "    http://localhost:$port ($shortName) -> HTTP $code" Green
+        Log "    http://localhost:$port ($svcName) -> HTTP $code" Green
     } else {
-        Log "    http://localhost:$port ($shortName) -> UNREACHABLE" Red
+        Log "    http://localhost:$port ($svcName) -> UNREACHABLE" Red
         $allPortsOk = $false
     }
 }
 
-# 7c. Infrastructure service check
+# 8c. Infrastructure service check
 Write-Host ""
 Log "  Infrastructure pods:" Cyan
-foreach ($infra in @('postgres-0', 'kafka-0', 'neo4j-0', 'qdrant-0')) {
+foreach ($infra in @('postgres-0', 'kafka-0', 'memgraph-0', 'qdrant-0')) {
     $env:MSYS_NO_PATHCONV = '1'
     $podStatus = kubectl get pod $infra -n $Namespace -o jsonpath='{.status.phase}' 2>&1
     $env:MSYS_NO_PATHCONV = $null
@@ -456,10 +538,19 @@ if ($failedPods.Count -eq 0 -and $allPortsOk) {
     Log "  CATEST Deploy Complete (with warnings)" Yellow
     Log "======================================================" Yellow
 }
-Log "  Gateway    : http://localhost:33088  (unified entry point)"
-Log "  Dashboard  : http://localhost:33088/"
-Log "  Workspace  : http://localhost:33088/workspace/"
-Log "  RAG        : http://localhost:33088/rag/"
-Log "  Review     : http://localhost:33088/review/"
-Log "  Team       : http://localhost:33088/team/"
+# Use detected ports from port-config.ps1 (falls back to defaults if unavailable)
+$pGateway = if ($Ports -and $Ports['envoy-gateway']) { $Ports['envoy-gateway'] } else { 33088 }
+$pTM      = if ($Ports -and $Ports['web-tm'])        { $Ports['web-tm'] }        else { 33005 }
+$pTB      = if ($Ports -and $Ports['web-tb'])        { $Ports['web-tb'] }        else { 33006 }
+$pMCP     = if ($Ports -and $Ports['mcp-facade'])    { $Ports['mcp-facade'] }    else { 34098 }
+Log "  Gateway       : http://localhost:$pGateway  (unified entry point)"
+Log "  Dashboard     : http://localhost:$pGateway/"
+Log "  Workspace     : http://localhost:$pGateway/workspace/"
+Log "  RAG           : http://localhost:$pGateway/rag/"
+Log "  Review        : http://localhost:$pGateway/review/"
+Log "  Team          : http://localhost:$pGateway/team/"
+Log "  TM            : http://localhost:$pTM/"
+Log "  TB            : http://localhost:$pTB/"
+Log "  Orchestration : http://localhost:$pGateway/orchestration/ (steampunk chat UI)"
+Log "  MCP Facade    : http://localhost:$pMCP/healthz (MCP at /mcp)"
 Write-Host ""

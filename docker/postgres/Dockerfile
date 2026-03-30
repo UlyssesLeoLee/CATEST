@@ -29,7 +29,7 @@ RUN git clone --branch v${PGVECTOR_VERSION} --depth 1 \
 
 # ── Build Apache AGE (graph database extension) ───────────────────────
 # Enables: Cypher queries inside PostgreSQL, graph traversal, path finding
-# Synergy: Neo4j handles primary graph workloads; AGE provides
+# Synergy: Memgraph handles primary graph workloads; AGE provides
 #          SQL-integrated graph queries for cross-relational-graph joins
 ARG AGE_VERSION=release/PG16/1.5.0
 RUN git clone --branch ${AGE_VERSION} --depth 1 \

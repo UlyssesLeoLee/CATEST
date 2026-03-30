@@ -250,7 +250,7 @@ export default function RagPage() {
           </div>
           <h3 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">Cypher Console</h3>
           <div className="flex-1" />
-          <span className="text-[9px] text-[var(--text-muted)]/60 font-mono">Neo4j Bolt://localhost:7687</span>
+          <span className="text-[9px] text-[var(--text-muted)]/60 font-mono">Memgraph Bolt://localhost:7687</span>
         </div>
         <div className="flex gap-3 items-end">
           <div className="flex-1 relative">

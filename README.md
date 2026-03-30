@@ -12,10 +12,10 @@
 ## 🚀 核心特性
 
 - **🤖 模块化 Agentic RAG**: 由 **LangGraph** 驱动的意图路由引擎，能够根据代码特征动态调度【术语库 (Term)】、【规则库 (Rule)】、【相似记忆 (Memory/TM)】和【知识图谱 (Graph)】。
-- **⚡ 流式知识摄取**: 基于 **Apache Kafka** 和 **Arroyo (SQL Stream)** 的准实时清洗管道，确保新产出的知识能够在毫秒级内被向量化并存入 Qdrant/Neo4j。
+- **⚡ 流式知识摄取**: 基于 **Apache Kafka** 和 **Arroyo (SQL Stream)** 的准实时清洗管道，确保新产出的知识能够在毫秒级内被向量化并存入 Qdrant/Memgraph。
 - **📝 类 CAT 工作流**: 深度还原专业翻译软件 (Computer-Assisted Translation) 的双栏对照体验，采用 **Next.js + SQLite** 的架构提供极致的本地响应速度。
 - **🌐 分布式微服务**: 核心组件均采用 **Rust (Actix-Web)** 编写，保障高并发处理下的数据一致性与系统稳定性。
-- **🏗️ 拓扑上下文感知**: 利用 **Neo4j** 构建代码实体间的关联关系，解决 RAG 系统中常见的“孤立代码块”语义缺失问题。
+- **🏗️ 拓扑上下文感知**: 利用 **Memgraph** 构建代码实体间的关联关系，解决 RAG 系统中常见的“孤立代码块”语义缺失问题。
 
 ---
 
@@ -24,9 +24,9 @@
 | 层次 | 核心技术 |
 | :--- | :--- |
 | **前端 (Web)** | Next.js 14, Tailwind CSS, LangGraph.js, pnpm |
-| **后端 (Rust)** | Actix-Web, SQLx, rdkafka, neo4rs, Tree-sitter |
+| **后端 (Rust)** | Actix-Web, SQLx, rdkafka, neo4rs (Bolt), Tree-sitter |
 | **流处理 (Stream)** | Apache Kafka, Arroyo |
-| **数据库 (DBs)** | PostgreSQL, Qdrant, Neo4j, SQLite |
+| **数据库 (DBs)** | PostgreSQL, Qdrant, Memgraph, SQLite |
 | **AI 模型** | Qwen2.5 (Ollama), e5-small, bge-reranker |
 
 ---
@@ -69,7 +69,7 @@ graph TD
 
     subgraph "存储层"
         SearchDomain -- 向量索引 --> Qdrant[(Qdrant Vector DB)]
-        SearchDomain -- 关系图谱 --> Neo4j[(Neo4j Graph DB)]
+        SearchDomain -- 关系图谱 --> Memgraph[(Memgraph Graph DB)]
         SearchDomain -- 元数据 --> Postgres[(Postgres DB)]
     end
 
@@ -80,7 +80,7 @@ graph TD
 
 ### 🏆 架构优化亮点 (Recent Optimizations)
 - **共享文件系统 (NAS) 核心**: 弃用 S3 协议，改为直接基于 NAS 的共享存储（/data/catest），利用 `tokio::fs` 实现极速异步 I/O。
-- **搜索域解耦 (Domain Logic)**: 独立出 `search-domain` 仓储，集中管理 Qdrant 搜索与 Neo4j 查询，实现 Gateway 的彻底瘦身。
+- **搜索域解耦 (Domain Logic)**: 独立出 `search-domain` 仓储，集中管理 Qdrant 搜索与 Memgraph 查询，实现 Gateway 的彻底瘦身。
 - **全链路异步化**: 全面适配 `async/await`，确保大文件解析不阻塞系统线程。
 - **环境配置化**: 通过 `HOST_STORAGE_PATH` 环境变量灵活管理 Windows UNC 或 Linux 宿主机存储路径。
 
@@ -94,7 +94,7 @@ CATEST/
 │   ├── gateway/        # 统一 API 网关 (端口: 33080)
 │   ├── ingestion/      # 数据摄取与快照管理 (NAS 写入)
 │   ├── parser/         # 基于 Tree-sitter 的代码深度解析 (NAS 读取)
-│   ├── search-domain/  # 搜索领域逻辑 (Qdrant & Neo4j 封装)
+│   ├── search-domain/  # 搜索领域逻辑 (Qdrant & Memgraph 封装)
 │   └── common/         # 共享模型与工具包
 ├── web/                # Next.js 前端门户 (端口: 33000)
 ├── scripts/            # 基础设施启动与健康检查脚本
@@ -110,7 +110,7 @@ CATEST/
 ```bash
 docker-compose up -d
 ```
-> **提示**: 首次启动会拉取大量镜像（Postgres, Kafka, Qdrant, Neo4j, Arroyo），请确保网络通畅。
+> **提示**: 首次启动会拉取大量镜像（Postgres, Kafka, Qdrant, Memgraph, Arroyo），请确保网络通畅。
 
 
 ### 2. 环境变量配置

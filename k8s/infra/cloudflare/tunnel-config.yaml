@@ -1,0 +1,38 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Cloudflare Tunnel Configuration for CATEST AI Orchestration Domain
+#
+# cloudflared establishes OUTBOUND-ONLY connection to Cloudflare.
+# No inbound ports needed on the local machine.
+#
+# SECURITY: Only mcp-facade and intent-gateway are exposed.
+# Qdrant, Kafka, Memgraph, PostgreSQL, memory-service are NEVER exposed.
+# ═══════════════════════════════════════════════════════════════════════
+
+tunnel: <TUNNEL_ID>
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  # ─── MCP Server (Claude Code / Codex connect here) ─────────────────
+  # This is a REAL MCP Server (Streamable HTTP at /mcp)
+  # Claude Code config: "url": "https://mcp.catest.yourdomain.com/mcp"
+  - hostname: mcp.catest.yourdomain.com
+    service: http://catest-mcp-facade:34098
+    originRequest:
+      noTLSVerify: true
+
+  # ─── Intent Gateway API (web chat + external submission) ───────────
+  - hostname: api.catest.yourdomain.com
+    path: /orchestration/*
+    service: http://catest-intent-gateway:34090
+    originRequest:
+      noTLSVerify: true
+
+  # ─── Trace Audit API (observability) ───────────────────────────────
+  - hostname: api.catest.yourdomain.com
+    path: /traces/*
+    service: http://catest-trace-audit:34097
+    originRequest:
+      noTLSVerify: true
+
+  # ─── Catch-all: deny everything else ───────────────────────────────
+  - service: http_status:404

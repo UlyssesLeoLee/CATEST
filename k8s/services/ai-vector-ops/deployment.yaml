@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-ai-vector-ops
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-ai-vector-ops
+  template:
+    metadata:
+      labels:
+        app: catest-ai-vector-ops
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: ai-vector-ops
+          image: ghcr.io/ulyssesleolee/catest-ai-vector-ops:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34085
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "ai-vector-ops"
+            - name: CATEST_AI_SERVICE_PORT
+              value: "34085"
+            - name: CATEST_AI_QDRANT_URL
+              value: "http://qdrant:36333"
+            - name: CATEST_AI_QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: qdrant-api-key
+            - name: CATEST_AI_MEMGRAPH_URI
+              value: "bolt://memgraph:37687"
+            - name: CATEST_AI_MEMGRAPH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: memgraph-secrets
+                  key: memgraph-password
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34085
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34085
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-ai-vector-ops
+  namespace: catest
+spec:
+  selector:
+    app: catest-ai-vector-ops
+  ports:
+    - port: 34085
+      targetPort: 34085
+      name: http

@@ -39,9 +39,16 @@ if (-not $pgExists) {
 Write-Host "Applying Infrastructure Components..."
 kubectl apply -f infra/postgres/
 kubectl apply -f infra/kafka/
-kubectl apply -f infra/neo4j/
+kubectl apply -f infra/memgraph/
 kubectl apply -f infra/qdrant/
 kubectl apply -f infra/arroyo/
+
+# 5b. Apply Cloudflare Tunnel (orchestration domain)
+$cfDir = "infra/cloudflare/"
+if (Test-Path $cfDir) {
+    Write-Host "Applying Cloudflare Tunnel configuration..."
+    kubectl apply -f $cfDir
+}
 
 # 6. Apply application microservices
 Write-Host "Applying Application Microservices..."
@@ -56,6 +63,21 @@ kubectl apply -f services/web/
 kubectl apply -f services/web-workspace/
 kubectl apply -f services/web-rag/
 kubectl apply -f services/web-review/
+kubectl apply -f services/web-tm/
+kubectl apply -f services/web-tb/
+kubectl apply -f services/web-orchestration/
+
+# 6b. Orchestration Domain services
+Write-Host "Applying Orchestration Domain services..." -ForegroundColor Cyan
+foreach ($orchSvc in @('intent-gateway', 'orchestrator-svc', 'memory-service',
+                       'dispatch-router', 'mcp-facade', 'trace-audit',
+                       'adapter-codex', 'adapter-claude-code', 'adapter-antigravity')) {
+    $p = "services/$orchSvc/"
+    if (Test-Path $p) {
+        Write-Host "  $orchSvc"
+        kubectl apply -f $p
+    }
+}
 
 # 7. Apply Ingestion Job
 Write-Host "Re-triggering Ingestion Job..."

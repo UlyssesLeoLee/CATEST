@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-adapter-antigravity
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-adapter-antigravity
+  template:
+    metadata:
+      labels:
+        app: catest-adapter-antigravity
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: adapter-antigravity
+          image: ghcr.io/ulyssesleolee/catest-adapter-antigravity:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34096
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "adapter-antigravity"
+            - name: CATEST_AI_KAFKA_BROKER
+              value: "kafka:39092"
+            - name: ANTIGRAVITY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: antigravity-api-key
+                  optional: true
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34096
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34096
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-adapter-antigravity
+  namespace: catest
+spec:
+  selector:
+    app: catest-adapter-antigravity
+  ports:
+    - port: 34096
+      targetPort: 34096
+      name: http

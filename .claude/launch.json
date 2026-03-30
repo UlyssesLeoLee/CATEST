@@ -18,6 +18,38 @@
       "autoPort": false
     },
     {
+      "name": "web-workspace",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/leo19/AppData/Roaming/npm/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-workspace", "run", "dev"],
+      "port": 33001,
+      "cwd": "web",
+      "autoPort": false
+    },
+    {
+      "name": "web-tm",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/leo19/AppData/Roaming/npm/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-tm", "run", "dev"],
+      "port": 33005,
+      "cwd": "web",
+      "autoPort": false
+    },
+    {
+      "name": "web-tb",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/leo19/AppData/Roaming/npm/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-tb", "run", "dev"],
+      "port": 33006,
+      "cwd": "web",
+      "autoPort": false
+    },
+    {
+      "name": "web-orchestration",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/leo19/AppData/Roaming/npm/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-orchestration", "run", "dev"],
+      "port": 33007,
+      "cwd": "web",
+      "autoPort": false
+    },
+    {
       "name": "gateway",
       "runtimeExecutable": "kubectl",
       "runtimeArgs": ["port-forward", "svc/nginx-gateway", "33088:33088", "-n", "catest"],

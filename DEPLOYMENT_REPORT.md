@@ -65,7 +65,7 @@
 ✅ **文件**: `docker-compose.yml` (已更新)
 
 - 移除引用不存在的 Dockerfile 的服务
-- 保留所有必需的基础设施（PostgreSQL, Kafka, Neo4j, Qdrant, Arroyo）
+- 保留所有必需的基础设施（PostgreSQL, Kafka, Memgraph, Qdrant, Arroyo）
 
 ### 步骤 5: 启动本地开发环境
 ✅ **执行**: `start.ps1`
@@ -73,7 +73,7 @@
 成功启动所有基础设施服务：
 - ✅ PostgreSQL (端口 34321)
 - ✅ Kafka (端口 39092)
-- ✅ Neo4j (端口 37474)
+- ✅ Memgraph (端口 37474)
 - ✅ Qdrant (端口 36334)
 - ✅ Arroyo (端口 35115)
 
@@ -87,7 +87,7 @@
 |-----|------|------|
 | PostgreSQL | 34321 | ✅ OK |
 | Kafka | 39092 | ✅ OK |
-| Neo4j | 37474 | ✅ OK |
+| Memgraph | 37474 | ✅ OK |
 | Qdrant | 36334 | ✅ OK |
 | Arroyo UI | 35115 | ✅ OK |
 | Adminer (DB UI) | 38080 | ✅ OK |

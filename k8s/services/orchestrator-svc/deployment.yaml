@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-orchestrator-svc
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-orchestrator-svc
+  template:
+    metadata:
+      labels:
+        app: catest-orchestrator-svc
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: orchestrator-svc
+          image: ghcr.io/ulyssesleolee/catest-orchestrator-svc:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34091
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "orchestrator-svc"
+            - name: CATEST_AI_SERVICE_PORT
+              value: "34091"
+            - name: CATEST_AI_KAFKA_BROKER
+              value: "kafka:39092"
+            - name: CATEST_AI_QDRANT_URL
+              value: "http://qdrant:36333"
+            - name: CATEST_AI_ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: anthropic-api-key
+            - name: CATEST_AI_LANGSMITH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: langsmith-api-key
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34091
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34091
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-orchestrator-svc
+  namespace: catest
+spec:
+  selector:
+    app: catest-orchestrator-svc
+  ports:
+    - port: 34091
+      targetPort: 34091
+      name: http

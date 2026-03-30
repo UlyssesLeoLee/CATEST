@@ -1,7 +1,7 @@
 ---
 # web-rag: Deployment + Service
 # Port: 3002 -> LoadBalancer: 33002
-# Maps to: catest-embedding (Qdrant + Neo4j)
+# Maps to: catest-embedding (Qdrant + Memgraph)
 apiVersion: apps/v1
 kind: Deployment
 metadata:

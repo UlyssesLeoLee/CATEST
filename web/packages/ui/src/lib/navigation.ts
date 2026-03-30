@@ -6,6 +6,9 @@ export const APP_URLS = {
   rag: isSaaSMode ? "/rag" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_RAG || "33002"}`,
   review: isSaaSMode ? "/review" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_REVIEW || "33003"}`,
   team: isSaaSMode ? "/team" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_TEAM || "33004"}`,
+  tm: isSaaSMode ? "/tm" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_TM || "33005"}`,
+  tb: isSaaSMode ? "/tb" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_TB || "33006"}`,
+  orchestration: isSaaSMode ? "/orchestration" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_ORCHESTRATION || "33007"}`,
 };
 
 export function getAppUrl(app: keyof typeof APP_URLS, path: string = "") {

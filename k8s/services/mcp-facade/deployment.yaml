@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-mcp-facade
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-mcp-facade
+  template:
+    metadata:
+      labels:
+        app: catest-mcp-facade
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: mcp-facade
+          image: ghcr.io/ulyssesleolee/catest-mcp-facade:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34098
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "mcp-facade"
+            - name: CATEST_AI_SERVICE_PORT
+              value: "34098"
+            - name: MEMORY_SERVICE_URL
+              value: "http://catest-memory-service:34092"
+            - name: INTENT_GATEWAY_URL
+              value: "http://catest-intent-gateway:34090"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34098
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34098
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-mcp-facade
+  namespace: catest
+spec:
+  selector:
+    app: catest-mcp-facade
+  ports:
+    - port: 34098
+      targetPort: 34098
+      name: http

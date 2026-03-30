@@ -1,0 +1,7 @@
+FROM ghcr.io/ulyssesleolee/catest-ai-base:latest
+
+# Optional ML dependencies for advanced projection/clustering
+RUN uv pip install --system --no-cache numpy scikit-learn || true
+
+EXPOSE 34085
+CMD ["uvicorn", "catest_ai.vector_ops.app:app", "--host", "0.0.0.0", "--port", "34085"]

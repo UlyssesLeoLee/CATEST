@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@source "../../../../packages/ui/src";
+
+/* Unified steampunk theme — single source of truth */
+@import "../../../../packages/ui/src/styles/steampunk-theme.css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}

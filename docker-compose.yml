@@ -65,18 +65,15 @@ services:
     networks:
       - catest-net
 
-  neo4j:
-    image: neo4j:community
+  memgraph:
+    image: memgraph/memgraph:latest
     restart: unless-stopped
-    environment:
-      NEO4J_AUTH: neo4j/password
     ports:
-      - "${NEO4J_HTTP_PORT:-37474}:7474"
-      - "${NEO4J_BOLT_PORT:-37687}:7687"
+      - "${MEMGRAPH_BOLT_PORT:-37687}:7687"
     volumes:
-      - neo4j_data:/data
+      - memgraph_data:/var/lib/memgraph
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      test: ["CMD-SHELL", "echo '' | nc -q1 localhost 7687 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -119,6 +116,22 @@ services:
     networks:
       - catest-net
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-36379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - catest-net
+
   # Note: Ingestion and Parser services are now built separately
   # Use: cargo build --bin catest-ingestion / cargo build --bin catest-parser
   # Or deploy via Kubernetes with: ./k8s-restart.ps1
@@ -126,8 +139,9 @@ services:
 
 volumes:
   pgdata:
-  neo4j_data:
+  memgraph_data:
   qdrant_storage:
+  redis_data:
 
 networks:
   catest-net:

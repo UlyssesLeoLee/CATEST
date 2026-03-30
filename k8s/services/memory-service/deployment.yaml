@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-memory-service
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-memory-service
+  template:
+    metadata:
+      labels:
+        app: catest-memory-service
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: memory-service
+          image: ghcr.io/ulyssesleolee/catest-memory-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 34092
+              name: http
+          env:
+            - name: CATEST_AI_SERVICE_NAME
+              value: "memory-service"
+            - name: CATEST_AI_SERVICE_PORT
+              value: "34092"
+            - name: CATEST_AI_KAFKA_BROKER
+              value: "kafka:39092"
+            - name: CATEST_AI_QDRANT_URL
+              value: "http://qdrant:36333"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 34092
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 34092
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-memory-service
+  namespace: catest
+spec:
+  selector:
+    app: catest-memory-service
+  ports:
+    - port: 34092
+      targetPort: 34092
+      name: http

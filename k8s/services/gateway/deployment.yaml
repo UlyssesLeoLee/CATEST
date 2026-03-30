@@ -34,15 +34,15 @@ spec:
               value: "kafka:39092"
             - name: QDRANT_URL
               value: "http://qdrant:36333"
-            - name: NEO4J_URI
-              value: "bolt://neo4j:37687"
-            - name: NEO4J_USER
-              value: "neo4j"
-            - name: NEO4J_PASSWORD
+            - name: MEMGRAPH_URI
+              value: "bolt://memgraph:37687"
+            - name: MEMGRAPH_USER
+              value: ""
+            - name: MEMGRAPH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: neo4j-secrets
-                  key: neo4j-password
+                  name: memgraph-secrets
+                  key: memgraph-password
           resources:
             limits:
               cpu: "500m"

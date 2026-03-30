@@ -21,10 +21,10 @@ if (Test-Path ".env") {
     }
 }
 
-Write-Host "🚀 Initializing CATEST Distributed Platform..." -ForegroundColor Cyan
+Write-Host "Initializing CATEST Distributed Platform..." -ForegroundColor Cyan
 
 # 1. Infrastructure Boot (build custom postgres with pgvector + AGE, then start all)
-Write-Host "📦 [1/4] Booting Infrastructure (Docker Compose)..." -ForegroundColor Yellow
+Write-Host "[1/5] Booting Infrastructure (Docker Compose)..." -ForegroundColor Yellow
 docker-compose build postgres
 docker-compose up -d
 if ($LASTEXITCODE -ne 0) {
@@ -32,24 +32,48 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-# 2. Database Readiness Check
-Write-Host "⏳ [2/4] Waiting for PostgreSQL readiness..." -ForegroundColor Yellow
-$Retries = 10
+# 2. Database Readiness Check + Ensure Databases Exist
+Write-Host "[2/5] Waiting for PostgreSQL readiness..." -ForegroundColor Yellow
+$Port = if ($Env:PORT_POSTGRES) { $Env:PORT_POSTGRES } else { "34321" }
+$Retries = 15
 while ($Retries -gt 0) {
-    # Test connection to the port we just mapped
-    $Port = if ($Env:PORT_POSTGRES) { $Env:PORT_POSTGRES } else { "34321" }
     $Test = Test-NetConnection -Port $Port -ComputerName "localhost" -InformationLevel Quiet
     if ($Test) { break }
     $Retries--
     Start-Sleep -Seconds 2
 }
 
+# Ensure all databases exist (idempotent — safe after Docker restart)
+Write-Host "  Ensuring all CATEST databases exist..." -ForegroundColor DarkGray
+$PgHost = "localhost"; $PgPort = $Port; $PgUser = "catest"
+$AllDatabases = @(
+    'catest_hub', 'catest_gateway', 'catest_ingestion', 'catest_intelligence',
+    'catest_workspace', 'catest_review', 'catest_tm', 'catest_tb',
+    'catest_orchestration'
+)
+$prevEAP = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+foreach ($db in $AllDatabases) {
+    docker exec catest-postgres-1 psql -U $PgUser -c "CREATE DATABASE $db OWNER $PgUser;" 2>&1 | Out-Null
+    docker exec catest-postgres-1 psql -U $PgUser -d $db -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS age;" 2>&1 | Out-Null
+}
+# Run init SQL scripts
+$initDir = Join-Path $RootDir 'scripts/initdb.d'
+if (Test-Path $initDir) {
+    docker exec catest-postgres-1 psql -U $PgUser -d catest_intelligence -c "CREATE TABLE IF NOT EXISTS tenants (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());" 2>&1 | Out-Null
+    foreach ($sql in (Get-ChildItem "$initDir/*.sql" | Sort-Object Name)) {
+        Write-Host "    $($sql.Name)" -ForegroundColor DarkGray
+        docker exec catest-postgres-1 psql -U $PgUser -f "/docker-entrypoint-initdb.d/$($sql.Name)" 2>&1 | Out-Null
+    }
+}
+$ErrorActionPreference = $prevEAP
+Write-Host "  Database init complete" -ForegroundColor Green
+
 # 3. Backend Cluster (Rust)
 $Services = @("catest-gateway", "catest-review", "catest-ingestion", "catest-embedding", "catest-parser")
 $LogDir = Join-Path $RootDir "logs"
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir | Out-Null }
 
-Write-Host "🏗️ [3/4] Compiling and Launching Backend Cluster..." -ForegroundColor Yellow
+Write-Host "[3/5] Compiling and Launching Backend Cluster..." -ForegroundColor Yellow
 cargo build --workspace --quiet
 foreach ($Service in $Services) {
     Write-Host "   -> Starting node: $Service" -ForegroundColor Gray
@@ -58,7 +82,7 @@ foreach ($Service in $Services) {
 }
 
 # 4. Frontend Ecosystem (Next.js)
-Write-Host "🌐 [4/4] Launching Frontend Portals (pnpm/npm)..." -ForegroundColor Yellow
+Write-Host "[4/5] Launching Frontend Portals (pnpm/npm)..." -ForegroundColor Yellow
 $WebDir = Join-Path $RootDir "web"
 $WebLog = Join-Path $LogDir "web.log"
 
@@ -69,10 +93,52 @@ if (Test-Path $WebDir) {
     Pop-Location
 }
 
+# 5. Orchestration Domain (Python AI services — local dev mode)
+Write-Host "[5/5] Launching Orchestration Services (Python)..." -ForegroundColor Yellow
+$PythonDir = Join-Path $RootDir "python"
+$PythonExe = "python"
+
+# Find Python executable
+if (Test-Path "C:\Users\$env:USERNAME\AppData\Local\Programs\Python\Python313\python.exe") {
+    $PythonExe = "C:\Users\$env:USERNAME\AppData\Local\Programs\Python\Python313\python.exe"
+}
+
+$OrchServices = @(
+    @{ Name = "memory-service";  Module = "catest_ai.memory_service.main";  Port = 34092 },
+    @{ Name = "mcp-facade";      Module = "catest_ai.mcp_facade.main";      Port = 34098 },
+    @{ Name = "intent-gateway";  Module = "catest_ai.intent_gateway.main";  Port = 34090 },
+    @{ Name = "orchestrator-svc"; Module = "catest_ai.orchestrator_svc.main"; Port = 34091 }
+)
+
+# Set env vars for local Python services
+$Env:MEMORY_SERVICE_URL = "http://127.0.0.1:34092"
+$Env:INTENT_GATEWAY_URL = "http://127.0.0.1:34090"
+
+foreach ($svc in $OrchServices) {
+    $svcLog = Join-Path $LogDir "$($svc.Name).log"
+    Write-Host "   -> Starting: $($svc.Name) (:$($svc.Port))" -ForegroundColor Gray
+    Start-Process -FilePath "cmd" `
+        -ArgumentList "/c cd /d `"$PythonDir`" && set PYTHONPATH=src && `"$PythonExe`" -m $($svc.Module) > `"$svcLog`" 2>&1" `
+        -WindowStyle Hidden
+}
+
 Write-Host ""
-Write-Host "✅ CATEST Logic Synchronized & Running!" -ForegroundColor Green
-Write-Host "📊 Monitoring logs at: $LogDir" -ForegroundColor Gray
-Write-Host "🌍 Identity Portal: http://localhost:33000" -ForegroundColor Cyan
+Write-Host "CATEST Platform Running!" -ForegroundColor Green
+Write-Host "  Logs: $LogDir" -ForegroundColor Gray
+
+# Detect live ports (handles Docker Desktop vpnkit ghost listeners)
+$portConfigScript = Join-Path $RootDir 'port-config.ps1'
+if (Test-Path $portConfigScript) {
+    . $portConfigScript -Probe
+    $pDash = if ($Ports['web-base'])    { $Ports['web-base'] }    else { 33000 }
+    $pOrch = if ($Ports['web-orchestration']) { $Ports['web-orchestration'] } else { 33007 }
+    $pMCP  = if ($Ports['mcp-facade']) { $Ports['mcp-facade'] } else { 34098 }
+} else {
+    $pDash = 33000; $pOrch = 33007; $pMCP = 34098
+}
+Write-Host "  Dashboard     : http://localhost:$pDash" -ForegroundColor Cyan
+Write-Host "  Orchestration : http://localhost:$pOrch (steampunk chat UI)" -ForegroundColor Cyan
+Write-Host "  MCP Facade    : http://localhost:$pMCP/healthz" -ForegroundColor Cyan
 Write-Host ""
 Start-Sleep -Seconds 3
-Start-Process "http://localhost:33000"
+Start-Process "http://localhost:$pDash"

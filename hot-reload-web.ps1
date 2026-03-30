@@ -4,9 +4,10 @@
 # Docker Desktop K8s shares the Docker daemon, so rebuilt images are immediately available.
 #
 # Usage:
-#   ./hot-reload-web.ps1                    # Rebuild & reload ALL 5 web apps
-#   ./hot-reload-web.ps1 -App web-review    # Rebuild & reload a single app
-#   ./hot-reload-web.ps1 -HMR              # Just touch UI package to trigger HMR (no K8s)
+#   ./hot-reload-web.ps1                          # Rebuild & reload ALL web apps
+#   ./hot-reload-web.ps1 -App web-review          # Rebuild & reload a single app
+#   ./hot-reload-web.ps1 -App web-orchestration   # Rebuild orchestration chat UI
+#   ./hot-reload-web.ps1 -HMR                     # Just touch UI package to trigger HMR (no K8s)
 
 [CmdletBinding()]
 param(
@@ -23,11 +24,14 @@ function Log { param([string]$M, [string]$C = 'Green') Write-Host $M -Foreground
 
 # ── Image tag mapping ────────────────────────────────────────────────
 $ImageTags = @{
-    'web-base'      = 'ghcr.io/ulyssesleolee/catest-web:latest'
-    'web-workspace' = 'ghcr.io/ulyssesleolee/catest-web-workspace:latest'
-    'web-rag'       = 'ghcr.io/ulyssesleolee/catest-web-rag:latest'
-    'web-review'    = 'ghcr.io/ulyssesleolee/catest-web-review:latest'
-    'web-team'      = 'ghcr.io/ulyssesleolee/catest-web-team:latest'
+    'web-base'          = 'ghcr.io/ulyssesleolee/catest-web:latest'
+    'web-workspace'     = 'ghcr.io/ulyssesleolee/catest-web-workspace:latest'
+    'web-rag'           = 'ghcr.io/ulyssesleolee/catest-web-rag:latest'
+    'web-review'        = 'ghcr.io/ulyssesleolee/catest-web-review:latest'
+    'web-team'          = 'ghcr.io/ulyssesleolee/catest-web-team:latest'
+    'web-tm'            = 'ghcr.io/ulyssesleolee/catest-web-tm:latest'
+    'web-tb'            = 'ghcr.io/ulyssesleolee/catest-web-tb:latest'
+    'web-orchestration' = 'ghcr.io/ulyssesleolee/catest-web-orchestration:latest'
 }
 
 # ── HMR-only mode ────────────────────────────────────────────────────
@@ -48,7 +52,7 @@ $Apps = if ($App -ne '') {
     }
     @($App)
 } else {
-    @('web-base', 'web-workspace', 'web-rag', 'web-review', 'web-team')
+    @('web-base', 'web-workspace', 'web-rag', 'web-review', 'web-team', 'web-tm', 'web-tb', 'web-orchestration')
 }
 
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -56,9 +60,9 @@ $total = $Apps.Count
 $current = 0
 
 Write-Host ""
-Log "══════════════════════════════════════════════" Cyan
+Log "==================================================" Cyan
 Log "  CATEST Web Image Rebuild ($total app(s))" Cyan
-Log "══════════════════════════════════════════════" Cyan
+Log "==================================================" Cyan
 Write-Host ""
 
 foreach ($appName in $Apps) {
@@ -96,8 +100,18 @@ $totalSw.Stop()
 
 # ── Summary ──────────────────────────────────────────────────────────
 Write-Host ""
-Log "══════════════════════════════════════════════" Green
+Log "==================================================" Green
 Log "  All done! ($([math]::Round($totalSw.Elapsed.TotalMinutes, 1)) min)" Green
-Log "══════════════════════════════════════════════" Green
-Log "  Gateway: http://localhost:33088" Cyan
+Log "==================================================" Green
+
+# Detect live ports via port-config.ps1
+$portConfigScript = Join-Path $PSScriptRoot 'port-config.ps1'
+if (Test-Path $portConfigScript) {
+    . $portConfigScript -Probe
+    $pGateway = if ($Ports['envoy-gateway']) { $Ports['envoy-gateway'] } else { 33088 }
+} else {
+    $pGateway = 33088
+}
+Log "  Gateway       : http://localhost:$pGateway" Cyan
+Log "  Orchestration : http://localhost:$pGateway/orchestration/" Cyan
 Write-Host ""

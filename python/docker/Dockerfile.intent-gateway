@@ -1,0 +1,4 @@
+FROM ghcr.io/ulyssesleolee/catest-ai-base:latest
+
+EXPOSE 34090
+CMD ["uvicorn", "catest_ai.intent_gateway.main:app", "--host", "0.0.0.0", "--port", "34090"]

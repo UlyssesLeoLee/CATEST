@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-web-orchestration
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-web-orchestration
+  template:
+    metadata:
+      labels:
+        app: catest-web-orchestration
+    spec:
+      serviceAccountName: catest-service-account
+      containers:
+        - name: web-orchestration
+          image: ghcr.io/ulyssesleolee/catest-web-orchestration:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: NEXT_PUBLIC_PORT_WEB_ORCHESTRATION
+              value: "33007"
+            - name: NEXT_PUBLIC_INTENT_GATEWAY_URL
+              value: "http://catest-intent-gateway:34090"
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_orchestration"
+            - name: JWT_HS256_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: catest-app-secrets
+                  key: JWT_HS256_SECRET
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-web-orchestration
+  namespace: catest
+spec:
+  type: LoadBalancer
+  selector:
+    app: catest-web-orchestration
+  ports:
+    - port: 33007
+      targetPort: 3000
+      name: http

@@ -203,12 +203,12 @@ async fn main() -> std::io::Result<()> {
         .build()
         .map_err(std::io::Error::other)?;
 
-    let neo4j_port = common::utils::get_env_default("NEO4J_BOLT_PORT", "37687");
-    let neo4j_uri = format!("bolt://localhost:{}", neo4j_port);
-    let neo4j_uri_env = common::utils::get_env_default("NEO4J_URI", &neo4j_uri);
-    let neo4j_user = common::utils::get_env_default("NEO4J_USER", "neo4j");
-    let neo4j_pass = common::utils::get_env_default("NEO4J_PASSWORD", "password");
-    let graph = Graph::new(&neo4j_uri_env, &neo4j_user, &neo4j_pass)
+    let mg_port = common::utils::get_env_default("MEMGRAPH_BOLT_PORT", "37687");
+    let mg_uri = format!("bolt://localhost:{}", mg_port);
+    let mg_uri_env = common::utils::get_env_default("MEMGRAPH_URI", &mg_uri);
+    let mg_user = common::utils::get_env_default("MEMGRAPH_USER", "");
+    let mg_pass = common::utils::get_env_default("MEMGRAPH_PASSWORD", "");
+    let graph = Graph::new(&mg_uri_env, &mg_user, &mg_pass)
         .await
         .map_err(std::io::Error::other)?;
 

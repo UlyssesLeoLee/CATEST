@@ -114,7 +114,7 @@ async function retrieveMemory(state: typeof GraphState.State) {
   return { evidence: { memory: [] } };
 }
 
-// Node E: Topo/Graph Retrieval (Neo4j Search)
+// Node E: Topo/Graph Retrieval (Memgraph Search)
 async function retrieveGraph(state: typeof GraphState.State) {
   console.log("--- RETRIEVING GRAPH CONTEXT ---");
   try {

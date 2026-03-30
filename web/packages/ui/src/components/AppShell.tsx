@@ -15,6 +15,9 @@ import {
   Cog,
   Menu,
   X,
+  BookOpen,
+  BookMarked,
+  Sparkles,
 } from "lucide-react";
 
 import { APP_URLS } from "../lib/navigation";
@@ -34,16 +37,19 @@ interface UserData {
 
 interface AppShellProps {
   children: React.ReactNode;
-  activeApp: "base" | "workspace" | "rag" | "review" | "team";
+  activeApp: "base" | "workspace" | "rag" | "review" | "team" | "tm" | "tb" | "orchestration";
   user?: UserData;
 }
 
 const apps = [
-  { id: "base",      name: "Hub Control",      shortName: "Hub",    href: APP_URLS.base, icon: Home },
-  { id: "workspace", name: "Project Space",     shortName: "Space",  href: APP_URLS.workspace, icon: LayoutDashboard },
-  { id: "rag",       name: "Intelligence Hub",  shortName: "Intel",  href: APP_URLS.rag, icon: Database },
-  { id: "review",    name: "Qual Review",       shortName: "Review", href: APP_URLS.review, icon: Code },
-  { id: "team",      name: "Team & Collab",     shortName: "Team",   href: APP_URLS.team, icon: Users },
+  { id: "base",      name: "Hub Control",        shortName: "Hub",    href: APP_URLS.base, icon: Home },
+  { id: "workspace", name: "Project Space",       shortName: "Space",  href: APP_URLS.workspace, icon: LayoutDashboard },
+  { id: "rag",       name: "Intelligence Hub",    shortName: "Intel",  href: APP_URLS.rag, icon: Database },
+  { id: "review",    name: "Qual Review",         shortName: "Review", href: APP_URLS.review, icon: Code },
+  { id: "tm",        name: "Translation Memory",  shortName: "TM",     href: APP_URLS.tm, icon: BookOpen },
+  { id: "tb",        name: "Terminology Base",    shortName: "TB",     href: APP_URLS.tb, icon: BookMarked },
+  { id: "team",      name: "Team & Collab",       shortName: "Team",   href: APP_URLS.team, icon: Users },
+  { id: "orchestration", name: "Orchestration",  shortName: "Orch",   href: APP_URLS.orchestration, icon: Sparkles },
 ];
 
 export function AppShell({ children, activeApp, user }: AppShellProps) {
@@ -584,7 +590,7 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
              {/* Shard Info */}
              <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2 whitespace-nowrap w-fit hidden lg:flex">
                 <Database className="w-3 h-3 text-[#b87333]/60" />
-                <span>Neo4j Shard 4</span>
+                <span>Memgraph Shard 4</span>
              </div>
 
              <div className="h-6 w-px bg-gradient-to-b from-transparent via-[#b87333]/30 to-transparent shrink-0 hidden xl:block" />

@@ -13,7 +13,7 @@ import {
   Tag
 } from "lucide-react";
 
-// Plugin: Shows relationships of a selected entity from the Neo4j graph
+// Plugin: Shows relationships of a selected entity from the Memgraph graph
 function RelationshipMapPlugin() {
   return (
     <div className="relative h-full min-h-[400px] flex items-center justify-center bg-[#050505] rounded-xl border border-[#3e1b0d]/30 overflow-hidden group">
@@ -29,7 +29,7 @@ function RelationshipMapPlugin() {
            <GitBranch className="w-8 h-8" />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-[var(--text-primary)]">Neo4j Integration Layer</h4>
+          <h4 className="text-sm font-bold text-[var(--text-primary)]">Memgraph Integration Layer</h4>
           <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1">Real-time Entity Relationship Mapping</p>
         </div>
         <Badge className="bg-black/40 border-[#3e1b0d]/30 text-[var(--text-muted)] text-[10px]">CYPHER: MATCH (n)-[r]-{'>'}(m) RETURN n,r,m</Badge>

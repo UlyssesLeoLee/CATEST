@@ -1,0 +1,4 @@
+FROM ghcr.io/ulyssesleolee/catest-ai-base:latest
+
+EXPOSE 34093
+CMD ["uvicorn", "catest_ai.dispatch_router.main:app", "--host", "0.0.0.0", "--port", "34093"]

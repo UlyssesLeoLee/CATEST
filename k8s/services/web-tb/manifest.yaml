@@ -1,0 +1,48 @@
+---
+# web-tb: Deployment + Service
+# Port: 3006 -> LoadBalancer: 33006
+# Terminology Base Management Console
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catest-web-tb
+  namespace: catest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catest-web-tb
+  template:
+    metadata:
+      labels:
+        app: catest-web-tb
+    spec:
+      containers:
+        - name: web-tb
+          image: ghcr.io/ulyssesleolee/catest-web-tb:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3006
+          envFrom:
+            - secretRef:
+                name: catest-app-secrets
+          env:
+            - name: NEXT_PUBLIC_SAAS_MODE
+              value: "true"
+            - name: NEXT_PUBLIC_GATEWAY_URL
+              value: "http://catest-hub:33080"
+            - name: TB_DATABASE_URL
+              value: "postgres://catest:password@postgres:5432/catest_tb"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catest-web-tb
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 33006
+      targetPort: 3006
+  selector:
+    app: catest-web-tb
