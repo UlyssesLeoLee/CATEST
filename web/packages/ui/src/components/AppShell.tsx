@@ -20,7 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { APP_URLS } from "../lib/navigation";
+import { APP_URLS, getAppUrl } from "../lib/navigation";
 import { useBoolCookieState } from "../hooks/useCookieState";
 import { COOKIE_KEYS } from "../lib/cookies";
 import { CopperGear, SteamValve, MechanicalPiston, RelayStatus, SteamLeak, PressureValveIndicator, PressureGauge } from "./SteampunkDecor";
@@ -62,7 +62,7 @@ export function AppShell({ children, activeApp, user }: AppShellProps) {
 
 function AppShellContent({ children, activeApp, user }: AppShellProps) {
   const { play } = useSound();
-  const profileHref = `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || "33000"}/profile`;
+  const profileHref = getAppUrl('base', '/profile');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useBoolCookieState(COOKIE_KEYS.SIDEBAR_COLLAPSED, false);
   const scrollRef = React.useRef<HTMLDivElement>(null);

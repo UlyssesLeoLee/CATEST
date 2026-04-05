@@ -11,12 +11,16 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  
-  // Security: Unauthenticated users are sent back to base login
+
+  // Auth redirect is handled by middleware (redirects to /login page which
+  // does a client-side hop to the gateway's login). Layout just renders
+  // a minimal shell when unauthenticated (e.g. for the /login redirect page).
   if (!session) {
-    const isSaaS = process.env.NEXT_PUBLIC_SAAS_MODE === "true";
-    const loginUrl = isSaaS ? "/login" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || "33000"}/login`;
-    redirect(loginUrl);
+    return (
+      <html lang="en">
+        <body>{children}</body>
+      </html>
+    );
   }
 
   const user = await getUser(session.userId);
@@ -24,8 +28,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#050505] text-zinc-100 font-sans antialiased overflow-hidden">
-        <AppShell 
-          activeApp="workspace" 
+        <AppShell
+          activeApp="workspace"
           user={user ? {
             email: user.email,
             displayName: user.display_name,

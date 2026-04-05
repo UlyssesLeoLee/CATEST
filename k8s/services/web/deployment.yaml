@@ -22,9 +22,11 @@ spec:
               name: http
           env:
             - name: NEXT_PUBLIC_SAAS_MODE
-              value: "false"
+              value: "true"
             - name: NEXT_PUBLIC_GATEWAY_URL
               value: "http://catest-hub:33080"
+            - name: DATABASE_URL
+              value: "postgres://catest:password@postgres:34321/catest_gateway"
           envFrom:
             - secretRef:
                 name: catest-app-secrets

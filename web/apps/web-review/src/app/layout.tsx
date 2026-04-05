@@ -13,9 +13,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await getSession();
   
   if (!session) {
-    const isSaaS = process.env.NEXT_PUBLIC_SAAS_MODE === "true";
-    const loginUrl = isSaaS ? "/login" : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || "33000"}/login`;
-    redirect(loginUrl);
+    return (
+      <html lang="en">
+        <body>{children}</body>
+      </html>
+    );
   }
 
   const user = await getUser(session.userId as string);

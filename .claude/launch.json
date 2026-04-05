@@ -55,6 +55,13 @@
       "runtimeArgs": ["port-forward", "svc/nginx-gateway", "33088:33088", "-n", "catest"],
       "port": 33088,
       "autoPort": false
+    },
+    {
+      "name": "k8s-gateway",
+      "runtimeExecutable": "kubectl",
+      "runtimeArgs": ["port-forward", "-n", "catest", "svc/envoy-gateway", "53088:33088", "--address=0.0.0.0"],
+      "port": 53088,
+      "autoPort": false
     }
   ]
 }

@@ -7,6 +7,19 @@ import { jwtVerify } from 'jose';
  * Validates the central JWT cookie provided by web-base.
  */
 
+function redirectToLogin(request: NextRequest) {
+  const isSaaS = process.env.NEXT_PUBLIC_SAAS_MODE === 'true';
+  if (isSaaS) {
+    // In SaaS mode, redirect to /login. Next.js basePath turns this into
+    // e.g. /workspace/login, which serves a client-side redirect page
+    // (app/login/page.tsx) that navigates to the gateway's /login.
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+  }
+  return NextResponse.redirect(new URL('/login', `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || 33000}`));
+}
+
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('session')?.value;
   const { pathname } = request.nextUrl;
@@ -23,9 +36,7 @@ export async function middleware(request: NextRequest) {
 
   // 2. Redirect to main login if no token (Distributed Auth Check)
   if (!token) {
-    const isSaaS = process.env.NEXT_PUBLIC_SAAS_MODE === 'true';
-    const base = isSaaS ? request.url : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || 33000}`;
-    return NextResponse.redirect(new URL('/login', base));
+    return redirectToLogin(request);
   }
 
   // 3. Signature Verification
@@ -38,12 +49,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch (err) {
     console.error('Cross-Micro-frontend Auth Failure:', err);
-    const isSaaS = process.env.NEXT_PUBLIC_SAAS_MODE === 'true';
-    const base = isSaaS ? request.url : `http://localhost:${process.env.NEXT_PUBLIC_PORT_WEB_BASE || 33000}`;
-    return NextResponse.redirect(new URL('/login', base));
+    return redirectToLogin(request);
   }
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/', '/((?!api|_next/static|_next/image|favicon.ico|login).+)'],
 };

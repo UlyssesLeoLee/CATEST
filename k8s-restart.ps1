@@ -21,6 +21,18 @@ $ErrorActionPreference = 'Stop'
 
 $K8s = Join-Path $PSScriptRoot 'k8s'
 
+# ── Load .env (single source of truth for ports) ────────────────────────────
+$EnvFile = Join-Path $PSScriptRoot '.env'
+$EnvVars = @{}
+if (Test-Path $EnvFile) {
+    Get-Content $EnvFile | ForEach-Object {
+        if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$' -and $_ -notmatch '^\s*#') {
+            $EnvVars[$Matches[1]] = $Matches[2].Trim('"').Trim("'")
+        }
+    }
+}
+$PostgresPort = if ($EnvVars.ContainsKey('POSTGRES_PORT')) { $EnvVars['POSTGRES_PORT'] } else { '34321' }
+
 # ── Service Registry ─────────────────────────────────────────────────────────
 $Services = @{
     # --- Infrastructure ---
@@ -274,26 +286,27 @@ if ($SkipInfra) {
                 'catest_workspace', 'catest_review', 'catest_tm', 'catest_tb',
                 'catest_orchestration'
             )
+            $pgUser = if ($EnvVars.ContainsKey('POSTGRES_USER')) { $EnvVars['POSTGRES_USER'] } else { 'catest' }
 
             # Create databases (IF NOT EXISTS via error suppression)
             foreach ($db in $AllDatabases) {
-                kubectl exec -n $Namespace postgres-0 -- psql -U catest -c "CREATE DATABASE $db OWNER catest;" 2>&1 | Out-Null
+                kubectl exec -n $Namespace postgres-0 -- psql -U $pgUser -c "CREATE DATABASE $db OWNER $pgUser;" 2>&1 | Out-Null
             }
             Log "    9 databases ensured" DarkGray
 
             # Enable extensions on all databases
             foreach ($db in $AllDatabases) {
-                kubectl exec -n $Namespace postgres-0 -- psql -U catest -d $db -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS age;" 2>&1 | Out-Null
+                kubectl exec -n $Namespace postgres-0 -- psql -U $pgUser -d $db -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS age;" 2>&1 | Out-Null
             }
             Log "    pgcrypto + pgvector + AGE enabled on all databases" DarkGray
 
             # Create tenants table in catest_intelligence (needed by rag-modules FK references)
-            kubectl exec -n $Namespace postgres-0 -- psql -U catest -d catest_intelligence -c "CREATE TABLE IF NOT EXISTS tenants (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());" 2>&1 | Out-Null
+            kubectl exec -n $Namespace postgres-0 -- psql -U $pgUser -d catest_intelligence -c "CREATE TABLE IF NOT EXISTS tenants (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());" 2>&1 | Out-Null
 
             # Run all SQL init files in order (all use IF NOT EXISTS / ON CONFLICT, safe to re-run)
             foreach ($sql in (Get-ChildItem "$initDir/*.sql" | Sort-Object Name)) {
                 Log "    $($sql.Name)" DarkGray
-                kubectl exec -n $Namespace postgres-0 -- psql -U catest -f "/docker-entrypoint-initdb.d/$($sql.Name)" 2>&1 | Out-Null
+                kubectl exec -n $Namespace postgres-0 -- psql -U $pgUser -f "/docker-entrypoint-initdb.d/$($sql.Name)" 2>&1 | Out-Null
             }
 
             # Fix constraints required by auth (ON CONFLICT needs UNIQUE)
@@ -308,6 +321,47 @@ if ($SkipInfra) {
     } else {
         Warn "PostgreSQL not ready — skipping DB init (you may need to run init scripts manually)"
     }
+}
+
+# ── 3.5. Manifest pre-flight (catch common mistakes before apply) ────────────
+Log "  Manifest pre-flight check..." Cyan
+$manifestIssues = @()
+$webManifestDirs = @(
+    @{ Name = 'web';                Dir = "$K8s/services/web/" }
+    @{ Name = 'web-workspace';      Dir = "$K8s/services/web-workspace/" }
+    @{ Name = 'web-rag';            Dir = "$K8s/services/web-rag/" }
+    @{ Name = 'web-review';         Dir = "$K8s/services/web-review/" }
+    @{ Name = 'web-team';           Dir = "$K8s/services/web-team/" }
+    @{ Name = 'web-tm';             Dir = "$K8s/services/web-tm/" }
+    @{ Name = 'web-tb';             Dir = "$K8s/services/web-tb/" }
+    @{ Name = 'web-orchestration';  Dir = "$K8s/services/web-orchestration/" }
+)
+foreach ($wm in $webManifestDirs) {
+    if (-not (Test-Path $wm.Dir)) { continue }
+    $allYaml = Get-Content (Get-ChildItem "$($wm.Dir)*.yaml" | Select-Object -First 3) -Raw -ErrorAction SilentlyContinue
+    if (-not $allYaml) { continue }
+    # Check: secret name must be catest-app-secrets, not app-secrets
+    if ($allYaml -match 'name:\s+app-secrets\b' -and $allYaml -notmatch 'name:\s+catest-app-secrets') {
+        $manifestIssues += "$($wm.Name): wrong secret name (should be catest-app-secrets)"
+    }
+    # Check: SAAS_MODE must be true for K8s gateway routing
+    if ($allYaml -match 'NEXT_PUBLIC_SAAS_MODE' -and $allYaml -match 'value:\s*"false"') {
+        $manifestIssues += "$($wm.Name): NEXT_PUBLIC_SAAS_MODE=false (must be true for gateway routing)"
+    }
+    # Check: imagePullPolicy should be IfNotPresent for local images
+    if ($allYaml -match 'imagePullPolicy:\s*Always') {
+        $manifestIssues += "$($wm.Name): imagePullPolicy=Always (should be IfNotPresent for local images)"
+    }
+    # Check: postgres port must match .env POSTGRES_PORT (Service port), not 5432 (container port)
+    if ($allYaml -match 'postgres://.*:5432/') {
+        $manifestIssues += "$($wm.Name): postgres port=5432 (should be $PostgresPort — from .env POSTGRES_PORT)"
+    }
+}
+if ($manifestIssues.Count -gt 0) {
+    foreach ($issue in $manifestIssues) { Warn "Manifest: $issue" }
+    Warn "Fix these issues before deploying to avoid runtime failures."
+} else {
+    Log "    All web manifests passed pre-flight checks" DarkGray
 }
 
 # ── 4. Application services ──────────────────────────────────────────────────
@@ -394,8 +448,14 @@ if ($SkipWait) {
 Log "[6/8] Detecting and fixing port accessibility..."
 $portConfigScript = Join-Path $PSScriptRoot 'port-config.ps1'
 if (Test-Path $portConfigScript) {
+    # Kill stale port-forwards that may have died during rollout restarts
+    Get-Process -Name 'kubectl' -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -match 'port-forward' } |
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    # Probe detects dead/down ports and auto-starts port-forwards for them
     . $portConfigScript -Probe
-    # $Ports and $PortStatus are now available
+    # $Ports and $PortStatus are now available (dead ports auto-forwarded to alt ports)
     $nativeCount = @($PortStatus.Values | Where-Object { $_.Status -eq 'native' }).Count
     $fwdCount    = @($PortStatus.Values | Where-Object { $_.Status -eq 'forwarded' }).Count
     $deadCount   = @($PortStatus.Values | Where-Object { $_.Status -eq 'dead' }).Count
@@ -540,17 +600,52 @@ if ($failedPods.Count -eq 0 -and $allPortsOk) {
 }
 # Use detected ports from port-config.ps1 (falls back to defaults if unavailable)
 $pGateway = if ($Ports -and $Ports['envoy-gateway']) { $Ports['envoy-gateway'] } else { 33088 }
-$pTM      = if ($Ports -and $Ports['web-tm'])        { $Ports['web-tm'] }        else { 33005 }
-$pTB      = if ($Ports -and $Ports['web-tb'])        { $Ports['web-tb'] }        else { 33006 }
 $pMCP     = if ($Ports -and $Ports['mcp-facade'])    { $Ports['mcp-facade'] }    else { 34098 }
-Log "  Gateway       : http://localhost:$pGateway  (unified entry point)"
+Log "  Gateway       : http://localhost:$pGateway  (unified entry point — use this!)"
 Log "  Dashboard     : http://localhost:$pGateway/"
 Log "  Workspace     : http://localhost:$pGateway/workspace/"
 Log "  RAG           : http://localhost:$pGateway/rag/"
 Log "  Review        : http://localhost:$pGateway/review/"
 Log "  Team          : http://localhost:$pGateway/team/"
-Log "  TM            : http://localhost:$pTM/"
-Log "  TB            : http://localhost:$pTB/"
+Log "  TM            : http://localhost:$pGateway/tm/"
+Log "  TB            : http://localhost:$pGateway/tb/"
 Log "  Orchestration : http://localhost:$pGateway/orchestration/ (steampunk chat UI)"
 Log "  MCP Facade    : http://localhost:$pMCP/healthz (MCP at /mcp)"
+Write-Host ""
+
+# ── 8d. Navigation smoke test ───────────────────────────────────────────────
+# Verify that envoy gateway correctly routes to all apps (SaaS mode navigation)
+Log "  Navigation routing check (via gateway :$pGateway):" Cyan
+$navRoutes = @(
+    @{ Path = '/';               Name = 'Dashboard' }
+    @{ Path = '/workspace';      Name = 'Workspace' }
+    @{ Path = '/rag';            Name = 'RAG' }
+    @{ Path = '/review';         Name = 'Review' }
+    @{ Path = '/team';           Name = 'Team' }
+    @{ Path = '/tm';             Name = 'TM' }
+    @{ Path = '/tb';             Name = 'TB' }
+    @{ Path = '/orchestration';  Name = 'Orchestration' }
+)
+$navOk = $true
+foreach ($route in $navRoutes) {
+    $url = "http://localhost:$pGateway$($route.Path)"
+    try {
+        $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -MaximumRedirection 0 -TimeoutSec 5 -ErrorAction SilentlyContinue 2>&1
+        $code = $resp.StatusCode
+    } catch {
+        if ($_.Exception.Response) { $code = [int]$_.Exception.Response.StatusCode } else { $code = 0 }
+    }
+    if ($code -gt 0) {
+        Log "    $($route.Name.PadRight(16)) $($route.Path.PadRight(20)) -> HTTP $code" Green
+    } else {
+        Log "    $($route.Name.PadRight(16)) $($route.Path.PadRight(20)) -> UNREACHABLE" Red
+        $navOk = $false
+    }
+}
+if ($navOk) {
+    Log "  All navigation routes reachable via gateway" Green
+} else {
+    Warn "Some routes unreachable — sidebar navigation may be broken"
+    Warn "Ensure envoy-gateway routes.yaml includes all app paths"
+}
 Write-Host ""

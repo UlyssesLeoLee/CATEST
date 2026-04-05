@@ -1,13 +1,13 @@
+# Frontend routes — maps SaaS-mode navigation paths to web micro-frontends
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: catest-saas-route
+  name: catest-frontend-routes
   namespace: catest
 spec:
   parentRefs:
     - name: catest-envoy-gateway
   rules:
-    # ─────────────── App Routing / Frontends ─────────────────────────────
     - matches:
         - path: { type: PathPrefix, value: /workspace }
       backendRefs:
@@ -29,17 +29,37 @@ spec:
         - name: catest-web-team
           port: 33004
     - matches:
+        - path: { type: PathPrefix, value: /tm }
+      backendRefs:
+        - name: catest-web-tm
+          port: 33005
+    - matches:
+        - path: { type: PathPrefix, value: /tb }
+      backendRefs:
+        - name: catest-web-tb
+          port: 33006
+    - matches:
         - path: { type: PathPrefix, value: /orchestration }
       backendRefs:
         - name: catest-web-orchestration
           port: 33007
+    # Catch-all: Dashboard (must be LAST — matches everything under /)
     - matches:
         - path: { type: PathPrefix, value: / }
       backendRefs:
         - name: catest-web-base
           port: 33000
-
-    # ─────────────── API Routing / Backends ──────────────────────────────
+---
+# API routes — maps /api/* to backend services with prefix rewrite
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: catest-api-routes
+  namespace: catest
+spec:
+  parentRefs:
+    - name: catest-envoy-gateway
+  rules:
     - matches:
         - path: { type: PathPrefix, value: /api/hub }
       filters:
@@ -88,8 +108,6 @@ spec:
       backendRefs:
         - name: catest-ai-vector-ops
           port: 34085
-
-    # ─────────────── AI Orchestration Domain ─────────────────────────────
     - matches:
         - path: { type: PathPrefix, value: /api/orchestration }
       filters:

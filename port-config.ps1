@@ -31,26 +31,44 @@ param(
     [string]$Namespace = 'catest'
 )
 
-# ── Port Registry ────────────────────────────────────────────────────────────
-# All CATEST services that need localhost access.
-# BasePort = the port defined in K8s Service manifests.
-# AltPort  = fallback when Docker Desktop vpnkit is stuck (BasePort + 10000).
-# Svc      = kubectl service name for port-forward.
-# Target   = container port (what the pod actually listens on).
+# ── Load .env ────────────────────────────────────────────────────────────────
+# Single source of truth for all ports. Parse .env file at repo root.
+$EnvFile = Join-Path $PSScriptRoot '.env'
+$EnvVars = @{}
+if (Test-Path $EnvFile) {
+    Get-Content $EnvFile | ForEach-Object {
+        if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$' -and $_ -notmatch '^\s*#') {
+            $EnvVars[$Matches[1]] = $Matches[2].Trim('"').Trim("'")
+        }
+    }
+}
+
+function Get-EnvPort([string]$Key, [int]$Default) {
+    if ($EnvVars.ContainsKey($Key)) { return [int]$EnvVars[$Key] }
+    return $Default
+}
+
+# ── Port Registry (driven by .env) ──────────────────────────────────────────
+# BasePort = from .env. AltPort = BasePort + 10000 (vpnkit fallback).
+# Svc = kubectl service name. Target = same as BasePort (K8s Service port).
 $PortRegistry = @(
-    @{ Name = 'envoy-gateway';    BasePort = 33088; AltPort = 43088; Svc = 'svc/envoy-gateway';          Target = 33088 }
-    @{ Name = 'web-base';         BasePort = 33000; AltPort = 43000; Svc = 'svc/catest-web-base';        Target = 33000 }
-    @{ Name = 'web-workspace';    BasePort = 33001; AltPort = 43001; Svc = 'svc/catest-web-workspace';   Target = 33001 }
-    @{ Name = 'web-rag';          BasePort = 33002; AltPort = 43002; Svc = 'svc/catest-web-rag';         Target = 33002 }
-    @{ Name = 'web-review';       BasePort = 33003; AltPort = 43003; Svc = 'svc/catest-web-review';      Target = 33003 }
-    @{ Name = 'web-team';         BasePort = 33004; AltPort = 43004; Svc = 'svc/catest-web-team';        Target = 33004 }
-    @{ Name = 'web-tm';           BasePort = 33005; AltPort = 43005; Svc = 'svc/catest-web-tm';          Target = 33005 }
-    @{ Name = 'web-tb';           BasePort = 33006; AltPort = 43006; Svc = 'svc/catest-web-tb';          Target = 33006 }
-    @{ Name = 'web-orchestration';BasePort = 33007; AltPort = 43007; Svc = 'svc/catest-web-orchestration'; Target = 33007 }
-    @{ Name = 'hub';              BasePort = 33080; AltPort = 43080; Svc = 'svc/catest-hub';             Target = 33080 }
-    @{ Name = 'intent-gateway';   BasePort = 34090; AltPort = 44090; Svc = 'svc/catest-intent-gateway';  Target = 34090 }
-    @{ Name = 'mcp-facade';       BasePort = 34098; AltPort = 44098; Svc = 'svc/catest-mcp-facade';      Target = 34098 }
+    @{ Name = 'envoy-gateway';    BasePort = Get-EnvPort 'ENVOY_GATEWAY_PORT' 33088;                 Svc = 'svc/envoy-gateway';              Target = Get-EnvPort 'ENVOY_GATEWAY_PORT' 33088 }
+    @{ Name = 'web-base';         BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_BASE' 33000;           Svc = 'svc/catest-web-base';             Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_BASE' 33000 }
+    @{ Name = 'web-workspace';    BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_WORKSPACE' 33001;      Svc = 'svc/catest-web-workspace';        Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_WORKSPACE' 33001 }
+    @{ Name = 'web-rag';          BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_RAG' 33002;            Svc = 'svc/catest-web-rag';              Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_RAG' 33002 }
+    @{ Name = 'web-review';       BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_REVIEW' 33003;         Svc = 'svc/catest-web-review';           Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_REVIEW' 33003 }
+    @{ Name = 'web-team';         BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TEAM' 33004;           Svc = 'svc/catest-web-team';             Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TEAM' 33004 }
+    @{ Name = 'web-tm';           BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TM' 33005;             Svc = 'svc/catest-web-tm';               Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TM' 33005 }
+    @{ Name = 'web-tb';           BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TB' 33006;             Svc = 'svc/catest-web-tb';               Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TB' 33006 }
+    @{ Name = 'web-orchestration';BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_ORCHESTRATION' 33007;  Svc = 'svc/catest-web-orchestration';    Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_ORCHESTRATION' 33007 }
+    @{ Name = 'hub';              BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_GATEWAY' 33080;            Svc = 'svc/catest-hub';                  Target = Get-EnvPort 'NEXT_PUBLIC_PORT_GATEWAY' 33080 }
+    @{ Name = 'intent-gateway';   BasePort = Get-EnvPort 'INTENT_GATEWAY_PORT' 34090;                Svc = 'svc/catest-intent-gateway';       Target = Get-EnvPort 'INTENT_GATEWAY_PORT' 34090 }
+    @{ Name = 'mcp-facade';       BasePort = Get-EnvPort 'MCP_FACADE_PORT' 34098;                    Svc = 'svc/catest-mcp-facade';           Target = Get-EnvPort 'MCP_FACADE_PORT' 34098 }
 )
+# Compute AltPort dynamically
+foreach ($entry in $PortRegistry) {
+    $entry.AltPort = $entry.BasePort + 10000
+}
 
 # ── Core: Test if a port is alive (TCP connect + HTTP response) ──────────────
 function Test-PortAlive {

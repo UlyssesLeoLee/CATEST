@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # 2. Database Readiness Check + Ensure Databases Exist
 Write-Host "[2/5] Waiting for PostgreSQL readiness..." -ForegroundColor Yellow
-$Port = if ($Env:PORT_POSTGRES) { $Env:PORT_POSTGRES } else { "34321" }
+$Port = if ($Env:POSTGRES_PORT) { $Env:POSTGRES_PORT } elseif ($Env:PORT_POSTGRES) { $Env:PORT_POSTGRES } else { "34321" }
 $Retries = 15
 while ($Retries -gt 0) {
     $Test = Test-NetConnection -Port $Port -ComputerName "localhost" -InformationLevel Quiet

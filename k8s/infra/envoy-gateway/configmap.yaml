@@ -22,16 +22,6 @@ data:
                     upgrade_configs:
                       - upgrade_type: websocket
                     http_filters:
-                      - name: envoy.filters.http.lua
-                        typed_config:
-                          "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-                          default_source_code:
-                            inline_string: |
-                              -- Cascade _next requests through all backends
-                              function envoy_on_request(handle)
-                              end
-                              function envoy_on_response(handle)
-                              end
                       - name: envoy.filters.http.router
                         typed_config:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -41,43 +31,63 @@ data:
                         - name: gateway
                           domains: ["*"]
                           routes:
-                            # ── Frontend apps: strip prefix, proxy to backend ──
+                            # ── Frontend apps: strip trailing slash on root, pass full path ──
                             - match:
-                                prefix: "/workspace/"
+                                path: "/workspace/"
+                              redirect:
+                                path_redirect: "/workspace"
+                            - match:
+                                prefix: "/workspace"
                               route:
-                                prefix_rewrite: "/"
                                 cluster: web-workspace
                             - match:
-                                path: "/workspace"
+                                path: "/rag/"
                               redirect:
-                                path_redirect: "/workspace/"
+                                path_redirect: "/rag"
                             - match:
-                                prefix: "/rag/"
+                                prefix: "/rag"
                               route:
-                                prefix_rewrite: "/"
                                 cluster: web-rag
                             - match:
-                                path: "/rag"
+                                path: "/review/"
                               redirect:
-                                path_redirect: "/rag/"
+                                path_redirect: "/review"
                             - match:
-                                prefix: "/review/"
+                                prefix: "/review"
                               route:
-                                prefix_rewrite: "/"
                                 cluster: web-review
                             - match:
-                                path: "/review"
+                                path: "/team/"
                               redirect:
-                                path_redirect: "/review/"
+                                path_redirect: "/team"
                             - match:
-                                prefix: "/team/"
+                                prefix: "/team"
                               route:
-                                prefix_rewrite: "/"
                                 cluster: web-team
                             - match:
-                                path: "/team"
+                                path: "/tm/"
                               redirect:
-                                path_redirect: "/team/"
+                                path_redirect: "/tm"
+                            - match:
+                                prefix: "/tm"
+                              route:
+                                cluster: web-tm
+                            - match:
+                                path: "/tb/"
+                              redirect:
+                                path_redirect: "/tb"
+                            - match:
+                                prefix: "/tb"
+                              route:
+                                cluster: web-tb
+                            - match:
+                                path: "/orchestration/"
+                              redirect:
+                                path_redirect: "/orchestration"
+                            - match:
+                                prefix: "/orchestration"
+                              route:
+                                cluster: web-orchestration
 
                             # ── API backends ──
                             - match:
@@ -100,17 +110,31 @@ data:
                               route:
                                 prefix_rewrite: "/"
                                 cluster: api-intelligence
-
-                            # ── _next/static assets: aggregate cluster cascades all backends ──
                             - match:
-                                prefix: "/_next/"
+                                prefix: "/api/ai/"
                               route:
-                                cluster: aggregate-next
-                                retry_policy:
-                                  retry_on: "5xx,reset,connect-failure,retriable-status-codes"
-                                  retriable_status_codes: [404]
-                                  num_retries: 4
-                                  per_try_timeout: 3s
+                                prefix_rewrite: "/"
+                                cluster: api-ai-orchestrator
+                            - match:
+                                prefix: "/api/vectors/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-ai-vector-ops
+                            - match:
+                                prefix: "/api/orchestration/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-intent-gateway
+                            - match:
+                                prefix: "/api/traces/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-trace-audit
+                            - match:
+                                prefix: "/api/mcp-facade/"
+                              route:
+                                prefix_rewrite: "/"
+                                cluster: api-mcp-facade
 
                             # ── Static assets ──
                             - match:
@@ -119,6 +143,10 @@ data:
                                 cluster: web-base
                             - match:
                                 path: "/favicon.ico"
+                              route:
+                                cluster: web-base
+                            - match:
+                                prefix: "/textures/"
                               route:
                                 cluster: web-base
 
@@ -199,47 +227,47 @@ data:
                           address: catest-web-team.catest.svc.cluster.local
                           port_value: 33004
 
-        # Aggregate cluster for _next/ static assets — tries all 5 backends
-        - name: aggregate-next
+        - name: web-tm
           connect_timeout: 5s
           type: STRICT_DNS
           lb_policy: ROUND_ROBIN
           load_assignment:
-            cluster_name: aggregate-next
+            cluster_name: web-tm
             endpoints:
               - lb_endpoints:
                   - endpoint:
                       address:
                         socket_address:
-                          address: catest-web-base.catest.svc.cluster.local
-                          port_value: 33000
+                          address: catest-web-tm.catest.svc.cluster.local
+                          port_value: 33005
+
+        - name: web-tb
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: web-tb
+            endpoints:
+              - lb_endpoints:
                   - endpoint:
                       address:
                         socket_address:
-                          address: catest-web-workspace.catest.svc.cluster.local
-                          port_value: 33001
+                          address: catest-web-tb.catest.svc.cluster.local
+                          port_value: 33006
+
+        - name: web-orchestration
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: web-orchestration
+            endpoints:
+              - lb_endpoints:
                   - endpoint:
                       address:
                         socket_address:
-                          address: catest-web-rag.catest.svc.cluster.local
-                          port_value: 33002
-                  - endpoint:
-                      address:
-                        socket_address:
-                          address: catest-web-review.catest.svc.cluster.local
-                          port_value: 33003
-                  - endpoint:
-                      address:
-                        socket_address:
-                          address: catest-web-team.catest.svc.cluster.local
-                          port_value: 33004
-          health_checks:
-            - timeout: 2s
-              interval: 10s
-              unhealthy_threshold: 3
-              healthy_threshold: 1
-              http_health_check:
-                path: "/"
+                          address: catest-web-orchestration.catest.svc.cluster.local
+                          port_value: 33007
 
         # API clusters
         - name: api-hub
@@ -297,6 +325,76 @@ data:
                         socket_address:
                           address: catest-intelligence.catest.svc.cluster.local
                           port_value: 33083
+
+        - name: api-ai-orchestrator
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-ai-orchestrator
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-ai-orchestrator.catest.svc.cluster.local
+                          port_value: 34080
+
+        - name: api-ai-vector-ops
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-ai-vector-ops
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-ai-vector-ops.catest.svc.cluster.local
+                          port_value: 34085
+
+        - name: api-intent-gateway
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-intent-gateway
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-intent-gateway.catest.svc.cluster.local
+                          port_value: 34090
+
+        - name: api-trace-audit
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-trace-audit
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-trace-audit.catest.svc.cluster.local
+                          port_value: 34097
+
+        - name: api-mcp-facade
+          connect_timeout: 5s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: api-mcp-facade
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: catest-mcp-facade.catest.svc.cluster.local
+                          port_value: 34098
 
     admin:
       address:

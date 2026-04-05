@@ -32,7 +32,7 @@ spec:
             - name: NEXT_PUBLIC_GATEWAY_URL
               value: "http://catest-hub:33080"
             - name: TM_DATABASE_URL
-              value: "postgres://catest:password@postgres:5432/catest_tm"
+              value: "postgres://catest:password@postgres:34321/catest_tm"
 ---
 apiVersion: v1
 kind: Service
