@@ -563,7 +563,11 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:53088/workspace)",
       "Bash(curl -s \"http://localhost:53088/api/test?action=login&email=lidian727@gmail.com&password=test123\")",
       "Bash(curl -sv \"http://localhost:53088/api/test?action=login&email=lidian727@gmail.com&password=test123\")",
-      "Bash(SESSION=session=eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJkODBlNDBkMC04NDdlLTRhNDAtYjhkMS00OTdjMmIyM2YxMjUiLCJlbWFpbCI6ImxpZGlhbjcyN0BnbWFpbC5jb20iLCJyb2xlIjoidXNlciIsInNlc3Npb25JZCI6ImYxYmY4NjRmLWMzZWQtNGU0YS1iNzU4LTY5ZGY0ZGVhMDY3MiIsInBsYW4iOiJmcmVlIiwiaWF0IjoxNzc1Mzg4MzM2LCJleHAiOjE3Nzc5ODAzMzZ9.ku7zYVurv95BtFYSgDOdYZcmdr2QdUQ-B8tmetqR7-o curl -s -b $SESSION --max-time 15 http://localhost:53088/orchestration)"
+      "Bash(SESSION=session=eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJkODBlNDBkMC04NDdlLTRhNDAtYjhkMS00OTdjMmIyM2YxMjUiLCJlbWFpbCI6ImxpZGlhbjcyN0BnbWFpbC5jb20iLCJyb2xlIjoidXNlciIsInNlc3Npb25JZCI6ImYxYmY4NjRmLWMzZWQtNGU0YS1iNzU4LTY5ZGY0ZGVhMDY3MiIsInBsYW4iOiJmcmVlIiwiaWF0IjoxNzc1Mzg4MzM2LCJleHAiOjE3Nzc5ODAzMzZ9.ku7zYVurv95BtFYSgDOdYZcmdr2QdUQ-B8tmetqR7-o curl -s -b $SESSION --max-time 15 http://localhost:53088/orchestration)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:53088/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:30559/)",
+      "Bash(pkill -f \"kubectl port-forward.*envoy-gateway\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:53088/ --max-time 5)"
     ]
   }
 }
