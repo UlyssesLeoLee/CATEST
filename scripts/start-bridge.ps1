@@ -26,6 +26,13 @@ Write-Host "=== Adapter Bridge ===" -ForegroundColor Cyan
 Write-Host "  Port:     $Port"
 Write-Host "  CWD:      $Cwd"
 Write-Host "  Callback: $env:CALLBACK_URL"
+Write-Host "  MCP:      http://localhost:$Port/mcp"
+Write-Host ""
+
+# Register as MCP server in Antigravity (idempotent)
+$mcpDef = "{`"name`":`"catest-bridge`",`"type`":`"http`",`"url`":`"http://localhost:$Port/mcp`"}"
+antigravity --add-mcp $mcpDef 2>&1 | Out-Null
+Write-Host "  Antigravity MCP registered" -ForegroundColor Green
 Write-Host ""
 
 python -m uvicorn catest_ai.adapter_bridge.main:app --host 0.0.0.0 --port $Port --reload

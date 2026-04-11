@@ -100,9 +100,12 @@ function useModels() {
       } catch {
         // Fallback: minimal hardcoded list if bridge is offline
         setModels([
-          { id: "sonnet", label: "Sonnet", provider: "claude_code" },
-          { id: "opus",   label: "Opus",   provider: "claude_code" },
-          { id: "haiku",  label: "Haiku",  provider: "claude_code" },
+          { id: "ide",    label: "IDE Chat", provider: "claude_code" },
+          { id: "sonnet", label: "Sonnet",   provider: "claude_code" },
+          { id: "opus",   label: "Opus",     provider: "claude_code" },
+          { id: "haiku",  label: "Haiku",    provider: "claude_code" },
+          { id: "ide",    label: "IDE Chat", provider: "codex" },
+          { id: "ide",    label: "IDE Chat", provider: "antigravity" },
         ]);
       } finally {
         setLoading(false);
@@ -606,7 +609,7 @@ export default function OrchestrationPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [target, setTarget] = useState<DispatchTarget>("claude_code");
-  const [model, setModel] = useState("sonnet");
+  const [model, setModel] = useState("ide");
   const [project, setProject] = useState("default");
   const { models: availableModels } = useModels();
 

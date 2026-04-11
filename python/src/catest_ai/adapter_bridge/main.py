@@ -26,6 +26,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from catest_ai.adapter_bridge.runners import create_runner, detect_models
+from catest_ai.adapter_bridge.mcp_server import router as mcp_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -83,6 +84,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(mcp_router)
 
 
 # ── Routes ────────────────────────────────────────────────────────────
@@ -111,6 +113,12 @@ async def execute(req: ExecuteRequest):
 
     queue: asyncio.Queue = asyncio.Queue()
     _streams[trace_id] = queue
+    print("\n" + "="*60)
+    print(f"DEBUG: INCOMING PROMPT FROM ORCHESTRATION")
+    print(f"TARGET: {req.target}")
+    print(f"PROMPT: {req.prompt}")
+    print("="*60 + "\n")
+    logger.info("[%s] Received execution request for '%s': %s", trace_id[:8], req.target, req.prompt)
 
     async def _run() -> None:
         runner = create_runner(req.target)

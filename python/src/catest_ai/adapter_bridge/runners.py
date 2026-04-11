@@ -31,6 +31,8 @@ from typing import AsyncIterator
 
 logger = logging.getLogger("adapter-bridge.runners")
 
+DEFAULT_CWD = os.getenv("BRIDGE_CWD", os.getcwd())
+
 
 def _reader_thread(pipe, q: queue.Queue) -> None:
     """Read lines from a pipe in a background thread, push to queue."""
@@ -59,6 +61,16 @@ class ClaudeCodeRunner(BaseRunner):
     async def run(
         self, prompt: str, *, cwd: str = ".", project: str = "default", model: str = ""
     ) -> AsyncIterator[dict]:
+        # model="ide"  →  paste into Claude Code's chat window
+        if model == "ide":
+            yield {"event": "status", "message": "Focusing Claude Code IDE…"}
+            result = await asyncio.to_thread(_run_ide_ps, "claude_code", prompt)
+            if result["ok"]:
+                yield {"event": "status", "message": "Prompt pasted into Claude Code ✓"}
+            else:
+                yield {"event": "error", "message": result["err"]}
+            return
+
         cmd = os.getenv("CLAUDE_CLI", "") or shutil.which("claude")
         if not cmd:
             yield {"event": "error", "message": "claude CLI not found in PATH"}
@@ -168,6 +180,16 @@ class CodexRunner(BaseRunner):
     async def run(
         self, prompt: str, *, cwd: str = ".", project: str = "default", model: str = ""
     ) -> AsyncIterator[dict]:
+        # model="ide"  →  paste into VS Code Copilot/Codex chat
+        if model == "ide":
+            yield {"event": "status", "message": "Focusing VS Code (Codex IDE)…"}
+            result = await asyncio.to_thread(_run_ide_ps, "codex", prompt)
+            if result["ok"]:
+                yield {"event": "status", "message": "Prompt pasted into VS Code ✓"}
+            else:
+                yield {"event": "error", "message": result["err"]}
+            return
+
         cmd = os.getenv("CODEX_CLI", "") or shutil.which("codex")
         if not cmd:
             yield {"event": "error", "message": "codex CLI not found in PATH"}
@@ -214,93 +236,160 @@ class CodexRunner(BaseRunner):
             raise
 
 
-# ── Antigravity ───────────────────────────────────────────────────────
+# ── IDE Keyboard Automation ───────────────────────────────────────────
+
+ANTIGRAVITY_INBOX_URL = os.getenv(
+    "ANTIGRAVITY_INBOX_URL",
+    "http://localhost:33000/api/antigravity/inbox",
+)
+
+# Unified IDE keyboard-automation script.
+# Used when model="ide" on any target, or as the default delivery for Antigravity.
+#
+# Per-target:
+#   claude_code  — finds "claude" process (Claude Code desktop/CLI), pastes
+#   codex        — finds VS Code, opens Copilot chat (Ctrl+Alt+I), pastes
+#   antigravity  — finds Antigravity, opens Gemini chat (Ctrl+I), pastes
+#
+# Text is placed in the chat INPUT but NOT submitted — user presses Enter.
+
+_IDE_PS1 = r"""
+param([string]$Target, [string]$Prompt)
+
+Set-Clipboard -Value $Prompt
+
+# Win32 helpers for reliable foreground-window stealing from background processes.
+# AttachThreadInput lets us call SetForegroundWindow even without the foreground lock.
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class WinHelper {
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern uint  GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] public static extern bool  AttachThreadInput(uint a, uint b, bool attach);
+    [DllImport("user32.dll")] public static extern bool  BringWindowToTop(IntPtr h);
+    [DllImport("user32.dll")] public static extern bool  SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern bool  ShowWindow(IntPtr h, int cmd);
+    public static bool ForceForeground(IntPtr hwnd) {
+        IntPtr fg   = GetForegroundWindow();
+        uint fgPid2 = 0;
+        uint fgTid  = GetWindowThreadProcessId(fg, out fgPid2);
+        uint myTid  = GetCurrentThreadId();
+        bool att    = (fgTid != myTid) && AttachThreadInput(myTid, fgTid, true);
+        ShowWindow(hwnd, 9);
+        BringWindowToTop(hwnd);
+        bool ok = SetForegroundWindow(hwnd);
+        if (att) AttachThreadInput(myTid, fgTid, false);
+        return ok;
+    }
+}
+"@
+
+function Activate-IDE {
+    param([string[]]$Names, [string]$Label)
+    foreach ($n in $Names) {
+        $procs = Get-Process -Name $n -ErrorAction SilentlyContinue |
+                 Where-Object { $_.MainWindowHandle -ne 0 }
+        foreach ($p in $procs) {
+            $hwnd = [IntPtr]$p.MainWindowHandle
+            $ok   = [WinHelper]::ForceForeground($hwnd)
+            Write-Output "ForceForeground $Label PID=$($p.Id) hwnd=$hwnd result=$ok"
+            if ($ok) { return $hwnd }
+        }
+    }
+    Write-Error "$Label window not found or could not be activated"
+    exit 1
+}
+
+$wsh = New-Object -ComObject WScript.Shell
+
+switch ($Target) {
+    "claude_code" {
+        Activate-IDE -Names @("claude","WindowsTerminal","powershell","pwsh") -Label "Claude Code"
+        Start-Sleep -Milliseconds 600
+        $wsh.SendKeys("^v")
+    }
+    "codex" {
+        Activate-IDE -Names @("Code","code") -Label "VS Code"
+        Start-Sleep -Milliseconds 600
+        $wsh.SendKeys("^%i")    # Ctrl+Alt+I  ->  Copilot Chat
+        Start-Sleep -Milliseconds 1000
+        $wsh.SendKeys("^a")
+        Start-Sleep -Milliseconds 150
+        $wsh.SendKeys("^v")
+    }
+    "antigravity" {
+        Activate-IDE -Names @("Antigravity") -Label "Antigravity"
+        Start-Sleep -Milliseconds 600
+        $wsh.SendKeys("^i")     # Ctrl+I  ->  antigravity.openChatView
+        Start-Sleep -Milliseconds 1000
+        $wsh.SendKeys("^a")
+        Start-Sleep -Milliseconds 150
+        $wsh.SendKeys("^v")
+    }
+    default {
+        Write-Error "Unknown target: $Target"
+        exit 1
+    }
+}
+
+Start-Sleep -Milliseconds 200
+Write-Output "ok"
+"""
+
+# Keep old name as alias (AntigravityRunner still references it)
+_ANTIGRAVITY_PS1 = _IDE_PS1
+
+
+def _run_ide_ps(target: str, prompt: str) -> dict:
+    """Run the unified IDE automation PS1 synchronously. Returns {ok, err}."""
+    import tempfile, os as _os
+
+    ps = shutil.which("powershell") or shutil.which("pwsh")
+    if not ps:
+        return {"ok": False, "err": "PowerShell not found"}
+
+    script_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".ps1", delete=False, encoding="utf-8"
+        ) as f:
+            f.write(_IDE_PS1)
+            script_path = f.name
+
+        proc = subprocess.run(
+            [ps, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+             "-File", script_path, "-Target", target, "-Prompt", prompt],
+            capture_output=True, text=True, timeout=15,
+        )
+        if proc.returncode == 0:
+            return {"ok": True, "stdout": proc.stdout.strip()}
+        err = (proc.stderr or proc.stdout or "unknown error").strip()[:500]
+        return {"ok": False, "err": err}
+    except Exception as exc:
+        return {"ok": False, "err": str(exc)}
+    finally:
+        if script_path:
+            try:
+                _os.unlink(script_path)
+            except Exception:
+                pass
 
 
 class AntigravityRunner(BaseRunner):
-    """Invokes the Antigravity CLI or falls back to its HTTP API."""
+    """Delivers a prompt to Antigravity IDE chat via keyboard automation."""
 
     async def run(
         self, prompt: str, *, cwd: str = ".", project: str = "default", model: str = ""
     ) -> AsyncIterator[dict]:
-        cmd = os.getenv("ANTIGRAVITY_CLI", "") or shutil.which("antigravity")
-
-        if cmd:
-            yield {"event": "status", "message": f"Launching Antigravity in {cwd}"}
-            async for ev in self._run_cli(cmd, prompt, cwd):
-                yield ev
+        yield {"event": "status", "message": "Focusing Antigravity IDE…"}
+        result = await asyncio.to_thread(_run_ide_ps, "antigravity", prompt)
+        if result["ok"]:
+            yield {"event": "status", "message": "Prompt pasted into Antigravity ✓"}
         else:
-            api_url = os.getenv("ANTIGRAVITY_API_URL", "")
-            if not api_url:
-                yield {
-                    "event": "error",
-                    "message": "Neither antigravity CLI nor ANTIGRAVITY_API_URL configured",
-                }
-                return
-            async for ev in self._run_api(api_url, prompt, project):
-                yield ev
+            yield {"event": "error", "message": result["err"]}
 
-    async def _run_cli(
-        self, cmd: str, prompt: str, cwd: str
-    ) -> AsyncIterator[dict]:
-        proc = subprocess.Popen(
-            [cmd, prompt],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=cwd,
-        )
-
-        q: queue.Queue = queue.Queue()
-        t = threading.Thread(target=_reader_thread, args=(proc.stdout, q), daemon=True)
-        t.start()
-
-        try:
-            while True:
-                raw_line = await asyncio.to_thread(q.get)
-                if raw_line is None:
-                    break
-                line = raw_line.decode("utf-8", errors="replace").strip()
-                if line:
-                    yield {"event": "output", "content": line}
-
-            proc.wait()
-
-            if proc.returncode and proc.returncode != 0:
-                stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
-                yield {
-                    "event": "error",
-                    "message": f"exit {proc.returncode}: {stderr[:500]}",
-                }
-        except asyncio.CancelledError:
-            proc.kill()
-            raise
-
-    async def _run_api(
-        self, api_url: str, prompt: str, project: str
-    ) -> AsyncIterator[dict]:
-        import httpx
-
-        yield {"event": "status", "message": "Calling Antigravity API\u2026"}
-        async with httpx.AsyncClient(timeout=300.0) as client:
-            resp = await client.post(
-                f"{api_url}/missions",
-                json={
-                    "mission": {
-                        "title": prompt[:80],
-                        "description": prompt,
-                        "project": project,
-                    }
-                },
-                headers={
-                    "Authorization": f"Bearer {os.getenv('ANTIGRAVITY_API_KEY', '')}",
-                },
-            )
-            resp.raise_for_status()
-            result = resp.json()
-            yield {
-                "event": "output",
-                "content": json.dumps(result, ensure_ascii=False),
-            }
 
 
 # ── Factory ───────────────────────────────────────────────────────────
@@ -345,6 +434,7 @@ async def detect_models() -> dict:
                     "available": True,
                     "version": version,
                     "models": [
+                        {"id": "ide",    "label": "IDE Chat"},
                         {"id": "opus",   "label": "Opus"},
                         {"id": "sonnet", "label": "Sonnet"},
                         {"id": "haiku",  "label": "Haiku"},
@@ -368,19 +458,27 @@ async def detect_models() -> dict:
                 result["codex"] = {
                     "available": True,
                     "version": version,
-                    "models": [{"id": m, "label": m} for m in codex_models],
+                    "models": [{"id": "ide", "label": "IDE Chat"}] + [{"id": m, "label": m} for m in codex_models],
                 }
         except Exception:
             pass
 
-    # Antigravity
+    # Antigravity – available if either CLI or API URL is configured
     ag_cmd = os.getenv("ANTIGRAVITY_CLI", "") or shutil.which("antigravity")
     ag_api = os.getenv("ANTIGRAVITY_API_URL", "")
-    if ag_cmd or ag_api:
+    ag_model = os.getenv("ANTIGRAVITY_MODEL", "")
+    # Antigravity always available (keyboard automation doesn't need CLI/API)
+    if True:
+        models_list: list[dict] = [{"id": "ide", "label": "IDE Chat"}]
+        if ag_model:
+            models_list.append({"id": ag_model, "label": ag_model})
+        elif ag_api:
+            models_list.append({"id": "gpt-4o-mini", "label": "GPT-4o Mini"})
+            models_list.append({"id": "gpt-4o", "label": "GPT-4o"})
         result["antigravity"] = {
             "available": True,
-            "version": "api" if not ag_cmd else "cli",
-            "models": [],
+            "version": "keyboard",
+            "models": models_list,
         }
 
     return result
