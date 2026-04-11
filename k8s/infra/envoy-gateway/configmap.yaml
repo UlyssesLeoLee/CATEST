@@ -416,7 +416,7 @@ data:
                       address:
                         socket_address:
                           address: host.docker.internal
-                          port_value: 34099
+                          port_value: 34101
 
     admin:
       address:

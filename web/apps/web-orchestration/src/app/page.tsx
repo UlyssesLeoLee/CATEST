@@ -76,16 +76,42 @@ type DispatchTarget = "claude_code" | "codex" | "antigravity";
 
 type ModelOption = { id: string; label: string; provider: string };
 
-// ─── Model Config ───────────────────────────────────────────────────
+// ─── Dynamic Model Detection ────────────────────────────────────────
 
-const MODELS: ModelOption[] = [
-  { id: "claude-opus-4-6",   label: "Opus 4.6",   provider: "claude_code" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6",  provider: "claude_code" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", provider: "claude_code" },
-  { id: "o4-mini",           label: "o4-mini",     provider: "codex" },
-  { id: "o3",                label: "o3",          provider: "codex" },
-  { id: "gpt-4.1",           label: "GPT-4.1",    provider: "codex" },
-];
+function useModels() {
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${getBridgeUrl()}/models`);
+        if (!res.ok) throw new Error("bridge unreachable");
+        const data = await res.json();
+        const result: ModelOption[] = [];
+        for (const [provider, info] of Object.entries(data) as [string, any][]) {
+          if (info.available && info.models) {
+            for (const m of info.models) {
+              result.push({ id: m.id, label: m.label, provider });
+            }
+          }
+        }
+        if (result.length > 0) setModels(result);
+      } catch {
+        // Fallback: minimal hardcoded list if bridge is offline
+        setModels([
+          { id: "sonnet", label: "Sonnet", provider: "claude_code" },
+          { id: "opus",   label: "Opus",   provider: "claude_code" },
+          { id: "haiku",  label: "Haiku",  provider: "claude_code" },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  return { models, loading };
+}
 
 // ─── Dispatch Target Config ──────────────────────────────────────────
 
@@ -404,10 +430,10 @@ function TargetSelector({ value, onChange }: { value: DispatchTarget; onChange: 
 
 // ─── Model Selector ─────────────────────────────────────────────────
 
-function ModelSelector({ value, onChange, target }: { value: string; onChange: (v: string) => void; target: DispatchTarget }) {
+function ModelSelector({ value, onChange, target, models }: { value: string; onChange: (v: string) => void; target: DispatchTarget; models: ModelOption[] }) {
   const [open, setOpen] = useState(false);
-  const available = MODELS.filter(m => m.provider === target);
-  const current = MODELS.find(m => m.id === value);
+  const available = models.filter(m => m.provider === target);
+  const current = models.find(m => m.id === value);
 
   if (available.length === 0) return null;
 
@@ -580,15 +606,16 @@ export default function OrchestrationPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [target, setTarget] = useState<DispatchTarget>("claude_code");
-  const [model, setModel] = useState("claude-sonnet-4-6");
+  const [model, setModel] = useState("sonnet");
   const [project, setProject] = useState("default");
+  const { models: availableModels } = useModels();
 
   // Auto-switch model when target changes
   const handleTargetChange = useCallback((t: DispatchTarget) => {
     setTarget(t);
-    const defaultModel = MODELS.find(m => m.provider === t);
+    const defaultModel = availableModels.find(m => m.provider === t);
     if (defaultModel) setModel(defaultModel.id);
-  }, []);
+  }, [availableModels]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [traces, setTraces] = useState<{ traceId: string; title: string; time: string; status: string }[]>([]);
   const [activeTraceId, setActiveTraceId] = useState<string | null>(null);
@@ -832,7 +859,7 @@ export default function OrchestrationPage() {
                 style={{ maxHeight: "200px" }}
               />
               <div className="flex items-center gap-2 shrink-0">
-                <ModelSelector value={model} onChange={setModel} target={target} />
+                <ModelSelector value={model} onChange={setModel} target={target} models={availableModels} />
                 <TargetSelector value={target} onChange={handleTargetChange} />
                 <Button
                   variant="copper"
@@ -857,7 +884,7 @@ export default function OrchestrationPage() {
                 <span>&bull;</span>
                 <span>target: {target}</span>
                 <span>&bull;</span>
-                <span>model: {MODELS.find(m => m.id === model)?.label || model}</span>
+                <span>model: {availableModels.find(m => m.id === model)?.label || model}</span>
                 <span>&bull;</span>
                 <span>traces: {traces.length}</span>
                 {activeTraceId && (

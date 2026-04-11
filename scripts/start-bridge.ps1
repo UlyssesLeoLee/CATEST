@@ -6,7 +6,7 @@
     The adapter-bridge runs on the host (not in K8s) because it needs to
     spawn local CLI processes (claude, codex, antigravity).
 
-    Envoy routes /api/bridge/* to host.docker.internal:34099.
+    Envoy routes /api/bridge/* to host.docker.internal:34101.
 
 .EXAMPLE
     .\scripts\start-bridge.ps1
@@ -15,7 +15,7 @@
 
 param(
     [string]$Cwd = (Get-Location).Path,
-    [int]$Port = 34099
+    [int]$Port = 34101
 )
 
 $env:BRIDGE_CWD = $Cwd

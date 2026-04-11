@@ -25,7 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from catest_ai.adapter_bridge.runners import create_runner
+from catest_ai.adapter_bridge.runners import create_runner, detect_models
 
 logging.basicConfig(
     level=logging.INFO,
@@ -95,6 +95,12 @@ async def healthz():
         "service": "adapter-bridge",
         "active": list(_streams.keys()),
     }
+
+
+@app.get("/models")
+async def models():
+    """Return available CLI targets and their models, detected from local installations."""
+    return await detect_models()
 
 
 @app.post("/execute", response_model=ExecuteResponse)
@@ -201,4 +207,4 @@ async def stop(trace_id: str):
 # ── Entry point ───────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=34099)
+    uvicorn.run(app, host="0.0.0.0", port=34101)

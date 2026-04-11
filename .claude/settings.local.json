@@ -614,7 +614,24 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:33007/)",
       "Bash(curl -sv http://localhost:33007/orchestration)",
       "Bash(curl -s -X POST http://localhost:34099/execute -H 'Content-Type: application/json' -d '{\"prompt\":\"respond with just the word hello\",\"target\":\"claude_code\",\"model\":\"claude-haiku-4-5-20251001\",\"project\":\"test\"}')",
-      "Bash(curl -s -N --connect-timeout 5 --max-time 30 http://localhost:34099/stream/72bff125-0aa9-4378-af71-3aadaff5704a)"
+      "Bash(curl -s -N --connect-timeout 5 --max-time 30 http://localhost:34099/stream/72bff125-0aa9-4378-af71-3aadaff5704a)",
+      "Bash(codex --help)",
+      "Bash(codex --version)",
+      "Bash(codex -m \"invalid-model-test\" \"test\")",
+      "Bash(codex -c model_reasoning_effort=high -m \"invalid-model-test\" \"test\")",
+      "Bash(curl -s http://localhost:34099/models)",
+      "Bash(PYTHONPATH=src python -c \"from catest_ai.adapter_bridge.runners import detect_models; print\\('OK'\\)\")",
+      "Bash(curl -s http://localhost:34099/openapi.json)",
+      "Bash(taskkill //F //PID 40616)",
+      "Bash(powershell -Command \"Stop-Process -Id 40616 -Force -ErrorAction SilentlyContinue; Get-Process -Id 40616 -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(powershell -Command \"Get-Process -Id 40616 | Select-Object Id,ProcessName,Path\")",
+      "Bash(PYTHONPATH=src BRIDGE_CWD=\"E:/CATEST\" CALLBACK_URL=\"http://localhost:33088/api/orchestration\" python -m uvicorn catest_ai.adapter_bridge.main:app --host 0.0.0.0 --port 34100)",
+      "Bash(curl -s http://localhost:34100/models)",
+      "Bash(rm -rf src/catest_ai/adapter_bridge/__pycache__/)",
+      "Bash(PYTHONPATH=src BRIDGE_CWD=\"E:/CATEST\" CALLBACK_URL=\"http://localhost:33088/api/orchestration\" python -m uvicorn catest_ai.adapter_bridge.main:app --host 0.0.0.0 --port 34101)",
+      "Bash(curl -s http://localhost:34101/models)",
+      "Bash(curl -s http://localhost:33088/api/bridge/models)",
+      "Bash(antigravity --help)"
     ]
   }
 }
