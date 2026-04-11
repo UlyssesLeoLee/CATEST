@@ -82,46 +82,68 @@ foreach ($svc in $internalServices) {
     }
 }
 
-# ── 3. External port accessibility (auto-detect via port-config.ps1) ──
+# ── 3. Envoy Gateway & route accessibility ──────────────────────────
 Write-Host ""
-Write-Host "=== External Ports ===" -ForegroundColor Yellow
+Write-Host "=== Envoy Gateway (single entry point) ===" -ForegroundColor Yellow
 
 # Dot-source port-config.ps1 to detect working ports (native or forwarded)
 $portConfigScript = Join-Path $PSScriptRoot '..' 'port-config.ps1'
 if (Test-Path $portConfigScript) {
     . $portConfigScript -Probe
-    # $Ports hashtable is now available: Name → working port number
     Write-Host "  (port-config.ps1 detected ports)" -ForegroundColor DarkGray
 } else {
-    # Fallback to hardcoded defaults
     Write-Host "  (port-config.ps1 not found, using defaults)" -ForegroundColor Yellow
-    $Ports = @{
-        'web-base' = 33000; 'web-workspace' = 33001; 'web-rag' = 33002
-        'web-review' = 33003; 'web-team' = 33004; 'web-tm' = 33005
-        'web-tb' = 33006; 'web-orchestration' = 33007; 'envoy-gateway' = 33088
-    }
+    $Ports = @{ 'envoy-gateway' = 33088 }
 }
 
-$externalChecks = @('web-base','web-workspace','web-rag','web-review','web-team','web-tm','web-tb','web-orchestration','envoy-gateway')
-foreach ($svc in $externalChecks) {
-    $port = $Ports[$svc]
-    if (-not $port) { continue }
-    Write-Host "  $svc (localhost:$port)... " -NoNewline
+$gwPort = if ($Ports['envoy-gateway']) { $Ports['envoy-gateway'] } else { 33088 }
+
+# 3a. TCP check on gateway port
+Write-Host "  envoy-gateway (localhost:$gwPort)... " -NoNewline
+try {
+    $tcp = New-Object System.Net.Sockets.TcpClient
+    $connect = $tcp.BeginConnect('127.0.0.1', $gwPort, $null, $null)
+    $wait = $connect.AsyncWaitHandle.WaitOne(3000, $false)
+    if ($wait) {
+        $tcp.EndConnect($connect)
+        Write-Host "OK" -ForegroundColor Green
+    } else {
+        Write-Host "FAILED (Timeout)" -ForegroundColor Red
+        $allPassed = $false
+    }
+    $tcp.Close()
+} catch {
+    Write-Host "FAILED" -ForegroundColor Red
+    $allPassed = $false
+}
+
+# 3b. Route checks via Envoy Gateway (all web apps are ClusterIP, only accessible through gateway)
+Write-Host ""
+Write-Host "=== App Routes (via Gateway :$gwPort) ===" -ForegroundColor Yellow
+$routes = @(
+    @{ Name = 'Dashboard';     Path = '/' },
+    @{ Name = 'Workspace';     Path = '/workspace' },
+    @{ Name = 'RAG';           Path = '/rag' },
+    @{ Name = 'Review';        Path = '/review' },
+    @{ Name = 'Team';          Path = '/team' },
+    @{ Name = 'TM';            Path = '/tm' },
+    @{ Name = 'TB';            Path = '/tb' },
+    @{ Name = 'Orchestration'; Path = '/orchestration' }
+)
+foreach ($route in $routes) {
+    Write-Host "  $($route.Name) ($($route.Path))... " -NoNewline
     try {
-        $tcp = New-Object System.Net.Sockets.TcpClient
-        $connect = $tcp.BeginConnect('127.0.0.1', $port, $null, $null)
-        $wait = $connect.AsyncWaitHandle.WaitOne(3000, $false)
-        if ($wait) {
-            $tcp.EndConnect($connect)
-            Write-Host "OK" -ForegroundColor Green
+        $resp = Invoke-WebRequest -Uri "http://localhost:$gwPort$($route.Path)" -UseBasicParsing `
+            -MaximumRedirection 0 -TimeoutSec 5 -ErrorAction SilentlyContinue 2>&1
+        Write-Host "OK (HTTP $($resp.StatusCode))" -ForegroundColor Green
+    } catch {
+        if ($_.Exception.Response) {
+            $code = [int]$_.Exception.Response.StatusCode
+            Write-Host "OK (HTTP $code)" -ForegroundColor Green
         } else {
-            Write-Host "FAILED (Timeout)" -ForegroundColor Red
+            Write-Host "FAILED" -ForegroundColor Red
             $allPassed = $false
         }
-        $tcp.Close()
-    } catch {
-        Write-Host "FAILED" -ForegroundColor Red
-        $allPassed = $false
     }
 }
 

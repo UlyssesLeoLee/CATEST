@@ -17,9 +17,9 @@
   # From k8s-restart.ps1 or smoke_test.ps1:
   . "$PSScriptRoot/port-config.ps1" -Probe
   # Now $Ports is available:
-  #   $Ports['web-base']       → 33000 or 43000
   #   $Ports['envoy-gateway']  → 33088 or 43088
-  #   $Ports['web-tm']         → 33005 (always works)
+  #   $Ports['postgres']       → 34321 or 44321
+  #   $Ports['qdrant']         → 36333 or 46333
 #>
 
 [CmdletBinding()]
@@ -51,19 +51,19 @@ function Get-EnvPort([string]$Key, [int]$Default) {
 # ── Port Registry (driven by .env) ──────────────────────────────────────────
 # BasePort = from .env. AltPort = BasePort + 10000 (vpnkit fallback).
 # Svc = kubectl service name. Target = same as BasePort (K8s Service port).
+# After the LoadBalancer→ClusterIP migration, only Envoy Gateway (the single entry
+# point) and infrastructure -ext services remain as LoadBalancer.  All web/API
+# micro-services are now ClusterIP and accessed via Envoy routing.
 $PortRegistry = @(
-    @{ Name = 'envoy-gateway';    BasePort = Get-EnvPort 'ENVOY_GATEWAY_PORT' 33088;                 Svc = 'svc/envoy-gateway';              Target = Get-EnvPort 'ENVOY_GATEWAY_PORT' 33088 }
-    @{ Name = 'web-base';         BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_BASE' 33000;           Svc = 'svc/catest-web-base';             Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_BASE' 33000 }
-    @{ Name = 'web-workspace';    BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_WORKSPACE' 33001;      Svc = 'svc/catest-web-workspace';        Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_WORKSPACE' 33001 }
-    @{ Name = 'web-rag';          BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_RAG' 33002;            Svc = 'svc/catest-web-rag';              Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_RAG' 33002 }
-    @{ Name = 'web-review';       BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_REVIEW' 33003;         Svc = 'svc/catest-web-review';           Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_REVIEW' 33003 }
-    @{ Name = 'web-team';         BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TEAM' 33004;           Svc = 'svc/catest-web-team';             Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TEAM' 33004 }
-    @{ Name = 'web-tm';           BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TM' 33005;             Svc = 'svc/catest-web-tm';               Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TM' 33005 }
-    @{ Name = 'web-tb';           BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TB' 33006;             Svc = 'svc/catest-web-tb';               Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_TB' 33006 }
-    @{ Name = 'web-orchestration';BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_ORCHESTRATION' 33007;  Svc = 'svc/catest-web-orchestration';    Target = Get-EnvPort 'NEXT_PUBLIC_PORT_WEB_ORCHESTRATION' 33007 }
-    @{ Name = 'hub';              BasePort = Get-EnvPort 'NEXT_PUBLIC_PORT_GATEWAY' 33080;            Svc = 'svc/catest-hub';                  Target = Get-EnvPort 'NEXT_PUBLIC_PORT_GATEWAY' 33080 }
-    @{ Name = 'intent-gateway';   BasePort = Get-EnvPort 'INTENT_GATEWAY_PORT' 34090;                Svc = 'svc/catest-intent-gateway';       Target = Get-EnvPort 'INTENT_GATEWAY_PORT' 34090 }
-    @{ Name = 'mcp-facade';       BasePort = Get-EnvPort 'MCP_FACADE_PORT' 34098;                    Svc = 'svc/catest-mcp-facade';           Target = Get-EnvPort 'MCP_FACADE_PORT' 34098 }
+    # ── Single entry point ──────────────────────────────────────────────────
+    # Envoy uses hostPort:33088 — no port-forward needed; still probed for health
+    @{ Name = 'envoy-gateway';    BasePort = 33088;  Svc = 'svc/envoy-gateway';  Target = 33088; SkipForward = $true }
+    # ── Infrastructure (LoadBalancer -ext services for host-side dev tools) ─
+    @{ Name = 'postgres';         BasePort = Get-EnvPort 'POSTGRES_PORT' 34321;         Svc = 'svc/postgres-ext';     Target = Get-EnvPort 'POSTGRES_PORT' 34321 }
+    @{ Name = 'kafka';            BasePort = Get-EnvPort 'KAFKA_PORT' 39092;            Svc = 'svc/kafka-ext';        Target = Get-EnvPort 'KAFKA_PORT' 39092 }
+    @{ Name = 'qdrant';           BasePort = 36333;                                     Svc = 'svc/qdrant-ext';       Target = 36333 }
+    @{ Name = 'memgraph';         BasePort = 37687;                                     Svc = 'svc/memgraph-ext';     Target = 37687 }
+    @{ Name = 'arroyo';           BasePort = 35115;                                     Svc = 'svc/arroyo-ext';       Target = 35115 }
 )
 # Compute AltPort dynamically
 foreach ($entry in $PortRegistry) {
@@ -292,27 +292,51 @@ foreach ($entry in $PortRegistry) {
 Write-Host ""
 Write-Host "  Access URLs:" -ForegroundColor Cyan
 $urlMap = @{
-    'envoy-gateway'     = @{ Label = 'Gateway (unified)'; Path = '/' }
-    'web-base'          = @{ Label = 'Dashboard';          Path = '/' }
-    'web-workspace'     = @{ Label = 'Workspace';          Path = '/' }
-    'web-rag'           = @{ Label = 'RAG';                Path = '/' }
-    'web-review'        = @{ Label = 'Review';             Path = '/' }
-    'web-team'          = @{ Label = 'Team';               Path = '/' }
-    'web-tm'            = @{ Label = 'TM';                 Path = '/' }
-    'web-tb'            = @{ Label = 'TB';                 Path = '/' }
-    'web-orchestration' = @{ Label = 'Orchestration';      Path = '/' }
-    'mcp-facade'        = @{ Label = 'MCP Facade';         Path = '/healthz' }
+    'envoy-gateway'     = @{ Label = 'Gateway (all-in-one)'; Path = '/' }
+    'postgres'          = @{ Label = 'PostgreSQL';            Path = $null }
+    'kafka'             = @{ Label = 'Kafka';                 Path = $null }
+    'qdrant'            = @{ Label = 'Qdrant';                Path = '/dashboard' }
+    'memgraph'          = @{ Label = 'Memgraph';              Path = $null }
+    'arroyo'            = @{ Label = 'Arroyo';                Path = '/' }
 }
-foreach ($key in @('envoy-gateway','web-base','web-workspace','web-rag','web-review','web-team','web-tm','web-tb','web-orchestration','mcp-facade')) {
+# Also show Envoy-routed app URLs (these go through the gateway, not direct)
+Write-Host ""
+Write-Host "  App URLs (via Envoy Gateway):" -ForegroundColor Cyan
+$gwInfo = $portStatus['envoy-gateway']
+if ($gwInfo -and $gwInfo.Status -ne 'down' -and $gwInfo.Status -ne 'dead') {
+    $gp = $gwInfo.Port
+    @(
+        @('Dashboard',      "/"),
+        @('Workspace',      "/workspace"),
+        @('RAG',            "/rag"),
+        @('Review',         "/review"),
+        @('Team',           "/team"),
+        @('TM',             "/tm"),
+        @('TB',             "/tb"),
+        @('Orchestration',  "/orchestration")
+    ) | ForEach-Object {
+        $label = $_[0].PadRight(20)
+        Write-Host "    $label http://localhost:$gp$($_[1])" -ForegroundColor Green
+    }
+} else {
+    Write-Host "    (Envoy Gateway is down — apps inaccessible)" -ForegroundColor Red
+}
+
+Write-Host ""
+Write-Host "  Infrastructure URLs:" -ForegroundColor Cyan
+foreach ($key in @('envoy-gateway','postgres','kafka','qdrant','memgraph','arroyo')) {
     $info = $portStatus[$key]
     if (-not $info -or $info.Status -eq 'down') { continue }
     $meta = $urlMap[$key]
     if (-not $meta) { continue }
     $port = $info.Port
     $label = $meta.Label.PadRight(20)
-    $url = "http://localhost:$port$($meta.Path)"
     $color = if ($info.Status -eq 'dead') { 'Red' } else { 'Green' }
-    Write-Host "    $label $url" -ForegroundColor $color
+    if ($meta.Path) {
+        Write-Host "    $label http://localhost:$port$($meta.Path)" -ForegroundColor $color
+    } else {
+        Write-Host "    $label localhost:$port" -ForegroundColor $color
+    }
 }
 
 Write-Host ""

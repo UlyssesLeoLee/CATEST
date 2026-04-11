@@ -4,7 +4,7 @@ metadata:
   name: catest-hub
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33080
       targetPort: 33080

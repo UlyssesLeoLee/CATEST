@@ -31,8 +31,8 @@ spec:
               value: "true"
             - name: NEXT_PUBLIC_GATEWAY_URL
               value: "http://catest-hub:33080"
-            - name: NEXT_PUBLIC_INTENT_GATEWAY_URL
-              value: "http://catest-intent-gateway:34090"
+            # NEXT_PUBLIC_INTENT_GATEWAY_URL removed — page.tsx auto-detects
+            # via window.location.origin/api/orchestration (Envoy-routed)
             - name: DATABASE_URL
               value: "postgres://catest:password@postgres:34321/catest_gateway"
 ---
@@ -42,7 +42,7 @@ metadata:
   name: catest-web-orchestration
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33007
       targetPort: 3000

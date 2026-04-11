@@ -402,18 +402,15 @@ foreach ($name in $applyOrder) {
 $workspaceSvc = "$K8s/services/workspace-svc.yaml"
 if (Test-Path $workspaceSvc) { kube apply -f $workspaceSvc }
 
-# Envoy reverse proxy gateway (routes all apps under single origin)
-$envoyDir = "$K8s/infra/envoy-gateway/"
+# Envoy reverse proxy gateway (static configmap-based, single LoadBalancer entry point)
+# NOTE: Only apply configmap + deployment. The CRD files (gateway.yaml, routes.yaml,
+# envoy-proxy.yaml) are kept for reference but NOT applied — they would create a
+# duplicate data-plane Envoy in envoy-gateway-system alongside our custom deployment.
+$envoyDir = "$K8s/infra/envoy-gateway"
 if (Test-Path $envoyDir) {
     Log "  envoy-gateway (reverse proxy)" Cyan
-    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
-    $envoyOutput = kubectl apply -f $envoyDir 2>&1
-    $ErrorActionPreference = $prevEAP
-    if ($LASTEXITCODE -ne 0) {
-        Warn "Envoy Gateway resources failed to apply. CRDs may not be installed."
-        Warn "Run the following command to install Envoy Gateway CRDs, then retry:"
-        Warn "  kubectl apply --server-side -f https://github.com/envoyproxy/gateway/releases/latest/download/install.yaml"
-    }
+    kube apply -f "$envoyDir/configmap.yaml"
+    kube apply -f "$envoyDir/deployment.yaml"
 }
 
 # KEDA scaled objects (if present)
@@ -551,7 +548,9 @@ if ($failedPods.Count -gt 0) {
 Write-Host ""
 Log "  Web service accessibility:" Cyan
 $allPortsOk = $true
-$webServices = @('web-base', 'web-workspace', 'web-rag', 'web-review', 'web-team', 'web-tm', 'web-tb', 'web-orchestration', 'envoy-gateway')
+# After ClusterIP migration, only Envoy Gateway is externally accessible.
+# All web apps are routed internally through Envoy (test via path).
+$webServices = @('envoy-gateway')
 foreach ($svcName in $webServices) {
     $port = if ($Ports -and $Ports[$svcName]) { $Ports[$svcName] } else { $null }
     if (-not $port) { continue }
@@ -600,7 +599,7 @@ if ($failedPods.Count -eq 0 -and $allPortsOk) {
 }
 # Use detected ports from port-config.ps1 (falls back to defaults if unavailable)
 $pGateway = if ($Ports -and $Ports['envoy-gateway']) { $Ports['envoy-gateway'] } else { 33088 }
-$pMCP     = if ($Ports -and $Ports['mcp-facade'])    { $Ports['mcp-facade'] }    else { 34098 }
+# mcp-facade is now ClusterIP, accessed via Envoy at /api/mcp-facade/
 Log "  Gateway       : http://localhost:$pGateway  (unified entry point — use this!)"
 Log "  Dashboard     : http://localhost:$pGateway/"
 Log "  Workspace     : http://localhost:$pGateway/workspace/"
@@ -610,7 +609,7 @@ Log "  Team          : http://localhost:$pGateway/team/"
 Log "  TM            : http://localhost:$pGateway/tm/"
 Log "  TB            : http://localhost:$pGateway/tb/"
 Log "  Orchestration : http://localhost:$pGateway/orchestration/ (steampunk chat UI)"
-Log "  MCP Facade    : http://localhost:$pMCP/healthz (MCP at /mcp)"
+Log "  MCP Facade    : http://localhost:$pGateway/api/mcp-facade/healthz"
 Write-Host ""
 
 # ── 8d. Navigation smoke test ───────────────────────────────────────────────
@@ -646,6 +645,6 @@ if ($navOk) {
     Log "  All navigation routes reachable via gateway" Green
 } else {
     Warn "Some routes unreachable — sidebar navigation may be broken"
-    Warn "Ensure envoy-gateway routes.yaml includes all app paths"
+    Warn "Ensure envoy-gateway configmap.yaml includes all app paths"
 }
 Write-Host ""

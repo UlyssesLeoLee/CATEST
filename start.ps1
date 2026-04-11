@@ -107,7 +107,8 @@ $OrchServices = @(
     @{ Name = "memory-service";  Module = "catest_ai.memory_service.main";  Port = 34092 },
     @{ Name = "mcp-facade";      Module = "catest_ai.mcp_facade.main";      Port = 34098 },
     @{ Name = "intent-gateway";  Module = "catest_ai.intent_gateway.main";  Port = 34090 },
-    @{ Name = "orchestrator-svc"; Module = "catest_ai.orchestrator_svc.main"; Port = 34091 }
+    @{ Name = "orchestrator-svc"; Module = "catest_ai.orchestrator_svc.main"; Port = 34091 },
+    @{ Name = "adapter-bridge";  Module = "catest_ai.adapter_bridge.main";  Port = 34099 }
 )
 
 # Set env vars for local Python services
@@ -127,18 +128,18 @@ Write-Host "CATEST Platform Running!" -ForegroundColor Green
 Write-Host "  Logs: $LogDir" -ForegroundColor Gray
 
 # Detect live ports (handles Docker Desktop vpnkit ghost listeners)
+# After ClusterIP migration, all web apps are accessed via Envoy Gateway.
 $portConfigScript = Join-Path $RootDir 'port-config.ps1'
 if (Test-Path $portConfigScript) {
     . $portConfigScript -Probe
-    $pDash = if ($Ports['web-base'])    { $Ports['web-base'] }    else { 33000 }
-    $pOrch = if ($Ports['web-orchestration']) { $Ports['web-orchestration'] } else { 33007 }
-    $pMCP  = if ($Ports['mcp-facade']) { $Ports['mcp-facade'] } else { 34098 }
+    $pGateway = if ($Ports['envoy-gateway']) { $Ports['envoy-gateway'] } else { 33088 }
 } else {
-    $pDash = 33000; $pOrch = 33007; $pMCP = 34098
+    $pGateway = 33088
 }
-Write-Host "  Dashboard     : http://localhost:$pDash" -ForegroundColor Cyan
-Write-Host "  Orchestration : http://localhost:$pOrch (steampunk chat UI)" -ForegroundColor Cyan
-Write-Host "  MCP Facade    : http://localhost:$pMCP/healthz" -ForegroundColor Cyan
+Write-Host "  Gateway       : http://localhost:$pGateway  (unified entry point)" -ForegroundColor Cyan
+Write-Host "  Dashboard     : http://localhost:$pGateway/" -ForegroundColor Cyan
+Write-Host "  Orchestration : http://localhost:$pGateway/orchestration/" -ForegroundColor Cyan
+Write-Host "  MCP Facade    : http://localhost:$pGateway/api/mcp-facade/healthz" -ForegroundColor Cyan
 Write-Host ""
 Start-Sleep -Seconds 3
-Start-Process "http://localhost:$pDash"
+Start-Process "http://localhost:$pGateway"

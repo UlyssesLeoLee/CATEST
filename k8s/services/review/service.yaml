@@ -4,7 +4,7 @@ metadata:
   name: catest-review
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33081
       targetPort: 33081

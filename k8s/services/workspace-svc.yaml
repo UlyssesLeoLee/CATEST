@@ -4,7 +4,7 @@ metadata:
   name: catest-workspace
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33082
       targetPort: 33082
@@ -18,7 +18,7 @@ metadata:
   name: catest-intelligence
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33083
       targetPort: 33083

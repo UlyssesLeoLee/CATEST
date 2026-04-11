@@ -48,7 +48,7 @@ metadata:
   name: catest-web-review
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33003
       targetPort: 3003

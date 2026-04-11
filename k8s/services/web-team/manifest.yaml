@@ -38,7 +38,7 @@ metadata:
   name: catest-web-team
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33004
       targetPort: 3004

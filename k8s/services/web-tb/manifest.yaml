@@ -40,7 +40,7 @@ metadata:
   name: catest-web-tb
   namespace: catest
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 33006
       targetPort: 3006
