@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-ha-scripts
+  namespace: catest
+data:
+  # ── Replica init script ────────────────────────────────────────────────────
+  # Run by the init container on postgres-replica-0 on first boot.
+  # Uses pg_basebackup (-R) to clone the primary and create standby.signal.
+  init-replica.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    PGDATA="${PGDATA:-/var/lib/postgresql/data/pgdata}"
+
+    if [ -n "$(ls -A "$PGDATA" 2>/dev/null)" ]; then
+      echo "[replica-init] PGDATA already populated — skipping basebackup"
+      exit 0
+    fi
+
+    echo "[replica-init] Starting pg_basebackup from primary..."
+    mkdir -p "$PGDATA"
+    chmod 0700 "$PGDATA"
+
+    PRIMARY_HOST="postgres-0.postgres.catest.svc.cluster.local"
+    PRIMARY_PORT="5432"
+    RETRIES=30
+
+    for i in $(seq 1 $RETRIES); do
+      if pg_isready -h "$PRIMARY_HOST" -p "$PRIMARY_PORT" -U replicator -q; then
+        echo "[replica-init] Primary is ready"
+        break
+      fi
+      echo "[replica-init] Waiting for primary ($i/$RETRIES)..."
+      sleep 3
+    done
+
+    PGPASSWORD="${REPLICATOR_PASSWORD}" pg_basebackup \
+      --host="$PRIMARY_HOST" \
+      --port="$PRIMARY_PORT" \
+      --username=replicator \
+      --pgdata="$PGDATA" \
+      --wal-method=stream \
+      --write-recovery-conf \
+      --checkpoint=fast \
+      --progress \
+      --verbose
+
+    # Ensure standby.signal exists (pg_basebackup -R creates it, but belt+suspenders)
+    touch "$PGDATA/standby.signal"
+
+    echo "[replica-init] Basebackup complete. Replica ready to start."
+
+  # ── pg_hba.conf additions for replication ─────────────────────────────────
+  # Applied at container startup via /docker-entrypoint-initdb.d/ on fresh installs.
+  # For existing installs, applied once via kubectl exec (already done for current primary).
+  99-replication.sh: |
+    #!/bin/bash
+    # Add replication entry if missing (runs in initdb context = first boot only)
+    if ! grep -q 'replicator' "$PGDATA/pg_hba.conf" 2>/dev/null; then
+      echo "host replication replicator 0.0.0.0/0 md5" >> "$PGDATA/pg_hba.conf"
+      echo "[ha-init] Added replication entry to pg_hba.conf"
+    fi
+    # Ensure replication user exists
+    psql -U "$POSTGRES_USER" -c \
+      "DO \$\$BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='replicator') THEN
+         CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '${REPLICATOR_PASSWORD:-Repl1cator#2026}';
+       END IF; END\$\$;" || true
+
+  # ── postgresql-ha.conf: WAL / standby settings ────────────────────────────
+  # Mounted at /etc/postgresql/conf.d/ha.conf on both primary and replica.
+  # The primary's postgresql.conf already has correct defaults; this is belt+suspenders.
+  ha.conf: |
+    # Streaming replication — primary settings
+    wal_level = replica
+    max_wal_senders = 10
+    wal_keep_size = 128MB
+    hot_standby = on
+    hot_standby_feedback = on
+
+    # Replica visibility in monitoring
+    synchronous_commit = local

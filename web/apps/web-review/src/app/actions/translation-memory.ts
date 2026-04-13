@@ -2,6 +2,8 @@
 
 import { reviewQuery } from "@/lib/review-db";
 import { requireReader, requireEditor, requireAdmin, getSessionUser } from "@/lib/permissions";
+import { embedText } from "@/lib/inference";
+import { upsertTMVector, deleteTMVector, searchTMVectors } from "@/lib/qdrant-tm";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -181,7 +183,20 @@ export async function addToTM(
        RETURNING id`,
       [tmName, sourceText, targetText, context || null, user.userId]
     );
-    return { success: true, id: res.rows[0].id };
+    const entryId: string = res.rows[0].id;
+
+    // Background: embed + index in Qdrant (non-blocking, silent on error)
+    embedText(sourceText)
+      .then((vec) =>
+        upsertTMVector(entryId, vec, {
+          source_text: sourceText,
+          target_text: targetText,
+          tm_name: tmName,
+        }),
+      )
+      .catch((e) => console.warn("[TM/Qdrant]", (e as Error).message));
+
+    return { success: true, id: entryId };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -227,6 +242,8 @@ export async function deleteTMEntry(id: string): Promise<{ success: boolean }> {
   try {
     await requireAdmin();
     await reviewQuery(`DELETE FROM translation_memory WHERE id = $1`, [id]);
+    // Background: remove from Qdrant index
+    deleteTMVector(id).catch((e) => console.warn("[TM/Qdrant] delete:", (e as Error).message));
     return { success: true };
   } catch {
     return { success: false };
@@ -458,4 +475,45 @@ function unescXml(s: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&amp;/g, "&");
+}
+
+
+// ── Semantic Search (Qdrant-backed) ────────────────────────────────
+
+/**
+ * Semantic TM search: embed the query, find similar source texts via Qdrant,
+ * then enrich with live PostgreSQL data. Falls back to empty array if Qdrant
+ * or the inference service is unavailable.
+ */
+export async function semanticSearchTM(
+  query: string,
+  tmName: string = "default",
+  limit: number = 8,
+): Promise<{ entries: TMEntry[]; scores: Record<string, number> }> {
+  try {
+    await requireReader();
+    const vec = await embedText(query);
+    const hits = await searchTMVectors(vec, limit, tmName);
+    if (hits.length === 0) return { entries: [], scores: {} };
+
+    const ids = hits.map((h) => h.id);
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(", ");
+    const res = await reviewQuery(
+      `SELECT id, tm_name, source_text, target_text, context, quality_score, usage_count, created_by, created_at, updated_at
+       FROM translation_memory WHERE id IN (${placeholders})`,
+      ids,
+    );
+
+    const scores: Record<string, number> = {};
+    for (const h of hits) scores[h.id] = h.score;
+
+    // Return in score order
+    const byId = new Map<string, TMEntry>(res.rows.map((r: TMEntry) => [r.id, r]));
+    const entries = ids.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+
+    return { entries, scores };
+  } catch (e) {
+    console.warn("[TM/semantic]", (e as Error).message);
+    return { entries: [], scores: {} };
+  }
 }

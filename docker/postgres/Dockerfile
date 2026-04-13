@@ -48,6 +48,15 @@ COPY --from=builder /usr/lib/postgresql/16/lib/age.so           /usr/lib/postgre
 COPY --from=builder /usr/share/postgresql/16/extension/age*     /usr/share/postgresql/16/extension/
 
 # AGE requires the library to be preloaded
-RUN echo "shared_preload_libraries = 'age'" >> /usr/share/postgresql/postgresql.conf.sample
+# Also enable conf.d include directory for HA config injection (pg_hba, wal settings)
+RUN echo "shared_preload_libraries = 'age'" >> /usr/share/postgresql/postgresql.conf.sample && \
+    echo "include_dir = '/etc/postgresql/conf.d'"  >> /usr/share/postgresql/postgresql.conf.sample
+
+# Pre-create conf.d so HA configmap mount works even on fresh installs
+RUN mkdir -p /etc/postgresql/conf.d
+
+# ── Replication support ───────────────────────────────────────────────────
+# Copy HA baseline config (applied to every instance; replicas override via standby.signal)
+COPY ha-defaults.conf /etc/postgresql/conf.d/ha.conf
 
 EXPOSE 5432

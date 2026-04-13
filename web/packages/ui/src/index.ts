@@ -24,6 +24,7 @@ export { SteampunkThemePluginGroup } from "./plugins/SteampunkThemePluginGroup";
 
 // Hooks
 export { useCookieState, useBoolCookieState } from "./hooks/useCookieState";
+export { useLocalStorageState } from "./hooks/useLocalStorageState";
 
 // Utilities
 export { cn }            from "./lib/utils";

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { type PluginGroup } from "@catest/ui/plugins";
 import { Badge, Button, cn, useCookieState, COOKIE_KEYS } from "@catest/ui";
@@ -32,8 +32,9 @@ import {
   GitBranch,
   File,
 } from "lucide-react";
-import { analyzeCodeWithAI } from "@/app/actions/ai-review";
-import { addToTM } from "@/app/actions/translation-memory";
+import { addToTM, getTMEntries } from "@/app/actions/translation-memory";
+import { getTBEntries, type TBEntry } from "@/app/actions/terminology-base";
+import { analysisStore, type AnalysisFinding, type TBViolation } from "@/lib/analysis-store";
 import {
   listProjects,
   listSnapshots,
@@ -508,6 +509,38 @@ function exportCatest(segments: Segment[], commentData: Record<number, string>, 
   return BOM + [header, ...rows, ...summary].join("\n");
 }
 
+// ── Severity indicator helpers ────────────────────────────────────────
+const SEVERITY_ORDER: Record<string, number> = { error: 4, danger: 3, warning: 2, info: 1 };
+const SEVERITY_DOT: Record<string, string> = {
+  error:   "#dc2626",
+  danger:  "#8b2500",
+  warning: "#e67e22",
+  info:    "#c9a84c",
+};
+
+// ── Client-side TB violation scanner ─────────────────────────────────
+function scanTBViolationsClient(
+  lines: { id: number; source: string }[],
+  tbEntries: TBEntry[],
+): TBViolation[] {
+  const violations: TBViolation[] = [];
+  for (const line of lines) {
+    for (const entry of tbEntries) {
+      if (line.source.toLowerCase().includes(entry.source_term.toLowerCase())) {
+        violations.push({
+          lineId: line.id,
+          sourceLine: line.source,
+          term: entry.source_term,
+          suggestedTerm: entry.target_term,
+          forbidden: entry.forbidden,
+          domain: entry.domain ?? null,
+        });
+      }
+    }
+  }
+  return violations;
+}
+
 // ── Main Component ───────────────────────────────────────────────────
 function ReviewEditorCombined() {
   const [commentLang, setCommentLang] = useCookieState(COOKIE_KEYS.REVIEW_LANG, "en");
@@ -539,6 +572,30 @@ function ReviewEditorCombined() {
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
   const selectedLang = LANGUAGES.find((l) => l.code === commentLang) || LANGUAGES[0];
   const segments = INITIAL_SEGMENTS;
+
+  // ── Analysis store subscription ────────────────────────────────────
+  const { findings } = useSyncExternalStore(
+    analysisStore.subscribe,
+    analysisStore.getSnapshot,
+  );
+
+  const findingsMap = React.useMemo(() => {
+    const map = new Map<number, AnalysisFinding[]>();
+    for (const f of findings) {
+      const arr = map.get(f.lineId) ?? [];
+      arr.push(f);
+      map.set(f.lineId, arr);
+    }
+    return map;
+  }, [findings]);
+
+  const getRowSeverity = useCallback((lineId: number): AnalysisFinding | null => {
+    const rowFindings = findingsMap.get(lineId);
+    if (!rowFindings || rowFindings.length === 0) return null;
+    return rowFindings.reduce((best, f) =>
+      (SEVERITY_ORDER[f.severity] ?? 0) > (SEVERITY_ORDER[best.severity] ?? 0) ? f : best
+    );
+  }, [findingsMap]);
 
   // Stats
   const statusCounts = {
@@ -646,33 +703,124 @@ function ReviewEditorCombined() {
     return () => document.removeEventListener("keydown", handler);
   }, [activeSegId, getNextSegId, getPrevSegId, focusSegment, commentData, segments]);
 
-  // ── AI Analysis ────────────────────────────────────────
-  const runAnalysis = useCallback(async () => {
+  // ── AI Analysis (SSE streaming) ────────────────────────────────────
+  const runAnalysis = useCallback(async (langOverride?: string) => {
+    const lang = langOverride ?? commentLang;
     setAnalyzing(true);
     setAiError(null);
+    analysisStore.startAnalysis();
     try {
-      const lines = segments.map((s) => ({ id: s.id, source: s.source, target: s.target }));
-      const result = await analyzeCodeWithAI(lines, commentLang);
-      const newData: Record<number, string> = {};
-      for (const c of result.comments) newData[c.lineId] = c.comment;
-      setCommentData(newData);
-      setIsAiContent(true);
-      if (result.error) setAiError(result.error);
-    } catch {
-      setAiError("Analysis failed");
+      const codeLines = segments.map((s) => ({ id: s.id, source: s.source }));
+
+      // Fetch TB + TM entries for RAG context (in parallel)
+      const [tbResult, tmResult] = await Promise.all([
+        getTBEntries("default", 50),
+        getTMEntries("default", 12),
+      ]);
+      const tbEntries = tbResult.entries;
+      const tmEntries = tmResult.entries;
+
+      // Client-side TB violation scan
+      analysisStore.setTBViolations(scanTBViolationsClient(codeLines, tbEntries));
+
+      // Start SSE stream
+      const resp = await fetch("/api/ai-review/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lines: codeLines,
+          language: lang,
+          tbEntries: tbEntries.map((e) => ({
+            source_term: e.source_term,
+            target_term: e.target_term,
+            forbidden: e.forbidden,
+            domain: e.domain,
+            definition: e.definition,
+          })),
+          tmEntries: tmEntries.map((e) => ({
+            source_text: e.source_text,
+            target_text: e.target_text,
+          })),
+        }),
+      });
+
+      if (!resp.ok || !resp.body) throw new Error(`Stream request failed: ${resp.status}`);
+
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      let streamDone = false;
+      const localFindings: AnalysisFinding[] = [];
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split("\n\n");
+        buf = parts.pop() ?? "";
+        for (const part of parts) {
+          if (streamDone) break;
+          const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+          const json = dataLine.slice(6).trim();
+          if (!json) continue;
+          try {
+            const obj = JSON.parse(json);
+            if (obj.done) { streamDone = true; break; }
+            if (obj.error) { setAiError(obj.error); }
+            else if (typeof obj.lineId === "number") {
+              const finding = obj as AnalysisFinding;
+              analysisStore.appendFinding(finding);
+              localFindings.push(finding);
+            }
+          } catch { /* skip malformed SSE payload */ }
+        }
+      }
+
+      analysisStore.finishAnalysis();
+
+      // Write AI findings into the COMMENT column and set segments to Draft
+      if (localFindings.length > 0) {
+        const byLine = new Map<number, AnalysisFinding[]>();
+        for (const f of localFindings) {
+          const arr = byLine.get(f.lineId) ?? [];
+          arr.push(f);
+          byLine.set(f.lineId, arr);
+        }
+        const newComments: Record<number, string> = {};
+        const newStatuses: Record<number, SegmentStatus> = {};
+        const ICONS: Record<string, string> = { error: "⛔", danger: "🔴", warning: "⚠️", info: "ℹ️" };
+        for (const [lineId, fs] of byLine) {
+          newComments[lineId] = fs
+            .map((f) => {
+              const icon = ICONS[f.severity] ?? "•";
+              const fix = f.suggestedFix ? `\n→ ${f.suggestedFix}` : "";
+              return `${icon} [${f.category}] ${f.message}${fix}`;
+            })
+            .join("\n\n");
+          newStatuses[lineId] = "draft";
+        }
+        setCommentData((prev) => ({ ...prev, ...newComments }));
+        setStatusData((prev) => ({ ...prev, ...newStatuses }));
+        setIsAiContent(true);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Analysis failed";
+      setAiError(msg);
+      analysisStore.finishAnalysis(msg);
     } finally {
       setAnalyzing(false);
     }
   }, [commentLang, segments]);
 
   const handleAnalyze = useCallback(() => {
-    const hasExistingContent = Object.values(commentData).some((v) => v.trim().length > 0);
-    if (hasExistingContent && !skipOverwriteConfirm.current) {
+    // Show confirmation dialog if findings already exist and user hasn't opted out
+    if (findings.length > 0 && !skipOverwriteConfirm.current) {
       setShowOverwriteDialog(true);
     } else {
       runAnalysis();
     }
-  }, [commentData, runAnalysis]);
+  }, [findings, runAnalysis]);
 
   const handleOverwriteConfirm = useCallback((dontAskAgain: boolean) => {
     if (dontAskAgain) skipOverwriteConfirm.current = true;
@@ -840,15 +988,8 @@ function ReviewEditorCombined() {
                       const changed = lang.code !== commentLang;
                       setCommentLang(lang.code);
                       setLangOpen(false);
-                      if (changed && isAiContent) {
-                        setTimeout(() => {
-                          const lines = segments.map((s) => ({ id: s.id, source: s.source, target: s.target }));
-                          setAnalyzing(true); setAiError(null);
-                          analyzeCodeWithAI(lines, lang.code)
-                            .then((result) => { const d: Record<number, string> = {}; for (const c of result.comments) d[c.lineId] = c.comment; setCommentData(d); if (result.error) setAiError(result.error); })
-                            .catch(() => setAiError("Analysis failed"))
-                            .finally(() => setAnalyzing(false));
-                        }, 0);
+                      if (changed && findings.length > 0 && !analyzing) {
+                        setTimeout(() => runAnalysis(lang.code), 0);
                       }
                     }}
                     className={cn("w-full text-left px-3 py-2 text-[10px] font-bold transition-colors",
@@ -861,7 +1002,7 @@ function ReviewEditorCombined() {
 
           <Button size="sm" variant="copper" className="px-2 min-w-0 h-8 shrink-0" onClick={handleAnalyze} disabled={analyzing} title="AI Analyze">
             {analyzing ? <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" /> : <Cpu className="w-3.5 h-3.5 shrink-0" />}
-            <span className="text-[10px] ml-1">{analyzing ? "..." : isAiContent ? "Re-AI" : "AI"}</span>
+            <span className="text-[10px] ml-1">{analyzing ? "..." : findings.length > 0 ? "Re-AI" : "AI"}</span>
           </Button>
 
           <div className="h-5 w-px bg-[#3e1b0d]/40 shrink-0" />
@@ -933,10 +1074,22 @@ function ReviewEditorCombined() {
                   >
                     {/* ID */}
                     <div className={cn(
-                      "flex items-center justify-center text-[10px] font-mono font-bold bg-black/20 transition-colors",
+                      "flex flex-col items-center justify-center gap-1 text-[10px] font-mono font-bold bg-black/20 transition-colors",
                       isActive ? "text-[#c9a84c]" : "text-[var(--text-muted)] group-hover:text-[#c9a84c]"
                     )}>
                       {seg.id.toString().padStart(3, "0")}
+                      {(() => {
+                        const top = getRowSeverity(seg.id);
+                        if (!top) return null;
+                        const c = SEVERITY_DOT[top.severity] ?? "#c9a84c";
+                        return (
+                          <div
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ background: c, boxShadow: `0 0 5px ${c}` }}
+                            title={`${top.severity}: ${top.message}`}
+                          />
+                        );
+                      })()}
                     </div>
 
                     {/* Source */}

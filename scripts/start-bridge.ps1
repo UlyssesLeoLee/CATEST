@@ -22,10 +22,24 @@ $env:BRIDGE_CWD = $Cwd
 $env:CALLBACK_URL = "http://localhost:33088/api/orchestration"
 $env:PYTHONPATH = "$PSScriptRoot\..\python\src"
 
+# ── Postgres port-forward (for chat_store DB writes) ──────────────────────────
+$pgLocalPort = 35432
+$pgFwdJob = $null
+$existing = Get-NetTCPConnection -LocalPort $pgLocalPort -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $existing) {
+    Write-Host "  Starting postgres port-forward (localhost:$pgLocalPort -> postgres:5432)..." -ForegroundColor DarkCyan
+    $pgFwdJob = Start-Job -ScriptBlock {
+        param($p) kubectl port-forward -n catest pod/postgres-0 "${p}:5432" 2>&1
+    } -ArgumentList $pgLocalPort
+    Start-Sleep -Seconds 2
+}
+$env:CHAT_DB_URL = "postgresql://catest:password@localhost:${pgLocalPort}/catest_orchestration"
+
 Write-Host "=== Adapter Bridge ===" -ForegroundColor Cyan
 Write-Host "  Port:     $Port"
 Write-Host "  CWD:      $Cwd"
 Write-Host "  Callback: $env:CALLBACK_URL"
+Write-Host "  DB:       $env:CHAT_DB_URL"
 Write-Host "  MCP:      http://localhost:$Port/mcp"
 Write-Host ""
 

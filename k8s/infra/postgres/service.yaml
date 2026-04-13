@@ -1,8 +1,15 @@
+---
+# ── Primary — read/write ───────────────────────────────────────────────────
+# All existing application configs use "postgres:34321".
+# This service keeps routing to postgres-0 (primary).
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres
   namespace: catest
+  labels:
+    app: postgres
+    role: primary
 spec:
   ports:
     - port: 34321
@@ -11,3 +18,53 @@ spec:
   selector:
     app: postgres
   type: ClusterIP
+---
+# ── Replica — read-only ───────────────────────────────────────────────────
+# Use "postgres-replica:34321" for read queries (reports, search, analytics).
+# Routes to hot-standby pod.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica
+  namespace: catest
+  labels:
+    app: postgres-replica
+    role: replica
+spec:
+  ports:
+    - port: 34321
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: postgres-replica
+  type: ClusterIP
+---
+# ── Primary external (host access for adapter-bridge) ─────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-ext
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 34321
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: postgres
+---
+# ── Replica external (host read access) ───────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica-ext
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 34322
+      targetPort: 5432
+      name: postgres-replica
+  selector:
+    app: postgres-replica

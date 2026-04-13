@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-replica
+  namespace: catest
+  labels:
+    app: postgres-replica
+    role: replica
+spec:
+  serviceName: postgres-replica
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-replica
+  template:
+    metadata:
+      labels:
+        app: postgres-replica
+        role: replica
+    spec:
+      # ── Init container: run pg_basebackup on first boot ────────────────────
+      initContainers:
+        - name: init-replica
+          # Use public postgres image (no auth needed) — only needs pg_basebackup
+          image: postgres:16-bookworm
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/scripts/init-replica.sh"]
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: REPLICATOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: replicator-password
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: ha-scripts
+              mountPath: /scripts
+
+      # ── Main container: PostgreSQL running in hot-standby mode ────────────
+      containers:
+        - name: postgres
+          image: ghcr.io/ulyssesleolee/catest-postgres:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_USER
+              value: catest
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: catest
+          ports:
+            - containerPort: 5432
+              name: postgres
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U catest && psql -U catest -c "SELECT 1" -q >/dev/null 2>&1
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "catest"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: ha-scripts
+              mountPath: /scripts
+
+      volumes:
+        - name: ha-scripts
+          configMap:
+            name: postgres-ha-scripts
+            defaultMode: 0755
+
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

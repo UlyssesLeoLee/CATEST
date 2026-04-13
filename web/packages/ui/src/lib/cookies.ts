@@ -132,6 +132,27 @@ export const COOKIE_KEYS = {
 
   /** Sound enabled / disabled — 30 days */
   SOUND_ENABLED: "sound_enabled",
+
+  /** Last active workspace ID — 90 days */
+  WORKSPACE_ACTIVE_ID: "workspace_active_id",
+
+  /** Last active project ID in workspace app — 90 days */
+  WORKSPACE_ACTIVE_PROJECT: "workspace_active_project",
+
+  /** Review editor: last active panel tab (analysis|memory|terminology|qa) — 90 days */
+  REVIEW_ACTIVE_TAB: "review_active_tab",
+
+  /** Last orchestration dispatch target (claude_code|codex|antigravity) — 90 days */
+  ORCH_TARGET: "orch_target",
+
+  /** Last orchestration model ID — 90 days */
+  ORCH_MODEL: "orch_model",
+
+  /** Last orchestration project name — 90 days */
+  ORCH_PROJECT: "orch_project",
+
+  /** Orchestration sidebar open state — 90 days */
+  ORCH_SIDEBAR_OPEN: "orch_sidebar_open",
 } as const;
 
 /** Default TTL per key (days). */
@@ -145,4 +166,11 @@ export const COOKIE_TTL: Record<string, number> = {
   [COOKIE_KEYS.REVIEW_TB_BANK]: 30,
   [COOKIE_KEYS.REVIEW_LANG]: 30,
   [COOKIE_KEYS.SOUND_ENABLED]: 30,
+  [COOKIE_KEYS.WORKSPACE_ACTIVE_ID]: 90,
+  [COOKIE_KEYS.WORKSPACE_ACTIVE_PROJECT]: 90,
+  [COOKIE_KEYS.REVIEW_ACTIVE_TAB]: 90,
+  [COOKIE_KEYS.ORCH_TARGET]: 90,
+  [COOKIE_KEYS.ORCH_MODEL]: 90,
+  [COOKIE_KEYS.ORCH_PROJECT]: 90,
+  [COOKIE_KEYS.ORCH_SIDEBAR_OPEN]: 90,
 };

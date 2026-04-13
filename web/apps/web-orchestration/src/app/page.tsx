@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Button, Badge, cn, SteamEmission, VictorianDivider } from "@catest/ui";
+import { Button, Badge, cn, SteamEmission, VictorianDivider, useCookieState, useBoolCookieState, COOKIE_KEYS } from "@catest/ui";
 import {
   Send,
   Bot,
@@ -608,9 +608,11 @@ export default function OrchestrationPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [target, setTarget] = useState<DispatchTarget>("claude_code");
-  const [model, setModel] = useState("ide");
-  const [project, setProject] = useState("default");
+  const [_target, _setTarget] = useCookieState(COOKIE_KEYS.ORCH_TARGET, "claude_code");
+  const target = _target as DispatchTarget;
+  const setTarget = _setTarget as (v: DispatchTarget) => void;
+  const [model, setModel] = useCookieState(COOKIE_KEYS.ORCH_MODEL, "ide");
+  const [project, setProject] = useCookieState(COOKIE_KEYS.ORCH_PROJECT, "default");
   const { models: availableModels } = useModels();
 
   // Auto-switch model when target changes
@@ -618,8 +620,8 @@ export default function OrchestrationPage() {
     setTarget(t);
     const defaultModel = availableModels.find(m => m.provider === t);
     if (defaultModel) setModel(defaultModel.id);
-  }, [availableModels]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  }, [availableModels, setTarget, setModel]);
+  const [sidebarOpen, setSidebarOpen] = useBoolCookieState(COOKIE_KEYS.ORCH_SIDEBAR_OPEN, true);
   const [traces, setTraces] = useState<{ traceId: string; title: string; time: string; status: string }[]>([]);
   const [activeTraceId, setActiveTraceId] = useState<string | null>(null);
 

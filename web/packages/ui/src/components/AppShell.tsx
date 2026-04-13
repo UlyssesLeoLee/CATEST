@@ -633,7 +633,7 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
             <div className="absolute top-[60%] left-[70%] w-10 h-10 rounded-full opacity-20"
               style={{ background: 'radial-gradient(circle, transparent 35%, rgba(139,69,19,0.06) 40%, rgba(139,69,19,0.06) 45%, transparent 50%)' }} />
           </div>
-          <div className="p-4 sm:p-6 md:p-8 lg:p-10 min-w-0 relative z-10">
+          <div className="p-4 sm:p-6 md:p-8 lg:p-10 min-w-0 relative z-10 h-full">
             {children}
           </div>
         </div>

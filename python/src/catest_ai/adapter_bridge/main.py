@@ -27,6 +27,7 @@ from pydantic import BaseModel
 
 from catest_ai.adapter_bridge.runners import create_runner, detect_models
 from catest_ai.adapter_bridge.mcp_server import router as mcp_router
+from catest_ai.adapter_bridge import chat_store
 
 logging.basicConfig(
     level=logging.INFO,
@@ -122,12 +123,38 @@ async def execute(req: ExecuteRequest):
 
     async def _run() -> None:
         runner = create_runner(req.target)
+        final_status = "completed"
         try:
+            # ── Persist session + user prompt ──────────────────────────
+            await chat_store.open_session(
+                trace_id, req.target, req.model, req.project
+            )
+            await chat_store.store_prompt(trace_id, req.prompt)
+
             await queue.put(
                 {"event": "start", "target": req.target, "trace_id": trace_id}
             )
+
+            seq = 1
             async for chunk in runner.run(req.prompt, cwd=cwd, project=req.project, model=req.model):
                 await queue.put(chunk)
+                # ── Persist each SSE event by kind ─────────────────────
+                await chat_store.store_event(trace_id, seq, chunk)
+                # IDE delivery events carry extra context
+                if chunk.get("event") in ("status",) and req.model == "ide":
+                    msg = chunk.get("message", "")
+                    if "pasted" in msg.lower() or "✓" in msg:
+                        await chat_store.store_ide_delivery(
+                            trace_id, req.target, req.prompt,
+                            success=True, ps1_stdout=msg,
+                        )
+                    elif chunk.get("event") == "error":
+                        await chat_store.store_ide_delivery(
+                            trace_id, req.target, req.prompt,
+                            success=False, error_message=chunk.get("message"),
+                        )
+                seq += 1
+
             await queue.put({"event": "done"})
 
             # Notify intent-gateway (best-effort)
@@ -147,10 +174,13 @@ async def execute(req: ExecuteRequest):
 
         except asyncio.CancelledError:
             await queue.put({"event": "cancelled"})
+            final_status = "cancelled"
         except Exception as exc:
             logger.exception("[%s] execution failed", trace_id[:8])
             await queue.put({"event": "error", "message": str(exc)})
+            final_status = "failed"
         finally:
+            await chat_store.close_session(trace_id, final_status)
             await queue.put(None)  # sentinel → end SSE stream
 
     _tasks[trace_id] = asyncio.create_task(_run())

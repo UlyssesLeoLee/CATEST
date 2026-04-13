@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { type PluginGroup } from "@catest/ui/plugins";
 import { Badge, Button, cn, useCookieState, COOKIE_KEYS } from "@catest/ui";
 import {
@@ -32,6 +32,7 @@ import {
   listTMBanks,
   getTMEntries,
   deleteTMEntry,
+  semanticSearchTM,
   type TMEntry,
   type TMBank,
 } from "@/app/actions/translation-memory";
@@ -40,10 +41,15 @@ import {
   getTBEntries,
   addTBEntry,
   deleteTBEntry,
+  getRelatedTerms,
+  listTBDomains,
+  getTermsInDomain,
   type TBEntry,
   type TBBank,
+  type RelatedTerm,
 } from "@/app/actions/terminology-base";
 import { getCurrentRole } from "@/lib/permissions";
+import { analysisStore, type AnalysisFinding, type TBViolation } from "@/lib/analysis-store";
 
 // ── Tab definitions ──────────────────────────────────────────────────
 type TabId = "analysis" | "memory" | "terminology" | "qa";
@@ -56,46 +62,135 @@ const TABS: { id: TabId; label: string; abbr: string; icon: any }[] = [
 ];
 
 // ── AI Analysis Tab ──────────────────────────────────────────────────
-function AnalysisTab() {
-  const mockSuggestions = [
-    { id: "s1", severity: "warning", message: "Inconsistent pattern: 'validateSession' deviates from Termbase 'validateAuthorization'.", category: "Terminology" },
-    { id: "s2", severity: "info", message: "TM hit: Similar resource leak fix in 4 projects. Suggest adding 'req.signal'.", category: "Pattern Match" },
-    { id: "s3", severity: "danger", message: "Architectural Rule violation: Unauthorized database access in service layer.", category: "Policy" },
-  ];
+const SEVERITY_CFG: Record<string, { color: string; glow: string; border: string; icon: any; label: string }> = {
+  error:   { color: "text-[#dc2626]",               glow: "rgba(220,38,38,0.4)",   border: "rgba(220,38,38,0.25)",  icon: AlertCircle,   label: "Error" },
+  danger:  { color: "text-[var(--burgundy-light)]", glow: "rgba(139,34,82,0.4)",   border: "rgba(107,28,35,0.3)",   icon: AlertCircle,   label: "Danger" },
+  warning: { color: "text-[var(--amber-glow)]",     glow: "rgba(255,179,71,0.4)",  border: "rgba(255,179,71,0.25)", icon: AlertTriangle, label: "Warning" },
+  info:    { color: "text-[var(--brass)]",          glow: "rgba(201,168,76,0.3)",  border: "rgba(201,168,76,0.2)",  icon: Info,          label: "Info" },
+};
 
-  const severityConfig: Record<string, { color: string; glow: string; border: string; icon: any }> = {
-    warning: { color: "text-[var(--amber-glow)]", glow: "rgba(255,179,71,0.4)", border: "rgba(255,179,71,0.25)", icon: AlertTriangle },
-    info: { color: "text-[var(--brass)]", glow: "rgba(201,168,76,0.3)", border: "rgba(201,168,76,0.2)", icon: Info },
-    danger: { color: "text-[var(--burgundy-light)]", glow: "rgba(139,34,82,0.4)", border: "rgba(107,28,35,0.3)", icon: AlertCircle },
-  };
+function AnalysisTab() {
+  const { findings, tbViolations, isAnalyzing, streamingCount, error } = useSyncExternalStore(
+    analysisStore.subscribe,
+    analysisStore.getSnapshot,
+  );
+
+  // Loading state — no findings yet
+  if (isAnalyzing && findings.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3 text-[var(--text-muted)]">
+        <Loader2 className="w-6 h-6 animate-spin text-[#c9a84c]" />
+        <p className="text-[10px] font-black uppercase tracking-wider">Analyzing code…</p>
+        {streamingCount > 0 && (
+          <p className="text-[9px] text-[#c9a84c]">{streamingCount} finding{streamingCount !== 1 ? "s" : ""} streamed</p>
+        )}
+      </div>
+    );
+  }
+
+  // Empty state
+  if (!isAnalyzing && findings.length === 0 && tbViolations.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3 text-[var(--text-muted)]">
+        <Sparkles className="w-6 h-6 opacity-30" />
+        <p className="text-[11px]">No findings yet</p>
+        <p className="text-[9px] opacity-60 text-center">Click the <strong className="text-[#c9a84c]">AI</strong> button in the editor to analyze code</p>
+        {error && <p className="text-[9px] text-[#e67e22] mt-1 text-center">{error}</p>}
+      </div>
+    );
+  }
 
   return (
-    <ul className="space-y-3">
-      {mockSuggestions.map((s) => {
-        const cfg = severityConfig[s.severity];
-        const Icon = cfg.icon;
-        return (
-          <li key={s.id} className="group relative">
-            <div className="absolute -inset-0.5 rounded-sm opacity-0 group-hover:opacity-100 transition duration-500 pointer-events-none"
-              style={{ background: `linear-gradient(135deg, ${cfg.border}, transparent 60%)`, filter: "blur(4px)" }} />
-            <div className="relative flex flex-col gap-2.5 p-4 rounded-sm border overflow-hidden transition-all"
-              style={{ borderColor: cfg.border, background: "linear-gradient(145deg, rgba(14,11,8,0.9), rgba(10,8,5,0.95))", boxShadow: "inset 0 1px 0 rgba(255,240,200,0.04), 0 2px 8px rgba(0,0,0,0.5)" }}>
-              <div className="flex items-center justify-between">
-                <div className={cn("flex items-center gap-2 text-[10px] font-black uppercase tracking-wider", cfg.color)}>
-                  <Icon className="w-3.5 h-3.5" style={{ filter: `drop-shadow(0 0 4px ${cfg.glow})` }} />{s.severity}
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+          {isAnalyzing ? (
+            <span className="flex items-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin text-[#c9a84c]" />
+              <span className="text-[#c9a84c]">Streaming…</span>
+              <span>{streamingCount} found</span>
+            </span>
+          ) : (
+            `${findings.length} Finding${findings.length !== 1 ? "s" : ""}`
+          )}
+        </span>
+        {error && <span className="text-[8px] text-[#e67e22] max-w-[130px] truncate" title={error}>{error}</span>}
+      </div>
+
+      {/* AI Findings */}
+      {findings.length > 0 && (
+        <ul className="space-y-2">
+          {findings.map((f: AnalysisFinding, idx: number) => {
+            const cfg = SEVERITY_CFG[f.severity] ?? SEVERITY_CFG.info;
+            const Icon = cfg.icon;
+            return (
+              <li key={`${f.lineId}-${idx}`} className="group relative">
+                <div className="absolute -inset-0.5 rounded-sm opacity-0 group-hover:opacity-100 transition duration-500 pointer-events-none"
+                  style={{ background: `linear-gradient(135deg, ${cfg.border}, transparent 60%)`, filter: "blur(4px)" }} />
+                <div className="relative flex flex-col gap-2 p-3 rounded-sm border overflow-hidden transition-all"
+                  style={{ borderColor: cfg.border, background: "linear-gradient(145deg, rgba(14,11,8,0.9), rgba(10,8,5,0.95))", boxShadow: "inset 0 1px 0 rgba(255,240,200,0.04)" }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className={cn("flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider shrink-0", cfg.color)}>
+                      <Icon className="w-3 h-3" style={{ filter: `drop-shadow(0 0 4px ${cfg.glow})` }} />
+                      {cfg.label}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant={f.severity === "error" || f.severity === "danger" ? "danger" : f.severity === "warning" ? "warning" : "info"} className="text-[7px] px-1 py-0">
+                        {f.category}
+                      </Badge>
+                      <span className="text-[8px] text-[var(--text-muted)] font-mono shrink-0">L{f.lineId}</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{f.message}</p>
+                  {f.suggestedFix && (
+                    <div className="text-[9px] font-mono text-[#4a8b6e] bg-[#4a8b6e]/5 border border-[#4a8b6e]/15 rounded-sm px-2 py-1.5 leading-relaxed whitespace-pre-wrap break-all">
+                      {f.suggestedFix}
+                    </div>
+                  )}
+                  <div className="flex items-center justify-end pt-1" style={{ borderTop: "1px solid rgba(184,115,51,0.1)" }}>
+                    <button
+                      onClick={() => analysisStore.dismissFinding(f.lineId, f.message)}
+                      className="text-[8px] font-bold text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors uppercase tracking-wider px-1 py-0.5 rounded hover:bg-[#3e1b0d]/20"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
                 </div>
-                <Badge variant={s.severity === "danger" ? "danger" : s.severity === "warning" ? "warning" : "info"}>{s.category}</Badge>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* TB Violations */}
+      {tbViolations.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5 pt-1">
+            <Shield className="w-3 h-3 text-[#e67e22]" />
+            {tbViolations.length} Terminology Violation{tbViolations.length !== 1 ? "s" : ""}
+          </div>
+          {tbViolations.map((v: TBViolation, idx: number) => (
+            <div key={idx} className={cn(
+              "p-2.5 rounded-sm border",
+              v.forbidden ? "border-[#8b2500]/30 bg-[#8b2500]/[0.04]" : "border-[#e67e22]/20 bg-[#e67e22]/[0.03]"
+            )}>
+              <div className="flex items-center gap-1.5 text-[9px] font-bold flex-wrap">
+                {v.forbidden ? <Ban className="w-3 h-3 text-[#8b2500] shrink-0" /> : <Tag className="w-3 h-3 text-[#e67e22] shrink-0" />}
+                <span className={v.forbidden ? "text-[#8b2500]" : "text-[#e67e22]"}>L{v.lineId}</span>
+                <span className="text-[var(--text-muted)] font-mono">
+                  &ldquo;{v.term}&rdquo;
+                </span>
+                <ArrowRight className="w-2.5 h-2.5 text-[var(--text-muted)] shrink-0" />
+                <span className="text-[#c9a84c] font-mono">&ldquo;{v.suggestedTerm}&rdquo;</span>
+                {v.forbidden && <Badge className="bg-[#8b2500]/10 text-[#8b2500] border-[#8b2500]/20 text-[7px] px-1 py-0 shrink-0">FORBIDDEN</Badge>}
               </div>
-              <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed font-medium">{s.message}</p>
-              <div className="flex items-center justify-between pt-2" style={{ borderTop: "1px solid rgba(184,115,51,0.15)" }}>
-                <Button variant="vapor" size="sm" className="!px-0 !py-0 !h-auto !min-h-0 gap-1">Quick Fix <ArrowRight className="w-2.5 h-2.5" /></Button>
-                <Button variant="ghost" size="sm" className="!px-0 !py-0 !h-auto !min-h-0 !text-[var(--text-muted)]">Dismiss</Button>
-              </div>
+              {v.domain && <div className="mt-1 text-[8px] text-[var(--text-muted)]">domain: {v.domain}</div>}
             </div>
-          </li>
-        );
-      })}
-    </ul>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -105,9 +200,13 @@ function MemoryTab() {
   const [banks, setBanks] = useState<TMBank[]>([]);
   const [selectedBank, setSelectedBank] = useCookieState(COOKIE_KEYS.REVIEW_TM_BANK, "default");
   const [entries, setEntries] = useState<TMEntry[]>([]);
+  const [scores, setScores] = useState<Record<string, number>>({});
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [bankOpen, setBankOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<"list" | "semantic">("list");
+  const searchDebounce = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAdmin = role === "admin";
 
   useEffect(() => { getCurrentRole().then(setRole); }, []);
@@ -119,14 +218,32 @@ function MemoryTab() {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    const res = await getTMEntries(selectedBank, 30);
+    setScores({});
+    const res = await getTMEntries(selectedBank as string, 30);
     setEntries(res.entries);
     setTotal(res.total);
     setLoading(false);
   }, [selectedBank]);
 
+  const runSemanticSearch = useCallback(async (q: string) => {
+    if (!q.trim()) { setSearchMode("list"); loadEntries(); return; }
+    setLoading(true);
+    setSearchMode("semantic");
+    const res = await semanticSearchTM(q.trim(), selectedBank as string, 8);
+    setEntries(res.entries);
+    setScores(res.scores);
+    setTotal(res.entries.length);
+    setLoading(false);
+  }, [selectedBank, loadEntries]);
+
   useEffect(() => { loadBanks(); }, [loadBanks]);
-  useEffect(() => { loadEntries(); }, [loadEntries]);
+  useEffect(() => { if (searchMode === "list") loadEntries(); }, [loadEntries, searchMode]);
+
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => runSemanticSearch(q), 450);
+  };
 
   const handleDelete = async (id: string) => {
     await deleteTMEntry(id);
@@ -176,6 +293,22 @@ function MemoryTab() {
         </div>
       </div>
 
+      {/* Semantic search bar */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-muted)]" />
+        <input
+          value={searchQuery}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          placeholder="Semantic search…"
+          className="w-full bg-black/30 border border-[#3e1b0d]/30 rounded-sm pl-7 pr-2.5 py-1.5 text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/40 outline-none focus:border-[#b87333]/40"
+        />
+        {searchMode === "semantic" && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold text-[#c9a84c] uppercase tracking-wider">
+            ✦ vector
+          </span>
+        )}
+      </div>
+
       {/* Entries */}
       {loading ? (
         <div className="flex items-center justify-center py-8 text-[var(--text-muted)]">
@@ -184,31 +317,45 @@ function MemoryTab() {
       ) : entries.length === 0 ? (
         <div className="text-center py-8">
           <BookOpen className="w-8 h-8 text-[var(--text-muted)]/30 mx-auto mb-3" />
-          <p className="text-[11px] text-[var(--text-muted)]">Translation Memory is empty</p>
-          <p className="text-[9px] text-[var(--text-muted)]/60 mt-1">Confirm segments with <kbd className="px-1 py-0.5 rounded border border-[#3e1b0d]/40 bg-black/30 text-[8px]">Ctrl+Enter</kbd> to auto-save</p>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            {searchMode === "semantic" ? "No similar entries found" : "Translation Memory is empty"}
+          </p>
+          {searchMode === "list" && (
+            <p className="text-[9px] text-[var(--text-muted)]/60 mt-1">Confirm segments with <kbd className="px-1 py-0.5 rounded border border-[#3e1b0d]/40 bg-black/30 text-[8px]">Ctrl+Enter</kbd> to auto-save</p>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{total} entries</div>
-          {entries.map((e) => (
-            <div key={e.id} className="p-3 rounded-sm border border-[#3e1b0d]/20 hover:border-[#b87333]/20 transition-colors group"
-              style={{ background: "linear-gradient(135deg, rgba(14,11,8,0.8), rgba(10,8,5,0.9))" }}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-mono text-[var(--text-secondary)] truncate">{e.source_text}</div>
-                  <div className="text-[10px] font-mono text-[#c9a84c] truncate mt-1">{e.target_text}</div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Badge className="bg-[#4a8b6e]/10 text-[#4a8b6e] border-[#4a8b6e]/20 text-[7px] px-1 py-0">×{e.usage_count}</Badge>
-                  {isAdmin && (
-                    <button onClick={() => handleDelete(e.id)} className="p-1 rounded hover:bg-[#8b2500]/20 text-[var(--text-muted)] hover:text-[#8b2500] transition-colors">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  )}
+          <div className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+            {searchMode === "semantic" ? `${total} semantic match${total !== 1 ? "es" : ""}` : `${total} entries`}
+          </div>
+          {entries.map((e) => {
+            const score = scores[e.id];
+            return (
+              <div key={e.id} className="p-3 rounded-sm border border-[#3e1b0d]/20 hover:border-[#b87333]/20 transition-colors group"
+                style={{ background: "linear-gradient(135deg, rgba(14,11,8,0.8), rgba(10,8,5,0.9))" }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-mono text-[var(--text-secondary)] truncate">{e.source_text}</div>
+                    <div className="text-[10px] font-mono text-[#c9a84c] truncate mt-1">{e.target_text}</div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {score !== undefined && (
+                      <Badge className="bg-[#4a8b6e]/10 text-[#4a8b6e] border-[#4a8b6e]/20 text-[7px] px-1 py-0" title="Semantic similarity score">
+                        {(score * 100).toFixed(0)}%
+                      </Badge>
+                    )}
+                    <Badge className="bg-[#4a8b6e]/10 text-[#4a8b6e] border-[#4a8b6e]/20 text-[7px] px-1 py-0">×{e.usage_count}</Badge>
+                    {isAdmin && (
+                      <button onClick={() => handleDelete(e.id)} className="p-1 rounded hover:bg-[#8b2500]/20 text-[var(--text-muted)] hover:text-[#8b2500] transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -237,6 +384,36 @@ function TerminologyTab() {
   const [adding, setAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // ── Graph state (Neo4j) ───────────────────────────────
+  const [domains, setDomains] = useState<string[]>([]);
+  const [activeDomain, setActiveDomain] = useState<string | null>(null);
+  const [relatedTerms, setRelatedTerms] = useState<RelatedTerm[]>([]);
+  const [graphLoading, setGraphLoading] = useState(false);
+  const [focusTerm, setFocusTerm] = useState<string | null>(null);
+
+  const loadDomains = useCallback(async () => {
+    const d = await listTBDomains(selectedBank as string);
+    setDomains(d);
+  }, [selectedBank]);
+
+  const loadDomainTerms = useCallback(async (domain: string) => {
+    setGraphLoading(true);
+    setActiveDomain(domain);
+    setFocusTerm(null);
+    const terms = await getTermsInDomain(domain, selectedBank as string, 30);
+    setRelatedTerms(terms);
+    setGraphLoading(false);
+  }, [selectedBank]);
+
+  const loadRelatedTerms = useCallback(async (sourceTerm: string) => {
+    setGraphLoading(true);
+    setFocusTerm(sourceTerm);
+    setActiveDomain(null);
+    const terms = await getRelatedTerms(sourceTerm, selectedBank as string, 15);
+    setRelatedTerms(terms);
+    setGraphLoading(false);
+  }, [selectedBank]);
+
   const loadBanks = useCallback(async () => {
     const b = await listTBBanks();
     setBanks(b.length > 0 ? b : [{ name: "default", entry_count: 0 }]);
@@ -244,14 +421,14 @@ function TerminologyTab() {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    const res = await getTBEntries(selectedBank, 50);
+    const res = await getTBEntries(selectedBank as string, 50);
     setEntries(res.entries);
     setTotal(res.total);
     setLoading(false);
   }, [selectedBank]);
 
   useEffect(() => { loadBanks(); }, [loadBanks]);
-  useEffect(() => { loadEntries(); }, [loadEntries]);
+  useEffect(() => { loadEntries(); loadDomains(); }, [loadEntries, loadDomains]);
 
   const handleAdd = async () => {
     if (!newSource.trim() || !newTarget.trim()) return;
@@ -380,7 +557,15 @@ function TerminologyTab() {
                 </div>
                 {(e.domain || e.definition) && (
                   <div className="flex items-center gap-2 mt-1">
-                    {e.domain && <Badge className="bg-[#b87333]/10 text-[var(--text-muted)] border-[#b87333]/20 text-[7px] px-1 py-0">{e.domain}</Badge>}
+                    {e.domain && (
+                      <button
+                        onClick={() => loadRelatedTerms(e.source_term)}
+                        className="text-[7px] font-bold px-1 py-0 rounded-sm border bg-[#b87333]/10 text-[var(--text-muted)] border-[#b87333]/20 hover:bg-[#b87333]/20 hover:text-[#c9a84c] transition-colors"
+                        title={`Show terms related to "${e.source_term}" via graph`}
+                      >
+                        {e.domain}
+                      </button>
+                    )}
                     {e.definition && <span className="text-[8px] text-[var(--text-muted)] italic truncate">{e.definition}</span>}
                   </div>
                 )}
@@ -393,6 +578,66 @@ function TerminologyTab() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Graph: Domain browser + related terms ───────────────────── */}
+      {domains.length > 0 && (
+        <div className="space-y-2 pt-2 border-t border-[#3e1b0d]/20">
+          <div className="flex items-center gap-1.5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+            <Tag className="w-3 h-3 text-[#c9a84c]" />
+            Domains
+            <span className="text-[8px] font-normal normal-case opacity-50 ml-0.5">Neo4j</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {domains.map((d) => (
+              <button key={d} onClick={() => loadDomainTerms(d)}
+                className={cn(
+                  "text-[8px] font-bold px-1.5 py-0.5 rounded-sm border transition-colors",
+                  activeDomain === d
+                    ? "bg-[#c9a84c]/15 border-[#c9a84c]/40 text-[#c9a84c]"
+                    : "bg-black/20 border-[#3e1b0d]/30 text-[var(--text-muted)] hover:border-[#b87333]/30 hover:text-[#c9a84c]",
+                )}>
+                {d}
+              </button>
+            ))}
+          </div>
+
+          {(activeDomain || focusTerm) && (
+            <div className="rounded-sm border border-[#c9a84c]/15 p-2.5 space-y-1.5"
+              style={{ background: "rgba(201,168,76,0.03)" }}>
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold text-[#c9a84c]">
+                  {focusTerm ? `Related to "${focusTerm}"` : `Domain: ${activeDomain}`}
+                </span>
+                <button onClick={() => { setActiveDomain(null); setFocusTerm(null); setRelatedTerms([]); }}
+                  className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              {graphLoading ? (
+                <div className="flex items-center gap-1.5 py-1 text-[var(--text-muted)]">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span className="text-[9px]">Querying graph…</span>
+                </div>
+              ) : relatedTerms.length === 0 ? (
+                <p className="text-[9px] text-[var(--text-muted)] italic">No related terms found</p>
+              ) : relatedTerms.map((t) => (
+                <div key={t.id} className="flex items-center gap-1.5 text-[9px] font-mono">
+                  {t.forbidden
+                    ? <Ban className="w-2.5 h-2.5 text-[#8b2500] shrink-0" />
+                    : <Tag className="w-2.5 h-2.5 text-[#b87333] shrink-0" />}
+                  <span className={cn(t.forbidden ? "text-[#8b2500] line-through" : "text-[var(--text-secondary)]")}>
+                    {t.source_term}
+                  </span>
+                  <ArrowRight className="w-2 h-2 text-[var(--text-muted)] shrink-0" />
+                  <span className={cn(t.forbidden ? "text-[#8b2500] line-through" : "text-[#c9a84c]")}>
+                    {t.target_term}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -448,7 +693,7 @@ function QACheckTab() {
 
 // ── Main Tabbed Component ────────────────────────────────────────────
 function ReviewPanelTabs() {
-  const [activeTab, setActiveTab] = useState<TabId>("analysis");
+  const [activeTab, setActiveTab] = useCookieState(COOKIE_KEYS.REVIEW_ACTIVE_TAB, "analysis") as [TabId, (v: TabId) => void];
 
   return (
     <div className="flex flex-col h-full">

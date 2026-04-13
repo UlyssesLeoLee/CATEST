@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { type PluginGroup } from "@catest/ui/plugins";
-import { Card, Badge, Button, cn } from "@catest/ui";
+import { Card, Badge, Button, cn, useCookieState, useLocalStorageState, COOKIE_KEYS } from "@catest/ui";
 import {
   FolderPlus,
   FolderUp,
@@ -37,8 +37,13 @@ import {
   type ImportResult,
   type ProjectInfo,
 } from "@/app/actions/import-folder";
+import {
+  previewGitHubRepo,
+  importFromGitHub,
+  type GitHubPreviewResult,
+} from "@/app/actions/import-github";
 import { isCodeFile, shouldSkip, detectLanguage } from "@/lib/segment-parser";
-import { Upload, Share2 } from "lucide-react";
+import { Upload, Share2, Github, Lock, GitBranch, RefreshCw } from "lucide-react";
 
 // ── Language color mapping ───────────────────────────────────────────
 
@@ -116,7 +121,7 @@ function downloadFile(filename: string, content: string, mimeType: string) {
 // ── Tree view ────────────────────────────────────────────────────────
 
 function TreeView({ node, depth = 0, onToggle }: { node: TreeNode; depth?: number; onToggle: (path: string) => void }) {
-  const [expanded, setExpanded] = useState(depth < 2);
+  const [expanded, setExpanded] = useLocalStorageState("workspace-tree", node.path || "root", depth < 2);
   if (!node.isDir) {
     const lc = langColor(node.language);
     return (
@@ -159,7 +164,7 @@ function TreeView({ node, depth = 0, onToggle }: { node: TreeNode; depth?: numbe
 // ── Import Modal ─────────────────────────────────────────────────────
 
 function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: () => void; onImported: () => void }) {
-  const [mode, setMode] = useState<"folder" | "catestgroup">("folder");
+  const [mode, setMode] = useState<"folder" | "catestgroup" | "github">("folder");
   const [step, setStep] = useState<"select" | "preview" | "importing" | "done">("select");
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
@@ -173,9 +178,23 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
   const [catestContents, setCatestContents] = useState<Record<string, string>>({});
   const [groupInfo, setGroupInfo] = useState<{ name: string; fileCount: number; segCount: number } | null>(null);
   const groupInputRef = useRef<HTMLInputElement>(null);
+  // For GitHub import
+  const [ghUrl, setGhUrl] = useState("");
+  const [ghBranch, setGhBranch] = useState("");
+  const [ghToken, setGhToken] = useState("");
+  const [ghPreview, setGhPreview] = useState<GitHubPreviewResult | null>(null);
+  const [ghFetching, setGhFetching] = useState(false);
+  const [ghError, setGhError] = useState<string | null>(null);
+  const [ghTree, setGhTree] = useState<TreeNode | null>(null);
 
   useEffect(() => {
-    if (!open) { setStep("select"); setMode("folder"); setProjectName(""); setDescription(""); setRawFiles([]); setTree(null); setResult(null); setGroupContent(""); setCatestContents({}); setGroupInfo(null); }
+    if (!open) {
+      setStep("select"); setMode("folder"); setProjectName(""); setDescription("");
+      setRawFiles([]); setTree(null); setResult(null);
+      setGroupContent(""); setCatestContents({}); setGroupInfo(null);
+      setGhUrl(""); setGhBranch(""); setGhToken(""); setGhPreview(null);
+      setGhFetching(false); setGhError(null); setGhTree(null);
+    }
   }, [open]);
 
   const handleFilesSelected = useCallback(async (fileList: FileList) => {
@@ -291,12 +310,53 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
     }
   }, []);
 
+  // GitHub: fetch file tree preview
+  const handleGhFetch = useCallback(async () => {
+    if (!ghUrl.trim()) return;
+    setGhFetching(true);
+    setGhError(null);
+    setGhPreview(null);
+    setGhTree(null);
+    try {
+      const preview = await previewGitHubRepo(ghUrl.trim(), ghBranch.trim() || undefined, ghToken.trim() || undefined);
+      setGhPreview(preview);
+      // Build tree from preview files
+      const t = buildTree(preview.files.map((f) => ({ path: f.path, size: f.size })));
+      setGhTree(t);
+      // Suggest project name from repo name
+      setProjectName((prev) => prev || `${preview.owner}/${preview.repo}`);
+      setStep("preview");
+    } catch (e: unknown) {
+      setGhError((e as Error).message ?? "Failed to fetch repository");
+    } finally {
+      setGhFetching(false);
+    }
+  }, [ghUrl, ghBranch, ghToken]);
+
   const handleImport = useCallback(async () => {
     setStep("importing");
 
     if (mode === "catestgroup") {
-      // Import from .catestgroup
       const res = await importFromCatestGroup(groupContent, catestContents);
+      setResult(res); setStep("done");
+      if (res.success) onImported();
+      return;
+    }
+
+    if (mode === "github") {
+      if (!ghPreview || !ghTree) return;
+      const selected: string[] = [];
+      function collectGh(node: TreeNode) {
+        if (!node.isDir && node.included) selected.push(node.path);
+        node.children.forEach(collectGh);
+      }
+      collectGh(ghTree);
+      const res = await importFromGitHub(
+        ghUrl.trim(), ghPreview.branch,
+        ghToken.trim() || undefined,
+        projectName || `${ghPreview.owner}/${ghPreview.repo}`,
+        description, selected,
+      );
       setResult(res); setStep("done");
       if (res.success) onImported();
       return;
@@ -316,7 +376,8 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
     const res = await importFolder(projectName || "Untitled Project", description, included);
     setResult(res); setStep("done");
     if (res.success) onImported();
-  }, [mode, tree, rawFiles, projectName, description, onImported, groupContent, catestContents]);
+  }, [mode, tree, rawFiles, projectName, description, onImported, groupContent, catestContents,
+      ghPreview, ghTree, ghUrl, ghToken]);
 
   const handleDownloadGroup = useCallback(() => {
     if (!result?.catestGroupContent) return;
@@ -346,9 +407,13 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
             <div>
               <h3 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">Import Project</h3>
               <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
-                {step === "select" && (mode === "folder" ? "Select source code folder" : "Select .catestgroup files")}
-                {step === "preview" && (mode === "folder" ? `${includedCount} code files ready` : `${groupInfo?.fileCount || 0} files from group`)}
-                {step === "importing" && "Parsing segments..."}
+                {step === "select" && mode === "folder" && "Select source code folder"}
+                {step === "select" && mode === "catestgroup" && "Select .catestgroup files"}
+                {step === "select" && mode === "github" && "Enter GitHub repository URL"}
+                {step === "preview" && mode === "folder" && `${includedCount} code files ready`}
+                {step === "preview" && mode === "catestgroup" && `${groupInfo?.fileCount || 0} files from group`}
+                {step === "preview" && mode === "github" && ghPreview && `${countIncluded(ghTree!)} / ${ghPreview.files.length} files`}
+                {step === "importing" && "Fetching & parsing segments..."}
                 {step === "done" && (result?.success ? "Import complete" : "Import failed")}
               </p>
             </div>
@@ -370,13 +435,89 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
                 ><FolderUp className="w-3.5 h-3.5" /> Source Folder</button>
                 <button
                   className={cn("flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
+                    mode === "github" ? "bg-[#b87333]/20 text-[#c9a84c] border border-[#b87333]/30" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  )}
+                  onClick={() => setMode("github")}
+                ><Github className="w-3.5 h-3.5" /> GitHub</button>
+                <button
+                  className={cn("flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
                     mode === "catestgroup" ? "bg-[#b87333]/20 text-[#c9a84c] border border-[#b87333]/30" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                   )}
                   onClick={() => setMode("catestgroup")}
-                ><Share2 className="w-3.5 h-3.5" /> .catestgroup (Collab)</button>
+                ><Share2 className="w-3.5 h-3.5" /> .catestgroup</button>
               </div>
 
-              {mode === "folder" ? (
+              {mode === "github" && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 block">Repository URL</label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Github className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
+                        <input
+                          type="text" value={ghUrl} onChange={(e) => setGhUrl(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleGhFetch()}
+                          placeholder="https://github.com/owner/repo"
+                          autoComplete="off" name="gh-url"
+                          className="w-full bg-[var(--coal)] border border-[#b87333]/30 rounded-lg pl-9 pr-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none focus:border-[#c9a84c]/60 font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 block flex items-center gap-1">
+                        <GitBranch className="w-3 h-3" /> Branch
+                        <span className="text-[var(--text-muted)]/50 font-normal normal-case">(optional)</span>
+                      </label>
+                      <input
+                        type="text" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleGhFetch()}
+                        placeholder="main" autoComplete="off" name="gh-branch"
+                        className="w-full bg-[var(--coal)] border border-[#b87333]/30 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none focus:border-[#c9a84c]/60 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 block flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Access Token
+                        <span className="text-[var(--text-muted)]/50 font-normal normal-case">(private repos)</span>
+                      </label>
+                      <input
+                        type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleGhFetch()}
+                        placeholder="ghp_••••••••" autoComplete="new-password" name="gh-token"
+                        className="w-full bg-[var(--coal)] border border-[#b87333]/30 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none focus:border-[#c9a84c]/60 font-mono"
+                      />
+                    </div>
+                  </div>
+                  {ghError && (
+                    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-red-900/20 border border-red-500/20">
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-red-400">{ghError}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleGhFetch}
+                    disabled={!ghUrl.trim() || ghFetching}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#b87333]/20 border border-[#b87333]/30 text-[#c9a84c] text-[11px] font-bold uppercase tracking-wider hover:bg-[#b87333]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    {ghFetching
+                      ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Fetching file tree...</>
+                      : <><Github className="w-3.5 h-3.5" /> Fetch Repository</>
+                    }
+                  </button>
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-black/20 border border-[#3e1b0d]/20">
+                    <AlertCircle className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                      Public repositories work without a token. For private repos, create a
+                      GitHub <strong className="text-[var(--text-secondary)]">Personal Access Token</strong> with
+                      <code className="text-[#c9a84c] mx-1">repo</code> scope.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {mode === "folder" && (
                 <div
                   className={cn(
                     "border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer",
@@ -392,7 +533,8 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
                   <p className="text-[11px] text-[var(--text-muted)]">Code files will be parsed into .catest review segments</p>
                   <input ref={inputRef} type="file" className="hidden" {...{ webkitdirectory: "", directory: "" } as any} multiple onChange={(e) => e.target.files && handleFilesSelected(e.target.files)} />
                 </div>
-              ) : (
+              )}
+              {mode === "catestgroup" && (
                 <div
                   className="border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer border-[#b87333]/30 hover:border-[#b87333]/50 hover:bg-[#b87333]/5"
                   onClick={() => groupInputRef.current?.click()}
@@ -404,16 +546,18 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
                   <input ref={groupInputRef} type="file" className="hidden" accept=".catestgroup,.catest" multiple onChange={(e) => e.target.files && handleGroupFilesSelected(e.target.files)} />
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-black/30 border border-[#3e1b0d]/30">
-                  <div className="flex items-center gap-2 mb-1.5"><File className="w-3.5 h-3.5 text-[#c9a84c]" /><span className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-wider">.catest</span></div>
-                  <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">Per-file review segments (TSV). Each code block becomes a reviewable segment.</p>
+              {mode !== "github" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-black/30 border border-[#3e1b0d]/30">
+                    <div className="flex items-center gap-2 mb-1.5"><File className="w-3.5 h-3.5 text-[#c9a84c]" /><span className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-wider">.catest</span></div>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">Per-file review segments (TSV). Each code block becomes a reviewable segment.</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-black/30 border border-[#3e1b0d]/30">
+                    <div className="flex items-center gap-2 mb-1.5"><Archive className="w-3.5 h-3.5 text-[#c9a84c]" /><span className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-wider">.catestgroup</span></div>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">Project manifest (JSON). Lists all .catest files with metadata and language stats.</p>
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-black/30 border border-[#3e1b0d]/30">
-                  <div className="flex items-center gap-2 mb-1.5"><Archive className="w-3.5 h-3.5 text-[#c9a84c]" /><span className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-wider">.catestgroup</span></div>
-                  <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">Project manifest (JSON). Lists all .catest files with metadata and language stats.</p>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -439,6 +583,56 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
               </div>
               <div className="max-h-[40vh] overflow-y-auto custom-scrollbar rounded-lg border border-[#3e1b0d]/30 bg-black/20 p-2">
                 {tree.children.map((child) => <TreeView key={child.path} node={child} depth={0} onToggle={handleToggleFile} />)}
+              </div>
+            </div>
+          )}
+
+          {step === "preview" && mode === "github" && ghPreview && ghTree && (
+            <div className="space-y-4">
+              {/* Repo badge */}
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/30 border border-[#3e1b0d]/30">
+                <Github className="w-4 h-4 text-[#c9a84c] shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-bold text-[var(--text-primary)] truncate">{ghPreview.owner}/{ghPreview.repo}</p>
+                  <p className="text-[9px] text-[var(--text-muted)] font-mono">{ghPreview.branch}</p>
+                </div>
+                {ghPreview.truncated && (
+                  <Badge className="bg-[#e67e22]/10 text-[#e67e22] border-[#e67e22]/20 text-[9px] px-1.5 py-0.5 shrink-0">truncated</Badge>
+                )}
+                <Badge className="bg-[#4a8b6e]/10 text-[#4a8b6e] border-[#4a8b6e]/20 text-[9px] px-1.5 py-0.5 shrink-0">{ghPreview.files.length} files</Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 block">Project Name</label>
+                  <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder={`${ghPreview.owner}/${ghPreview.repo}`}
+                    className="w-full bg-[var(--coal)] border border-[#b87333]/30 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none focus:border-[#c9a84c]/60" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 block">Description</label>
+                  <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional"
+                    className="w-full bg-[var(--coal)] border border-[#b87333]/30 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]/40 focus:outline-none focus:border-[#c9a84c]/60" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-black/30 border border-[#3e1b0d]/30">
+                <Badge className="bg-[#4a8b6e]/10 text-[#4a8b6e] border-[#4a8b6e]/20 text-[9px] px-1.5 py-0.5">{countIncluded(ghTree)} included</Badge>
+                <Badge className="bg-[#b87333]/10 text-[#b87333] border-[#b87333]/20 text-[9px] px-1.5 py-0.5">{ghPreview.files.length} total</Badge>
+                <Badge className="bg-[#3e1b0d]/20 text-[var(--text-muted)] border-[#3e1b0d]/30 text-[9px] px-1.5 py-0.5">{formatBytes(ghPreview.totalSize)}</Badge>
+                <span className="text-[9px] text-[var(--text-muted)] ml-auto">Click file to toggle</span>
+              </div>
+              <div className="max-h-[35vh] overflow-y-auto custom-scrollbar rounded-lg border border-[#3e1b0d]/30 bg-black/20 p-2">
+                {ghTree.children.map((child) => (
+                  <TreeView key={child.path} node={child} depth={0} onToggle={(path) => {
+                    setGhTree((prev) => {
+                      if (!prev) return prev;
+                      const clone = JSON.parse(JSON.stringify(prev)) as TreeNode;
+                      function toggle(node: TreeNode) {
+                        if (!node.isDir && node.path === path) { node.included = !node.included; return; }
+                        node.children.forEach(toggle);
+                      }
+                      toggle(clone); return clone;
+                    });
+                  }} />
+                ))}
               </div>
             </div>
           )}
@@ -485,8 +679,12 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
           {step === "importing" && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <Loader2 className="w-10 h-10 text-[#c9a84c] animate-spin" />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Parsing {includedCount} files into segments...</p>
-              <p className="text-[11px] text-[var(--text-muted)]">Generating .catest files and project manifest</p>
+              {mode === "github"
+                ? <><p className="text-sm font-bold text-[var(--text-primary)]">Downloading & parsing from GitHub...</p>
+                    <p className="text-[11px] text-[var(--text-muted)]">Fetching file contents and generating segments</p></>
+                : <><p className="text-sm font-bold text-[var(--text-primary)]">Parsing {includedCount} files into segments...</p>
+                    <p className="text-[11px] text-[var(--text-muted)]">Generating .catest files and project manifest</p></>
+              }
             </div>
           )}
 
@@ -542,11 +740,17 @@ function ImportModal({ open, onClose, onImported }: { open: boolean; onClose: ()
             <Button variant="secondary" size="sm" onClick={() => setStep("select")}>← Back</Button>
             <div className="flex-1" />
             <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
-            {mode === "folder" ? (
+            {mode === "folder" && (
               <Button variant="copper" size="sm" onClick={handleImport} disabled={includedCount === 0 || !projectName.trim()}>
                 <Package className="w-3.5 h-3.5 mr-1.5" />Import {includedCount} Files
               </Button>
-            ) : (
+            )}
+            {mode === "github" && ghTree && (
+              <Button variant="copper" size="sm" onClick={handleImport} disabled={countIncluded(ghTree) === 0}>
+                <Github className="w-3.5 h-3.5 mr-1.5" />Import {countIncluded(ghTree)} Files
+              </Button>
+            )}
+            {mode === "catestgroup" && (
               <Button variant="copper" size="sm" onClick={handleImport} disabled={Object.keys(catestContents).length === 0 || !projectName.trim()}>
                 <Share2 className="w-3.5 h-3.5 mr-1.5" />Import {Object.keys(catestContents).length} Files
               </Button>
@@ -572,6 +776,7 @@ function ProjectListPlugin() {
   const [importOpen, setImportOpen] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useCookieState(COOKIE_KEYS.WORKSPACE_ACTIVE_PROJECT, "");
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
@@ -659,9 +864,9 @@ function ProjectListPlugin() {
         /* ─── Project cards ─── */
         <div className="grid grid-cols-1 gap-3">
           {projects.map((p) => (
-            <div key={p.id} className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-[#b87333]/15 to-[#c9a84c]/15 rounded-2xl opacity-0 group-hover:opacity-100 transition duration-500 blur" />
-              <div className="relative flex items-center justify-between rounded-xl border border-[#3e1b0d]/30 bg-black/40 hover:bg-[#b87333]/[0.04] px-5 py-4 transition-all">
+            <div key={p.id} className="group relative" onClick={() => setSelectedProjectId(p.id)}>
+              <div className={cn("absolute -inset-0.5 bg-gradient-to-r from-[#b87333]/15 to-[#c9a84c]/15 rounded-2xl transition duration-500 blur", selectedProjectId === p.id ? "opacity-100" : "opacity-0 group-hover:opacity-100")} />
+              <div className={cn("relative flex items-center justify-between rounded-xl border px-5 py-4 transition-all cursor-pointer", selectedProjectId === p.id ? "border-[#c9a84c]/30 bg-[#b87333]/[0.08]" : "border-[#3e1b0d]/30 bg-black/40 hover:bg-[#b87333]/[0.04]")}>
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   <div className={cn(
                     "w-10 h-10 rounded-xl flex items-center justify-center border shrink-0",

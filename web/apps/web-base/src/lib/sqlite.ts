@@ -41,6 +41,33 @@ export function getWorkspaceDb(workspaceId: string) {
 export function listWorkspaces() {
   if (!fs.existsSync(WORKSPACES_DIR)) return [];
   return fs.readdirSync(WORKSPACES_DIR)
-    .filter(f => f.endsWith('.db'))
+    .filter(f => f.endsWith('.db') && f !== 'app-state.db')
     .map(f => f.replace('.db', ''));
+}
+
+/**
+ * Opens (or creates) the shared app-state SQLite database at
+ * .workspaces/app-state.db.  This DB is NOT per-workspace — it stores
+ * per-user UI state that survives browser clears.
+ */
+export function getAppStateDb() {
+  if (!fs.existsSync(WORKSPACES_DIR)) {
+    fs.mkdirSync(WORKSPACES_DIR, { recursive: true });
+  }
+
+  const dbPath = path.join(WORKSPACES_DIR, 'app-state.db');
+  const db = new Database(dbPath);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_state (
+      user_id    TEXT NOT NULL,
+      app        TEXT NOT NULL,
+      key        TEXT NOT NULL,
+      value      TEXT NOT NULL,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      PRIMARY KEY (user_id, app, key)
+    )
+  `);
+
+  return db;
 }

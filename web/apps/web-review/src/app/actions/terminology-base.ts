@@ -2,6 +2,9 @@
 
 import { reviewQuery } from "@/lib/review-db";
 import { requireReader, requireEditor, requireAdmin } from "@/lib/permissions";
+import { upsertTBNode, deleteTBNode, getTermsByDomain, findTermNeighbors, listDomains, type RelatedTerm } from "@/lib/memgraph-tb";
+
+export type { RelatedTerm };
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -152,7 +155,19 @@ export async function addTBEntry(
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
       [tbName, sourceTerm, targetTerm, definition || null, domain || null, forbidden, user.userId]
     );
-    return { success: true, id: res.rows[0].id };
+    const entryId: string = res.rows[0].id;
+
+    // Background: sync to Neo4j graph (non-blocking, silent on error)
+    upsertTBNode({
+      id: entryId,
+      source_term: sourceTerm,
+      target_term: targetTerm,
+      domain: domain || null,
+      forbidden: !!forbidden,
+      tb_name: tbName,
+    }).catch((e) => console.warn("[TB/Neo4j]", (e as Error).message));
+
+    return { success: true, id: entryId };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -191,9 +206,54 @@ export async function deleteTBEntry(id: string): Promise<{ success: boolean }> {
   try {
     await requireAdmin();
     await reviewQuery(`DELETE FROM terminology_base WHERE id = $1`, [id]);
+    // Background: remove from Neo4j graph
+    deleteTBNode(id).catch((e) => console.warn("[TB/Neo4j] delete:", (e as Error).message));
     return { success: true };
   } catch {
     return { success: false };
+  }
+}
+
+// ── Graph Queries (Neo4j-backed) ───────────────────────────────────
+
+/** Get all terms in a given domain from the Neo4j graph. */
+export async function getTermsInDomain(
+  domain: string,
+  tbName: string = "default",
+  limit: number = 30,
+): Promise<RelatedTerm[]> {
+  try {
+    await requireReader();
+    return await getTermsByDomain(domain, tbName, limit);
+  } catch (e) {
+    console.warn("[TB/Neo4j] getTermsInDomain:", (e as Error).message);
+    return [];
+  }
+}
+
+/** Get terms in the same domain(s) as a given source term. */
+export async function getRelatedTerms(
+  sourceTerm: string,
+  tbName: string = "default",
+  limit: number = 15,
+): Promise<RelatedTerm[]> {
+  try {
+    await requireReader();
+    return await findTermNeighbors(sourceTerm, tbName, limit);
+  } catch (e) {
+    console.warn("[TB/Neo4j] getRelatedTerms:", (e as Error).message);
+    return [];
+  }
+}
+
+/** List all domain names present in the Neo4j graph. */
+export async function listTBDomains(tbName?: string): Promise<string[]> {
+  try {
+    await requireReader();
+    return await listDomains(tbName);
+  } catch (e) {
+    console.warn("[TB/Neo4j] listDomains:", (e as Error).message);
+    return [];
   }
 }
 
