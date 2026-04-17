@@ -4,11 +4,12 @@ import React, {
   useState, useCallback, useEffect, useRef, useMemo,
 } from "react";
 import {
-  Database, GitBranch, Terminal, Code2, Play, Eye, Loader2,
+  Database, GitBranch, Terminal, Play, Eye, Loader2,
   CheckCircle2, AlertTriangle, Copy, RefreshCw, ChevronDown,
-  ChevronRight, Box, Link2, Zap, Maximize2, Minimize2,
-  MousePointer, ZoomIn, ZoomOut, RotateCcw, Sparkles, X,
-  Activity, FileCode2, Trash2,
+  ChevronRight, Box, Link2, Zap, Maximize2,
+  ZoomIn, ZoomOut, RotateCcw, Sparkles, X,
+  Activity, FileCode2, Trash2, ArrowRight, ArrowLeft,
+  PenLine, ShieldCheck, Info,
 } from "lucide-react";
 import { Badge, Button, cn } from "@catest/ui";
 
@@ -523,47 +524,432 @@ function AIChatPanel({
   );
 }
 
-// ── Left Input Panel (Code / Cypher tabs) ────────────────────────────────────
+// ── Annotation helpers ────────────────────────────────────────────────────────
+
+const ANNO_RE = /^\/\*[\s\S]*?\*\//;
+
+function parseAnnotationBlock(code: string) {
+  const m = code.match(ANNO_RE);
+  if (!m) return { found: false, block: "", stmts: [] as string[], codeBody: code };
+  const block = m[0];
+  const stmts = block.split("\n")
+    .map(l => l.replace(/^\s*\*\s?/, "").trim())
+    .filter(l => /^(MERGE|CREATE)\s/i.test(l));
+  return { found: true, block, stmts, codeBody: code.slice(m[0].length).trimStart() };
+}
+
+function buildAnnotationBlock(stmts: string[], prefix: string, lang: string) {
+  const now = new Date().toISOString().split("T")[0];
+  return [
+    "/*",
+    " * ┌──────────────────────────────────────────────────────┐",
+    " * │  CATEST · Code Structure Annotation                  │",
+    ` * │  Prefix: ${prefix.padEnd(12)} Language: ${lang.padEnd(15)}│`,
+    ` * │  Date:   ${now.padEnd(43)}│`,
+    " * └──────────────────────────────────────────────────────┘",
+    " *",
+    ...stmts.map(s => ` * ${s.endsWith(";") ? s : s + ";"}`),
+    " */",
+  ].join("\n");
+}
+
+function injectAnnotation(code: string, annoBlock: string) {
+  const cleaned = code.replace(ANNO_RE, "").trimStart();
+  return annoBlock.trimEnd() + "\n\n" + cleaned;
+}
+
+// ── Code Tab (3-step wizard) ──────────────────────────────────────────────────
+
+type CodeStep = "input" | "annotate" | "import";
+
+function CodeTab({
+  lang, setLang, prefix, setPrefix, memgraphOnline, onGraphRefresh,
+}: {
+  lang: string; setLang: (v: string) => void;
+  prefix: string; setPrefix: (v: string) => void;
+  memgraphOnline: boolean;
+  onGraphRefresh: () => void;
+}) {
+  const [code, setCode] = useState("");
+  const [step, setStep] = useState<CodeStep>("input");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [annotationEdit, setAnnotationEdit] = useState("");
+  const [existingInfo, setExistingInfo] = useState<{ found: boolean; stmts: string[] }>({ found: false, stmts: [] });
+  const [newStmts, setNewStmts] = useState<string[]>([]);
+  const [annoStatus, setAnnoStatus] = useState<"new" | "same" | "changed">("new");
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ nodes: number; edges: number; errors: string[] } | null>(null);
+
+  // Auto-detect annotation on code change
+  useEffect(() => {
+    const p = parseAnnotationBlock(code);
+    setExistingInfo({ found: p.found, stmts: p.stmts });
+  }, [code]);
+
+  async function analyze() {
+    if (!code.trim()) return;
+    setAnalyzing(true);
+    setImportResult(null);
+    try {
+      const body = parseAnnotationBlock(code).codeBody || code;
+      const res = await fetch(`${VECTOR_OPS}/v1/code/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: body, language: lang, label_prefix: prefix }),
+      });
+      const data: AnalysisResult = await res.json();
+      const stmts = (data.statements ?? []).map(s => s.cypher);
+      setNewStmts(stmts);
+
+      // Compare with existing annotation
+      let status: "new" | "same" | "changed" = "new";
+      if (existingInfo.found) {
+        const normalize = (s: string) => s.trim().replace(/;$/, "").replace(/\s+/g, " ");
+        const existSet = new Set(existingInfo.stmts.map(normalize));
+        const newSet  = new Set(stmts.map(normalize));
+        const allSame = existSet.size === newSet.size && [...newSet].every(s => existSet.has(s));
+        status = allSame ? "same" : "changed";
+      }
+      setAnnoStatus(status);
+      setAnnotationEdit(buildAnnotationBlock(stmts, prefix, lang));
+      setStep("annotate");
+    } catch { /* ignore */ }
+    setAnalyzing(false);
+  }
+
+  function writeToCode() {
+    setCode(injectAnnotation(code, annotationEdit));
+    setStep("import");
+  }
+
+  function useExistingAndImport() {
+    // Skip analysis, go straight to import using existing annotation
+    setStep("import");
+  }
+
+  async function doImport() {
+    const { stmts } = parseAnnotationBlock(code);
+    const toRun = stmts.length ? stmts : newStmts;
+    if (!toRun.length || !memgraphOnline) return;
+    setImporting(true);
+    try {
+      const res = await fetch(`${VECTOR_OPS}/v1/code/execute-cypher`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statements: toRun }),
+      });
+      const data = await res.json();
+      setImportResult({ nodes: data.node_count ?? 0, edges: data.edge_count ?? 0, errors: data.errors ?? [] });
+      onGraphRefresh();
+    } catch { /* ignore */ }
+    setImporting(false);
+  }
+
+  // Step labels
+  const STEPS: { key: CodeStep; label: string; icon: React.ReactNode }[] = [
+    { key: "input",    label: "Code",     icon: <FileCode2 className="w-3 h-3" /> },
+    { key: "annotate", label: "Annotate", icon: <PenLine   className="w-3 h-3" /> },
+    { key: "import",   label: "Import",   icon: <Zap       className="w-3 h-3" /> },
+  ];
+
+  // Diff: lines only in existing (to remove) / only in new (to add)
+  const normalize = (s: string) => s.trim().replace(/;$/, "").replace(/\s+/g, " ");
+  const existSet = new Set(existingInfo.stmts.map(normalize));
+  const newSet   = new Set(newStmts.map(normalize));
+  const removed  = existingInfo.stmts.filter(s => !newSet.has(normalize(s)));
+  const added    = newStmts.filter(s => !existSet.has(normalize(s)));
+
+  // Import-step: statements from code annotation (after write) or newStmts
+  const importStmts = parseAnnotationBlock(code).stmts.length
+    ? parseAnnotationBlock(code).stmts
+    : newStmts;
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
+      {/* ── Step indicator ── */}
+      <div className="flex items-center gap-0.5">
+        {STEPS.map((s, i) => (
+          <React.Fragment key={s.key}>
+            <button
+              onClick={() => {
+                if (s.key === "input") setStep("input");
+                if (s.key === "annotate" && step === "import") setStep("annotate");
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
+                step === s.key
+                  ? "bg-[#b87333]/15 border border-[#b87333]/35 text-[#c9a84c]"
+                  : "border border-transparent text-[var(--text-muted)]/35 hover:text-[var(--text-muted)]"
+              )}
+            >
+              <span className={cn(
+                "w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black border",
+                step === s.key
+                  ? "border-[#b87333]/50 bg-[#b87333]/20 text-[#c9a84c]"
+                  : "border-[var(--text-muted)]/20 text-[var(--text-muted)]/30"
+              )}>{i + 1}</span>
+              {s.icon}
+              {s.label}
+            </button>
+            {i < STEPS.length - 1 && (
+              <ArrowRight className="w-3 h-3 text-[var(--text-muted)]/20 shrink-0" />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* ════════════════════ STEP 1: CODE INPUT ════════════════════ */}
+      {step === "input" && (<>
+        {/* Lang + Prefix */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Language</label>
+            <select value={lang} onChange={e => setLang(e.target.value)}
+              className="w-full font-mono text-xs rounded-xl px-3 py-2 text-[#e8d5b5] focus:outline-none"
+              style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)" }}>
+              {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+          <div className="w-28">
+            <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Label Prefix</label>
+            <input value={prefix} onChange={e => setPrefix(e.target.value)}
+              className="w-full font-mono text-xs rounded-xl px-3 py-2 text-[#e8d5b5] focus:outline-none"
+              style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)" }} />
+          </div>
+        </div>
+
+        {/* Existing annotation badge */}
+        {existingInfo.found && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
+            style={{ background: "rgba(201,168,76,0.06)", borderColor: "rgba(201,168,76,0.2)" }}>
+            <ShieldCheck className="w-3.5 h-3.5 text-[#c9a84c] shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-bold text-[#c9a84c]">Annotation detected · {existingInfo.stmts.length} statements</span>
+              <p className="text-[8px] font-mono text-[#c9a84c]/40 mt-0.5">Re-analyze to verify or optimize</p>
+            </div>
+            <button onClick={useExistingAndImport}
+              className="flex items-center gap-1 text-[9px] font-bold text-[#4a8b6e] hover:text-[#5ba87e] transition-colors shrink-0">
+              Import as-is <ArrowRight className="w-2.5 h-2.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Code textarea */}
+        <div className="relative">
+          <textarea
+            value={code} onChange={e => setCode(e.target.value)}
+            placeholder="Paste source code here…&#10;&#10;Tip: If the code already has a /* Cypher annotation */ header,&#10;it will be detected automatically."
+            rows={12}
+            className="w-full font-mono text-xs leading-relaxed rounded-xl px-4 py-3 text-[#e8d5b5] placeholder-[#8a7b6a]/30 focus:outline-none resize-none"
+            style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6)" }}
+          />
+          <div className="absolute inset-0 pointer-events-none rounded-xl opacity-[0.02]"
+            style={{ background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.1) 2px,rgba(255,255,255,0.1) 4px)" }} />
+        </div>
+
+        <Button onClick={analyze} disabled={analyzing || !code.trim()}
+          className="w-full h-9 text-[10px] font-bold bg-[#b87333]/12 border-[#b87333]/30 text-[#c9a84c] hover:bg-[#b87333]/22 flex items-center justify-center gap-2">
+          {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {analyzing ? "Analyzing…" : existingInfo.found ? "Re-analyze & Compare →" : "Analyze →"}
+        </Button>
+      </>)}
+
+      {/* ════════════════════ STEP 2: ANNOTATION ════════════════════ */}
+      {step === "annotate" && (<>
+
+        {/* Status banner */}
+        {annoStatus === "same" && (
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border"
+            style={{ background: "rgba(74,139,110,0.08)", borderColor: "rgba(74,139,110,0.25)" }}>
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#4a8b6e] shrink-0" />
+            <div>
+              <p className="text-[9px] font-bold text-[#4a8b6e]">Annotation up to date — no changes needed</p>
+              <p className="text-[8px] font-mono text-[#4a8b6e]/50 mt-0.5">{existingInfo.stmts.length} statements verified</p>
+            </div>
+          </div>
+        )}
+        {annoStatus === "changed" && (
+          <div className="rounded-xl border overflow-hidden"
+            style={{ borderColor: "rgba(201,168,76,0.25)" }}>
+            <div className="flex items-center gap-2 px-3 py-2"
+              style={{ background: "rgba(201,168,76,0.06)" }}>
+              <Info className="w-3.5 h-3.5 text-[#c9a84c] shrink-0" />
+              <p className="text-[9px] font-bold text-[#c9a84c]">
+                Changes detected vs existing annotation
+                {removed.length > 0 && <span className="ml-2 text-red-400/70">−{removed.length}</span>}
+                {added.length > 0   && <span className="ml-1 text-[#4a8b6e]">+{added.length}</span>}
+              </p>
+            </div>
+            <div className="p-2 space-y-0.5 max-h-24 overflow-y-auto">
+              {removed.map((s, i) => (
+                <div key={`r${i}`} className="font-mono text-[8px] px-2 py-0.5 rounded text-red-400/60 line-through"
+                  style={{ background: "rgba(139,74,74,0.08)" }}>{s}</div>
+              ))}
+              {added.map((s, i) => (
+                <div key={`a${i}`} className="font-mono text-[8px] px-2 py-0.5 rounded text-[#4a8b6e]"
+                  style={{ background: "rgba(74,139,110,0.08)" }}>{s}</div>
+              ))}
+            </div>
+          </div>
+        )}
+        {annoStatus === "new" && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
+            style={{ background: "rgba(184,115,51,0.06)", borderColor: "rgba(184,115,51,0.2)" }}>
+            <Sparkles className="w-3.5 h-3.5 text-[#b87333] shrink-0" />
+            <p className="text-[9px] font-bold text-[#c9a84c]">
+              New annotation generated · {newStmts.length} statements
+            </p>
+          </div>
+        )}
+
+        {/* Annotation editor */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+              Cypher Annotation · Edit if needed
+            </label>
+            <button onClick={() => navigator.clipboard?.writeText(annotationEdit)}
+              className="flex items-center gap-1 text-[9px] font-bold text-[var(--text-muted)] hover:text-[#c9a84c] transition-colors">
+              <Copy className="w-2.5 h-2.5" /> Copy
+            </button>
+          </div>
+          <textarea
+            value={annotationEdit} onChange={e => setAnnotationEdit(e.target.value)}
+            rows={10}
+            className="w-full font-mono text-[10px] leading-relaxed rounded-xl px-4 py-3 text-[#4a8b6e]/80 focus:outline-none resize-none"
+            style={{ background: "#040302", border: "1px solid rgba(74,139,110,0.2)", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6)" }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => setStep("input")}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-xl border text-[9px] font-bold border-[#b87333]/20 bg-black/20 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all">
+            <ArrowLeft className="w-3 h-3" /> Back
+          </button>
+          <Button onClick={writeToCode}
+            className="flex-1 h-8 text-[10px] font-bold bg-[#b87333]/12 border-[#b87333]/30 text-[#c9a84c] hover:bg-[#b87333]/22 flex items-center justify-center gap-1.5">
+            <PenLine className="w-3 h-3" /> Write to Code →
+          </Button>
+          {annoStatus === "same" && existingInfo.found && (
+            <Button onClick={useExistingAndImport}
+              className="h-8 text-[10px] font-bold bg-[#4a8b6e]/12 border-[#4a8b6e]/30 text-[#4a8b6e] hover:bg-[#4a8b6e]/22 flex items-center gap-1.5">
+              Skip <ArrowRight className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
+      </>)}
+
+      {/* ════════════════════ STEP 3: IMPORT ════════════════════ */}
+      {step === "import" && (<>
+
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
+          style={{ background: "rgba(74,139,110,0.06)", borderColor: "rgba(74,139,110,0.2)" }}>
+          <ShieldCheck className="w-3.5 h-3.5 text-[#4a8b6e] shrink-0" />
+          <div>
+            <p className="text-[9px] font-bold text-[#4a8b6e]">Ready to import · {importStmts.length} statements</p>
+            <p className="text-[8px] font-mono text-[#4a8b6e]/40 mt-0.5">
+              Executing MERGE statements from annotation header
+            </p>
+          </div>
+        </div>
+
+        {/* Statement preview */}
+        <div>
+          <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">
+            Statements to Execute
+          </label>
+          <div className="rounded-xl border overflow-hidden"
+            style={{ background: "#040302", borderColor: "rgba(74,139,110,0.15)" }}>
+            <div className="max-h-48 overflow-y-auto p-3 space-y-1">
+              {importStmts.length === 0 ? (
+                <p className="text-[9px] font-mono text-[var(--text-muted)]/30 text-center py-4">
+                  No annotation found in code. Go back and write annotation first.
+                </p>
+              ) : importStmts.map((s, i) => (
+                <div key={i} className="font-mono text-[9px] text-[#4a8b6e]/70 leading-relaxed">
+                  <span className="text-[#b87333]/30 select-none mr-2">{String(i + 1).padStart(2, "0")}</span>
+                  {s}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Result */}
+        {importResult && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
+            style={{
+              background: importResult.errors.length ? "rgba(139,74,74,0.08)" : "rgba(74,139,110,0.08)",
+              borderColor: importResult.errors.length ? "rgba(139,74,74,0.25)" : "rgba(74,139,110,0.25)",
+            }}>
+            {importResult.errors.length
+              ? <AlertTriangle className="w-3.5 h-3.5 text-[#8b4a4a]" />
+              : <CheckCircle2 className="w-3.5 h-3.5 text-[#4a8b6e]" />}
+            <span className="text-[10px] font-bold" style={{ color: importResult.errors.length ? "#8b4a4a" : "#4a8b6e" }}>
+              {importResult.errors.length
+                ? `${importResult.errors.length} error(s) — check Memgraph`
+                : `${importResult.nodes} nodes · ${importResult.edges} edges imported`}
+            </span>
+          </div>
+        )}
+
+        {!memgraphOnline && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
+            style={{ background: "rgba(139,74,74,0.08)", borderColor: "rgba(139,74,74,0.25)" }}>
+            <AlertTriangle className="w-3.5 h-3.5 text-[#8b4a4a]" />
+            <span className="text-[10px] font-bold text-[#8b4a4a]">Memgraph offline — cannot import</span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => setStep("annotate")}
+            className="flex items-center gap-1.5 h-9 px-3 rounded-xl border text-[9px] font-bold border-[#b87333]/20 bg-black/20 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all">
+            <ArrowLeft className="w-3 h-3" /> Back
+          </button>
+          <Button
+            onClick={doImport}
+            disabled={importing || !importStmts.length || !memgraphOnline}
+            className="flex-1 h-9 text-[10px] font-bold bg-[#4a8b6e]/15 border-[#4a8b6e]/35 text-[#4a8b6e] hover:bg-[#4a8b6e]/25 flex items-center justify-center gap-2">
+            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+            {importing ? "Importing…" : "Confirm Import → Memgraph"}
+          </Button>
+        </div>
+      </>)}
+    </div>
+  );
+}
+
+// ── Left Input Panel ──────────────────────────────────────────────────────────
 
 const QUICK_CYPHERS = [
   { label: "All nodes", q: "MATCH (n) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100" },
   { label: "With edges", q: "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50" },
-  { label: "By label…", q: "MATCH (n:Function) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 30" },
+  { label: "By label…",  q: "MATCH (n:Function) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 30" },
   { label: "Class tree", q: "MATCH (c)-[r]->(m) WHERE 'Class' IN labels(c) OR any(l IN labels(c) WHERE l ENDS WITH '_Class') RETURN c, r, m LIMIT 40" },
 ];
 
 function LeftInputPanel({
-  lang, setLang, prefix, setPrefix,
-  code, setCode,
-  analyzing, importing, autoImport, setAutoImport,
-  preview, importResult, cypherAnnotation,
-  memgraphOnline,
-  onPreview, onImport, onRunCypher,
+  lang, setLang, prefix, setPrefix, memgraphOnline, onGraphRefresh, onRunCypher,
 }: {
   lang: string; setLang: (v: string) => void;
   prefix: string; setPrefix: (v: string) => void;
-  code: string; setCode: (v: string) => void;
-  analyzing: boolean; importing: boolean;
-  autoImport: boolean; setAutoImport: (v: boolean) => void;
-  preview: AnalysisResult | null;
-  importResult: AnalysisResult | null;
-  cypherAnnotation: string;
   memgraphOnline: boolean;
-  onPreview: () => void;
-  onImport: () => void;
+  onGraphRefresh: () => void;
   onRunCypher: (cypher: string) => void;
 }) {
   const [tab, setTab] = useState<"code" | "cypher">("code");
   const [cypher, setCypher] = useState("MATCH (n) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100");
   const [running, setRunning] = useState(false);
-  const [runResult, setRunResult] = useState<{ node_count: number; edge_count: number } | null>(null);
+  const [runDone, setRunDone] = useState(false);
 
   async function runCypher() {
     if (!cypher.trim()) return;
-    setRunning(true); setRunResult(null);
+    setRunning(true); setRunDone(false);
     await onRunCypher(cypher);
-    setRunning(false);
-    setRunResult({ node_count: 0, edge_count: 0 }); // graph updates externally
+    setRunning(false); setRunDone(true);
   }
 
   const TAB_STYLE = (active: boolean) => cn(
@@ -591,114 +977,26 @@ function LeftInputPanel({
             {tab === "cypher" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#4a8b6e] to-[#5ba87e]" />}
           </button>
           <div className="flex-1" />
-          {/* Active indicator */}
           <div className="flex items-center pr-4">
             <span className="text-[8px] font-mono text-[var(--text-muted)]/30">
-              {tab === "code" ? "AI → Cypher → Graph" : "Cypher → Graph"}
+              {tab === "code" ? "Code → Annotate → Import" : "Cypher → Graph"}
             </span>
           </div>
         </div>
 
         {/* ── CODE TAB ── */}
         {tab === "code" && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {/* Controls row */}
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Language</label>
-                <select value={lang} onChange={e => setLang(e.target.value)}
-                  className="w-full font-mono text-xs rounded-xl px-3 py-2 text-[#e8d5b5] focus:outline-none"
-                  style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)" }}>
-                  {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </div>
-              <div className="w-28">
-                <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Label Prefix</label>
-                <input value={prefix} onChange={e => setPrefix(e.target.value)}
-                  className="w-full font-mono text-xs rounded-xl px-3 py-2 text-[#e8d5b5] focus:outline-none"
-                  style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)" }} />
-              </div>
-            </div>
-
-            {/* Code textarea */}
-            <div className="relative">
-              <textarea
-                value={code} onChange={e => setCode(e.target.value)}
-                placeholder="Paste source code here…"
-                rows={10}
-                className="w-full font-mono text-xs leading-relaxed rounded-xl px-4 py-3 text-[#e8d5b5] placeholder-[#8a7b6a]/40 focus:outline-none resize-none"
-                style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6)" }}
-              />
-              <div className="absolute inset-0 pointer-events-none rounded-xl opacity-[0.025]"
-                style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)" }} />
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button onClick={onPreview} disabled={analyzing || !code.trim()}
-                className="h-8 text-[10px] font-bold bg-[#b87333]/12 border-[#b87333]/30 text-[#c9a84c] hover:bg-[#b87333]/22 flex items-center gap-1.5">
-                {analyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />}
-                Preview
-              </Button>
-              <Button onClick={onImport} disabled={importing || !code.trim() || !memgraphOnline}
-                className="h-8 text-[10px] font-bold bg-[#4a8b6e]/12 border-[#4a8b6e]/30 text-[#4a8b6e] hover:bg-[#4a8b6e]/22 flex items-center gap-1.5">
-                {importing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                Import → Graph
-              </Button>
-              <button onClick={() => setAutoImport(!autoImport)}
-                className={cn("flex items-center gap-1.5 h-8 px-3 rounded-xl border text-[10px] font-bold transition-all",
-                  autoImport ? "bg-[#4a8b6e]/15 border-[#4a8b6e]/40 text-[#4a8b6e]" : "bg-black/20 border-[#3e1b0d]/30 text-[var(--text-muted)]")}>
-                <span className={cn("w-2 h-2 rounded-full border-2 flex items-center justify-center",
-                  autoImport ? "border-[#4a8b6e]" : "border-[var(--text-muted)]/40")}>
-                  {autoImport && <span className="w-1 h-1 rounded-full bg-[#4a8b6e]" />}
-                </span>
-                Auto
-              </button>
-            </div>
-
-            {importResult && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
-                style={{ background: "rgba(74,139,110,0.08)", borderColor: "rgba(74,139,110,0.25)" }}>
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#4a8b6e]" />
-                <span className="text-[10px] font-bold text-[#4a8b6e]">
-                  {importResult.node_count} nodes · {importResult.edge_count} edges imported
-                </span>
-                {importResult.errors?.length > 0 && (
-                  <Badge className="bg-red-900/20 border-red-500/25 text-red-400 text-[9px]">
-                    {importResult.errors.length} err
-                  </Badge>
-                )}
-              </div>
-            )}
-
-            {cypherAnnotation && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Cypher Annotation</span>
-                  <button onClick={() => navigator.clipboard?.writeText(cypherAnnotation)}
-                    className="flex items-center gap-1 text-[9px] font-bold text-[var(--text-muted)] hover:text-[#c9a84c] transition-colors">
-                    <Copy className="w-2.5 h-2.5" /> Copy
-                  </button>
-                </div>
-                <pre className="font-mono text-[9px] text-[#4a8b6e]/70 bg-[#040302] rounded-xl p-3 max-h-36 overflow-auto border border-[#4a8b6e]/12 whitespace-pre-wrap leading-relaxed">
-                  {cypherAnnotation}
-                </pre>
-              </div>
-            )}
-
-            {preview && (
-              <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--text-muted)]/60">
-                <Activity className="w-3 h-3" />
-                <span>{preview.node_count}n · {preview.edge_count}e · {preview.statements.length} stmts</span>
-              </div>
-            )}
-          </div>
+          <CodeTab
+            lang={lang} setLang={setLang}
+            prefix={prefix} setPrefix={setPrefix}
+            memgraphOnline={memgraphOnline}
+            onGraphRefresh={onGraphRefresh}
+          />
         )}
 
         {/* ── CYPHER TAB ── */}
         {tab === "cypher" && (
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {/* Quick query chips */}
             <div>
               <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Quick Queries</label>
               <div className="flex flex-wrap gap-1.5">
@@ -712,25 +1010,19 @@ function LeftInputPanel({
               </div>
             </div>
 
-            {/* Cypher textarea */}
             <div>
               <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Cypher Query</label>
-              <div className="relative">
-                <textarea
-                  value={cypher} onChange={e => setCypher(e.target.value)}
-                  placeholder="MATCH (n) RETURN n LIMIT 50"
-                  rows={10}
-                  onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) runCypher(); }}
-                  className="w-full font-mono text-xs leading-relaxed rounded-xl px-4 py-3 text-[#e8d5b5] placeholder-[#8a7b6a]/40 focus:outline-none resize-none"
-                  style={{ background: "#060402", border: "1px solid rgba(74,139,110,0.2)", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6)" }}
-                />
-                <div className="absolute inset-0 pointer-events-none rounded-xl opacity-[0.025]"
-                  style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)" }} />
-              </div>
+              <textarea
+                value={cypher} onChange={e => setCypher(e.target.value)}
+                placeholder="MATCH (n) RETURN n LIMIT 50"
+                rows={10}
+                onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) runCypher(); }}
+                className="w-full font-mono text-xs leading-relaxed rounded-xl px-4 py-3 text-[#e8d5b5] placeholder-[#8a7b6a]/40 focus:outline-none resize-none"
+                style={{ background: "#060402", border: "1px solid rgba(74,139,110,0.2)", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6)" }}
+              />
               <div className="text-[8px] font-mono text-[var(--text-muted)]/30 mt-1">Ctrl+Enter to run</div>
             </div>
 
-            {/* Run button */}
             <Button onClick={runCypher} disabled={running || !cypher.trim() || !memgraphOnline}
               className="w-full h-9 text-[10px] font-bold bg-[#4a8b6e]/15 border-[#4a8b6e]/35 text-[#4a8b6e] hover:bg-[#4a8b6e]/25 flex items-center justify-center gap-2">
               {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
@@ -744,11 +1036,9 @@ function LeftInputPanel({
                 <span className="text-[10px] font-bold text-[#8b4a4a]">Memgraph offline</span>
               </div>
             )}
-
-            {runResult !== null && (
+            {runDone && (
               <div className="flex items-center gap-2 text-[10px] font-mono text-[#4a8b6e]/60">
-                <CheckCircle2 className="w-3 h-3" />
-                Query complete — graph updated
+                <CheckCircle2 className="w-3 h-3" /> Query complete — graph updated
               </div>
             )}
           </div>
@@ -848,16 +1138,9 @@ export default function GraphPage() {
   // Status
   const [statuses, setStatuses] = useState<BackendStatus[]>([]);
 
-  // Code analyzer state
+  // Shared lang/prefix (passed to CodeTab)
   const [lang, setLang] = useState("typescript");
   const [prefix, setPrefix] = useState("Test");
-  const [code, setCode] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [autoImport, setAutoImport] = useState(false);
-  const [preview, setPreview] = useState<AnalysisResult | null>(null);
-  const [importResult, setImportResult] = useState<AnalysisResult | null>(null);
-  const [cypherAnnotation, setCypherAnnotation] = useState("");
 
   // Graph visualization state
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [], node_count: 0, edge_count: 0 });
@@ -890,57 +1173,6 @@ export default function GraphPage() {
     setGraphLoading(false);
   }, [prefix]);
 
-  // Build annotation header
-  function buildHeader(stmts: CypherStatement[]) {
-    const now = new Date().toISOString().split("T")[0];
-    return [
-      "/*",
-      " * ┌──────────────────────────────────────────────────────┐",
-      ` * │  CATEST · Code Structure Annotation                  │`,
-      ` * │  Prefix: ${prefix.padEnd(12)} Language: ${lang.padEnd(15)}│`,
-      ` * │  Date:   ${now.padEnd(43)}│`,
-      " * └──────────────────────────────────────────────────────┘",
-      " *",
-      ...stmts.map(s => ` * ${s.cypher}`),
-      " */",
-    ].join("\n");
-  }
-
-  async function handlePreview() {
-    if (!code.trim()) return;
-    setAnalyzing(true); setPreview(null); setImportResult(null);
-    try {
-      const res = await fetch(`${VECTOR_OPS}/v1/code/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, language: lang, label_prefix: prefix }),
-      });
-      const data: AnalysisResult = await res.json();
-      setPreview(data);
-      setCypherAnnotation(buildHeader(data.statements));
-      if (autoImport) await doImport();
-    } catch { /* ignore */ }
-    setAnalyzing(false);
-  }
-
-  async function doImport() {
-    if (!code.trim()) return;
-    setImporting(true);
-    try {
-      const res = await fetch(`${VECTOR_OPS}/v1/code/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, language: lang, label_prefix: prefix }),
-      });
-      const data: AnalysisResult = await res.json();
-      setImportResult(data);
-      if (!preview && data.statements?.length) setCypherAnnotation(buildHeader(data.statements));
-      // Auto-refresh graph
-      await fetchGraph();
-    } catch { /* ignore */ }
-    setImporting(false);
-  }
-
   const [deleting, setDeleting] = useState(false);
 
   async function deleteDisplayed() {
@@ -959,6 +1191,7 @@ export default function GraphPage() {
     setDeleting(false);
   }
 
+  // Remove old unused state/functions (handlePreview, doImport, buildHeader)
   const memgraphOnline = statuses.find(s => s.backend === "memgraph")?.connected ?? false;
   const selectedNode = graphData.nodes.find(n => n.id === selectedId) ?? null;
 
@@ -987,14 +1220,8 @@ export default function GraphPage() {
         <LeftInputPanel
           lang={lang} setLang={setLang}
           prefix={prefix} setPrefix={setPrefix}
-          code={code} setCode={setCode}
-          analyzing={analyzing} importing={importing}
-          autoImport={autoImport} setAutoImport={setAutoImport}
-          preview={preview} importResult={importResult}
-          cypherAnnotation={cypherAnnotation}
           memgraphOnline={memgraphOnline}
-          onPreview={handlePreview}
-          onImport={doImport}
+          onGraphRefresh={() => fetchGraph()}
           onRunCypher={fetchGraph}
         />
 

@@ -260,3 +260,26 @@ async def chat(req: ChatRequest):
 
     answer = await _call_ai(messages)
     return ChatResponse(answer=answer)
+
+
+# ── Execute raw Cypher (no AI step) ───────────────────────────────────────────
+
+class ExecuteCypherRequest(BaseModel):
+    """Execute a list of raw Cypher statements directly — used when importing from annotation."""
+    statements: list[str]
+
+
+class ExecuteCypherResponse(BaseModel):
+    node_count: int
+    edge_count: int
+    errors: list[str] = []
+
+
+@router.post("/code/execute-cypher", response_model=ExecuteCypherResponse)
+async def execute_cypher(req: ExecuteCypherRequest):
+    """Execute raw Cypher statements without AI analysis step."""
+    stmts = [CypherStatement(cypher=s.strip()) for s in req.statements if s.strip()]
+    if not stmts:
+        return ExecuteCypherResponse(node_count=0, edge_count=0)
+    node_count, edge_count, errors = await _execute_cypher_batch(stmts)
+    return ExecuteCypherResponse(node_count=node_count, edge_count=edge_count, errors=errors)

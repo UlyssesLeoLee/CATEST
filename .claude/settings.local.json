@@ -827,7 +827,8 @@
       "Bash(powershell.exe -Command \"Stop-Process -Id 3188 -Force\")",
       "Bash(powershell.exe -Command \"Start-Sleep 6; try { \\(Invoke-WebRequest -Uri 'http://localhost:34085/healthz' -UseBasicParsing\\).StatusCode } catch { 'NOT UP' }\")",
       "Bash(curl -s -X POST http://localhost:34085/v1/chat -H 'Content-Type: application/json' -d '{ *)",
-      "Bash(powershell.exe -Command \"Stop-Process -Id 44412 -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell.exe -Command \"Stop-Process -Id 44412 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(powershell.exe -Command \"cd E:\\\\CATEST; .\\\\k8s-build.ps1 -Only web-rag\")"
     ]
   }
 }
