@@ -11,6 +11,7 @@ dependencies = [
     # --- AI / LLM ---
     "langgraph>=0.4.0",
     "langchain-anthropic>=0.3.0",
+    "langchain-openai>=0.3.0",
     "langsmith>=0.3.0",
     # --- MCP ---
     "mcp[cli]>=1.0.0",

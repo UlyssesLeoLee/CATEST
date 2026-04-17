@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from catest_ai.common.config import settings
 from catest_ai.common.llm import init_tracing
 from catest_ai.common.qdrant_service import qdrant_service
-from catest_ai.vector_ops.routes import cluster_ops, code_analysis, graph_ops, qdrant_ops
+from catest_ai.vector_ops.routes import agent_routes, cluster_ops, code_analysis, graph_ops, qdrant_ops
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,7 @@ def create_app() -> FastAPI:
     app.include_router(graph_ops.router, prefix="/v1")
     app.include_router(cluster_ops.router, prefix="/v1")
     app.include_router(code_analysis.router, prefix="/v1")
+    app.include_router(agent_routes.router, prefix="/v1")
 
     return app
 

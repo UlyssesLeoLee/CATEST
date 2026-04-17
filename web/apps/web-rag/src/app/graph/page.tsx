@@ -558,27 +558,64 @@ function injectAnnotation(code: string, annoBlock: string) {
   return annoBlock.trimEnd() + "\n\n" + cleaned;
 }
 
+// ── Step progress type ────────────────────────────────────────────────────────
+
+interface StepEvent {
+  step: string;
+  label?: string;
+  status: "running" | "done" | "error";
+  output?: Record<string, unknown>;
+}
+
+const STEP_LABELS: Record<string, string> = {
+  detect_language:      "Detecting language",
+  enrich_context:       "Extracting structure",
+  generate_cypher:      "Generating Cypher",
+  validate_cypher:      "Validating syntax",
+  semantic_validate:    "Checking accuracy",
+  fix_cypher:           "Repairing errors",
+  execute_cypher:       "Writing to Memgraph",
+  post_import_suggest:  "Generating insights",
+};
+
+interface CodeInventory {
+  classes: string[];
+  functions: string[];
+  imports: string[];
+  complexity: string;
+}
+
 // ── Code Tab (3-step wizard) ──────────────────────────────────────────────────
 
 type CodeStep = "input" | "annotate" | "import";
 
 function CodeTab({
-  lang, setLang, prefix, setPrefix, memgraphOnline, onGraphRefresh,
+  lang, setLang, prefix, setPrefix, memgraphOnline, onGraphRefresh, onRunCypher,
 }: {
   lang: string; setLang: (v: string) => void;
   prefix: string; setPrefix: (v: string) => void;
   memgraphOnline: boolean;
   onGraphRefresh: () => void;
+  onRunCypher: (q: string) => void;
 }) {
   const [code, setCode] = useState("");
+  const [fileName, setFileName] = useState("input");
   const [step, setStep] = useState<CodeStep>("input");
   const [analyzing, setAnalyzing] = useState(false);
+  const [agentSteps, setAgentSteps] = useState<StepEvent[]>([]);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const [annotationEdit, setAnnotationEdit] = useState("");
   const [existingInfo, setExistingInfo] = useState<{ found: boolean; stmts: string[] }>({ found: false, stmts: [] });
   const [newStmts, setNewStmts] = useState<string[]>([]);
   const [annoStatus, setAnnoStatus] = useState<"new" | "same" | "changed">("new");
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ nodes: number; edges: number; errors: string[] } | null>(null);
+  // Intelligence fields
+  const [semanticScore, setSemanticScore] = useState<number | null>(null);
+  const [semanticFeedback, setSemanticFeedback] = useState("");
+  const [codeInventory, setCodeInventory] = useState<CodeInventory | null>(null);
+  const [codeSummary, setCodeSummary] = useState("");
+  const [suggestedQueries, setSuggestedQueries] = useState<string[]>([]);
 
   // Auto-detect annotation on code change
   useEffect(() => {
@@ -589,31 +626,73 @@ function CodeTab({
   async function analyze() {
     if (!code.trim()) return;
     setAnalyzing(true);
+    setAgentSteps([]);
     setImportResult(null);
+
     try {
-      const body = parseAnnotationBlock(code).codeBody || code;
-      const res = await fetch(`${VECTOR_OPS}/v1/code/preview`, {
+      // 1. Start the LangGraph agent run
+      const startRes = await fetch(`${VECTOR_OPS}/v1/agent/code-analyze/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: body, language: lang, label_prefix: prefix }),
+        body: JSON.stringify({ code, language: lang, prefix, file_name: fileName || "input" }),
       });
-      const data: AnalysisResult = await res.json();
-      const stmts = (data.statements ?? []).map(s => s.cypher);
+      const startData = await startRes.json();
+      const tid: string = startData.thread_id;
+      setThreadId(tid);
+
+      // 2. State is already in startData (POST /start runs to interrupt synchronously)
+      //    Build synthetic step display from the returned state — no SSE needed here
+      //    (SSE stream would accidentally resume the interrupted graph if connected now)
+      const agentState = startData.state ?? {};
+
+      // 3. Synthesise step-progress display from state fields
+      const syntheticSteps: StepEvent[] = [
+        { step: "detect_language",   label: "Detecting language",     status: "done" },
+        { step: "enrich_context",    label: "Extracting structure",   status: "done",
+          output: { complexity_hint: agentState.complexity_hint,
+                    class_list: agentState.class_list, function_list: agentState.function_list } },
+        { step: "generate_cypher",   label: "Generating Cypher",      status: "done" },
+        { step: "validate_cypher",   label: "Validating syntax",      status: agentState.is_valid ? "done" : "error" },
+        { step: "semantic_validate", label: "Checking accuracy",      status: "done",
+          output: { semantic_score: agentState.semantic_score, semantic_feedback: agentState.semantic_feedback } },
+      ];
+      if ((agentState.retry_count ?? 0) > 0) {
+        syntheticSteps.splice(3, 0,
+          { step: "fix_cypher", label: "Repairing errors", status: "done" });
+      }
+      if (agentState.abort_reason) {
+        syntheticSteps[syntheticSteps.length - 1].status = "error";
+      }
+      setAgentSteps(syntheticSteps);
+
+      const stmts: string[] = agentState.statements ?? [];
+      const annoBlock: string = agentState.annotation_block ?? buildAnnotationBlock(stmts, prefix, lang);
       setNewStmts(stmts);
+      setAnnotationEdit(annoBlock);
+
+      // Store intelligence fields from agent state
+      setSemanticScore(agentState.semantic_score ?? null);
+      setSemanticFeedback(agentState.semantic_feedback ?? "");
+      setCodeInventory({
+        classes:    agentState.class_list    ?? [],
+        functions:  agentState.function_list ?? [],
+        imports:    agentState.import_list   ?? [],
+        complexity: agentState.complexity_hint ?? "unknown",
+      });
 
       // Compare with existing annotation
       let status: "new" | "same" | "changed" = "new";
       if (existingInfo.found) {
         const normalize = (s: string) => s.trim().replace(/;$/, "").replace(/\s+/g, " ");
         const existSet = new Set(existingInfo.stmts.map(normalize));
-        const newSet  = new Set(stmts.map(normalize));
-        const allSame = existSet.size === newSet.size && [...newSet].every(s => existSet.has(s));
+        const newSet   = new Set(stmts.map(normalize));
+        const allSame  = existSet.size === newSet.size && [...newSet].every(s => existSet.has(s));
         status = allSame ? "same" : "changed";
       }
       setAnnoStatus(status);
-      setAnnotationEdit(buildAnnotationBlock(stmts, prefix, lang));
       setStep("annotate");
     } catch { /* ignore */ }
+
     setAnalyzing(false);
   }
 
@@ -623,23 +702,48 @@ function CodeTab({
   }
 
   function useExistingAndImport() {
-    // Skip analysis, go straight to import using existing annotation
     setStep("import");
   }
 
   async function doImport() {
-    const { stmts } = parseAnnotationBlock(code);
-    const toRun = stmts.length ? stmts : newStmts;
-    if (!toRun.length || !memgraphOnline) return;
+    if (!memgraphOnline) return;
     setImporting(true);
+    setImportResult(null);
     try {
-      const res = await fetch(`${VECTOR_OPS}/v1/code/execute-cypher`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statements: toRun }),
-      });
-      const data = await res.json();
-      setImportResult({ nodes: data.node_count ?? 0, edges: data.edge_count ?? 0, errors: data.errors ?? [] });
+      if (threadId) {
+        // Agent-based import — resume the LangGraph run with the approved annotation
+        const res = await fetch(`${VECTOR_OPS}/v1/agent/code-analyze/resume`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ thread_id: threadId, approved_annotation: annotationEdit }),
+        });
+        const data = await res.json();
+        const agentState = data.state ?? {};
+        setImportResult({
+          nodes: agentState.nodes_upserted ?? agentState.node_count ?? 0,
+          edges: agentState.edges_upserted ?? agentState.edge_count ?? 0,
+          errors: agentState.execution_errors ?? [],
+        });
+        // Fetch post-import insights (summary + suggested queries)
+        try {
+          const insRes = await fetch(`${VECTOR_OPS}/v1/agent/code-analyze/insights/${threadId}`);
+          const ins = await insRes.json();
+          setCodeSummary(ins.code_summary ?? "");
+          setSuggestedQueries(ins.suggested_queries ?? []);
+        } catch { /* insights are non-blocking */ }
+      } else {
+        // Direct import — no agent thread (user jumped straight from "Import as-is")
+        const { stmts } = parseAnnotationBlock(code);
+        const toRun = stmts.length ? stmts : newStmts;
+        if (!toRun.length) { setImporting(false); return; }
+        const res = await fetch(`${VECTOR_OPS}/v1/code/execute-cypher`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ statements: toRun }),
+        });
+        const data = await res.json();
+        setImportResult({ nodes: data.node_count ?? 0, edges: data.edge_count ?? 0, errors: data.errors ?? [] });
+      }
       onGraphRefresh();
     } catch { /* ignore */ }
     setImporting(false);
@@ -701,7 +805,7 @@ function CodeTab({
 
       {/* ════════════════════ STEP 1: CODE INPUT ════════════════════ */}
       {step === "input" && (<>
-        {/* Lang + Prefix */}
+        {/* Lang + Prefix + Filename */}
         <div className="flex gap-2">
           <div className="flex-1">
             <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Language</label>
@@ -711,10 +815,17 @@ function CodeTab({
               {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
-          <div className="w-28">
-            <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Label Prefix</label>
+          <div className="w-24">
+            <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">Prefix</label>
             <input value={prefix} onChange={e => setPrefix(e.target.value)}
               className="w-full font-mono text-xs rounded-xl px-3 py-2 text-[#e8d5b5] focus:outline-none"
+              style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)" }} />
+          </div>
+          <div className="w-28">
+            <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 block">File Name</label>
+            <input value={fileName} onChange={e => setFileName(e.target.value)}
+              placeholder="main.ts"
+              className="w-full font-mono text-xs rounded-xl px-3 py-2 text-[#e8d5b5] placeholder-[#8a7b6a]/40 focus:outline-none"
               style={{ background: "#0a0704", border: "1px solid rgba(184,115,51,0.2)" }} />
           </div>
         </div>
@@ -753,6 +864,54 @@ function CodeTab({
           {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
           {analyzing ? "Analyzing…" : existingInfo.found ? "Re-analyze & Compare →" : "Analyze →"}
         </Button>
+
+        {/* Agent pipeline progress */}
+        {agentSteps.length > 0 && (
+          <div className="rounded-xl border overflow-hidden"
+            style={{ borderColor: "rgba(184,115,51,0.15)", background: "rgba(6,4,2,0.6)" }}>
+            <div className="px-3 py-1.5 border-b flex items-center gap-2"
+              style={{ borderColor: "rgba(184,115,51,0.1)", background: "rgba(184,115,51,0.04)" }}>
+              <Activity className="w-2.5 h-2.5 text-[#b87333]" />
+              <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Agent Pipeline</span>
+            </div>
+            <div className="p-2 space-y-0.5">
+              {agentSteps.map((s, i) => (
+                <div key={i} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors"
+                  style={{
+                    background: s.status === "done"
+                      ? "rgba(74,139,110,0.07)"
+                      : s.status === "error"
+                        ? "rgba(139,74,74,0.07)"
+                        : "rgba(201,168,76,0.07)",
+                  }}>
+                  {s.status === "running" && <Loader2 className="w-3 h-3 animate-spin text-[#c9a84c] shrink-0" />}
+                  {s.status === "done"    && <CheckCircle2 className="w-3 h-3 text-[#4a8b6e] shrink-0" />}
+                  {s.status === "error"   && <AlertTriangle className="w-3 h-3 text-[#8b4a4a] shrink-0" />}
+                  <span className="text-[9px] font-mono" style={{
+                    color: s.status === "done" ? "#4a8b6e" : s.status === "error" ? "#8b4a4a" : "#c9a84c",
+                  }}>
+                    {s.label ?? STEP_LABELS[s.step] ?? s.step}
+                  </span>
+                  {s.status === "done" && s.step === "semantic_validate" && s.output?.semantic_score != null && (
+                    <span className="ml-auto text-[8px] font-mono"
+                      style={{ color: (s.output.semantic_score as number) >= 0.7 ? "#4a8b6e" : "#c9a84c" }}>
+                      {Math.round((s.output.semantic_score as number) * 100)}% accurate
+                    </span>
+                  )}
+                  {s.status === "done" && s.step === "enrich_context" && s.output && (
+                    <span className="ml-auto text-[8px] font-mono text-[var(--text-muted)]/40">
+                      {[
+                        s.output.complexity_hint,
+                        s.output.class_list && (s.output.class_list as string[]).length > 0 && `${(s.output.class_list as string[]).length} classes`,
+                        s.output.function_list && (s.output.function_list as string[]).length > 0 && `${(s.output.function_list as string[]).length} fns`,
+                      ].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </>)}
 
       {/* ════════════════════ STEP 2: ANNOTATION ════════════════════ */}
@@ -799,6 +958,63 @@ function CodeTab({
             <Sparkles className="w-3.5 h-3.5 text-[#b87333] shrink-0" />
             <p className="text-[9px] font-bold text-[#c9a84c]">
               New annotation generated · {newStmts.length} statements
+            </p>
+          </div>
+        )}
+
+        {/* Semantic score + code inventory */}
+        <div className="flex items-stretch gap-2">
+          {/* Semantic accuracy score */}
+          {semanticScore !== null && (
+            <div className="flex flex-col items-center justify-center px-3 py-2 rounded-xl border shrink-0"
+              style={{
+                borderColor: semanticScore >= 0.7 ? "rgba(74,139,110,0.3)" : semanticScore >= 0.5 ? "rgba(201,168,76,0.3)" : "rgba(184,115,51,0.3)",
+                background: semanticScore >= 0.7 ? "rgba(74,139,110,0.07)" : "rgba(184,115,51,0.07)",
+              }}>
+              <span className="text-[18px] font-black leading-none"
+                style={{ color: semanticScore >= 0.7 ? "#4a8b6e" : semanticScore >= 0.5 ? "#c9a84c" : "#b87333" }}>
+                {Math.round(semanticScore * 100)}
+              </span>
+              <span className="text-[7px] font-bold uppercase tracking-wider mt-0.5"
+                style={{ color: semanticScore >= 0.7 ? "#4a8b6e" : "#c9a84c" }}>
+                AI Score
+              </span>
+            </div>
+          )}
+          {/* Code structure inventory from enrich_context */}
+          {codeInventory && (codeInventory.classes.length > 0 || codeInventory.functions.length > 0) && (
+            <div className="flex-1 px-3 py-2 rounded-xl border space-y-1"
+              style={{ borderColor: "rgba(184,115,51,0.15)", background: "rgba(6,4,2,0.5)" }}>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[8px] font-black text-[var(--text-muted)]/50 uppercase tracking-widest">Detected</span>
+                <span className="text-[8px] font-mono text-[#b87333]/50 ml-auto">{codeInventory.complexity}</span>
+              </div>
+              {codeInventory.classes.length > 0 && (
+                <div className="text-[8px] font-mono text-[#c9a84c]/60 truncate">
+                  <span className="text-[var(--text-muted)]/40 mr-1">class</span>{codeInventory.classes.join(", ")}
+                </div>
+              )}
+              {codeInventory.functions.length > 0 && (
+                <div className="text-[8px] font-mono text-[#4a8b6e]/60 truncate">
+                  <span className="text-[var(--text-muted)]/40 mr-1">fn</span>{codeInventory.functions.join(", ")}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Semantic feedback (if meaningful) */}
+        {semanticFeedback && !semanticFeedback.includes("skipped") && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-xl border"
+            style={{
+              background: semanticScore != null && semanticScore >= 0.7 ? "rgba(74,139,110,0.05)" : "rgba(201,168,76,0.05)",
+              borderColor: semanticScore != null && semanticScore >= 0.7 ? "rgba(74,139,110,0.2)" : "rgba(201,168,76,0.2)",
+            }}>
+            <Info className="w-3 h-3 shrink-0 mt-0.5"
+              style={{ color: semanticScore != null && semanticScore >= 0.7 ? "#4a8b6e" : "#c9a84c" }} />
+            <p className="text-[8px] font-mono leading-relaxed"
+              style={{ color: semanticScore != null && semanticScore >= 0.7 ? "#4a8b6e" : "#c9a84c" }}>
+              {semanticFeedback}
             </p>
           </div>
         )}
@@ -879,19 +1095,52 @@ function CodeTab({
 
         {/* Result */}
         {importResult && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
-            style={{
-              background: importResult.errors.length ? "rgba(139,74,74,0.08)" : "rgba(74,139,110,0.08)",
-              borderColor: importResult.errors.length ? "rgba(139,74,74,0.25)" : "rgba(74,139,110,0.25)",
-            }}>
-            {importResult.errors.length
-              ? <AlertTriangle className="w-3.5 h-3.5 text-[#8b4a4a]" />
-              : <CheckCircle2 className="w-3.5 h-3.5 text-[#4a8b6e]" />}
-            <span className="text-[10px] font-bold" style={{ color: importResult.errors.length ? "#8b4a4a" : "#4a8b6e" }}>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
+              style={{
+                background: importResult.errors.length ? "rgba(139,74,74,0.08)" : "rgba(74,139,110,0.08)",
+                borderColor: importResult.errors.length ? "rgba(139,74,74,0.25)" : "rgba(74,139,110,0.25)",
+              }}>
               {importResult.errors.length
-                ? `${importResult.errors.length} error(s) — check Memgraph`
-                : `${importResult.nodes} nodes · ${importResult.edges} edges imported`}
-            </span>
+                ? <AlertTriangle className="w-3.5 h-3.5 text-[#8b4a4a]" />
+                : <CheckCircle2 className="w-3.5 h-3.5 text-[#4a8b6e]" />}
+              <span className="text-[10px] font-bold" style={{ color: importResult.errors.length ? "#8b4a4a" : "#4a8b6e" }}>
+                {importResult.errors.length
+                  ? `${importResult.errors.length} error(s) — check Memgraph`
+                  : `${importResult.nodes} nodes · ${importResult.edges} edges imported`}
+              </span>
+            </div>
+
+            {/* AI code summary */}
+            {codeSummary && (
+              <div className="px-3 py-2.5 rounded-xl border"
+                style={{ background: "rgba(6,4,2,0.6)", borderColor: "rgba(184,115,51,0.15)" }}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Sparkles className="w-2.5 h-2.5 text-[#c9a84c]" />
+                  <span className="text-[8px] font-black text-[var(--text-muted)]/50 uppercase tracking-widest">AI Summary</span>
+                </div>
+                <p className="text-[9px] font-mono text-[#e8d5b5]/60 leading-relaxed">{codeSummary}</p>
+              </div>
+            )}
+
+            {/* Suggested queries */}
+            {suggestedQueries.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Terminal className="w-2.5 h-2.5 text-[#4a8b6e]" />
+                  <span className="text-[8px] font-black text-[var(--text-muted)]/50 uppercase tracking-widest">Explore Graph</span>
+                </div>
+                <div className="space-y-0.5">
+                  {suggestedQueries.map((q, i) => (
+                    <button key={i} onClick={() => onRunCypher(q)}
+                      title={q}
+                      className="w-full text-left font-mono text-[8px] px-2.5 py-1.5 rounded-lg border border-[#4a8b6e]/15 bg-black/20 text-[#4a8b6e]/60 hover:text-[#4a8b6e] hover:border-[#4a8b6e]/35 hover:bg-[#4a8b6e]/05 transition-all truncate">
+                      <span className="text-[#b87333]/30 mr-1.5 select-none">{i + 1}.</span>{q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -938,7 +1187,7 @@ function LeftInputPanel({
   prefix: string; setPrefix: (v: string) => void;
   memgraphOnline: boolean;
   onGraphRefresh: () => void;
-  onRunCypher: (cypher: string) => void;
+  onRunCypher: (cypher: string) => void;  // shared: Cypher tab runner + suggested queries
 }) {
   const [tab, setTab] = useState<"code" | "cypher">("code");
   const [cypher, setCypher] = useState("MATCH (n) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100");
@@ -991,6 +1240,7 @@ function LeftInputPanel({
             prefix={prefix} setPrefix={setPrefix}
             memgraphOnline={memgraphOnline}
             onGraphRefresh={onGraphRefresh}
+            onRunCypher={onRunCypher}
           />
         )}
 
