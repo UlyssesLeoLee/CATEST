@@ -39,6 +39,10 @@ interface AppShellProps {
   children: React.ReactNode;
   activeApp: "base" | "workspace" | "rag" | "review" | "team" | "tm" | "tb" | "orchestration";
   user?: UserData;
+  /** Optional sub-navigation rendered between the top header and the scroll area (not scrollable). */
+  subNav?: React.ReactNode;
+  /** Optional sub-items rendered inside the sidebar nav, below the active app entry. Hidden when sidebar is collapsed. */
+  sidebarSubNav?: React.ReactNode;
 }
 
 const apps = [
@@ -52,15 +56,15 @@ const apps = [
   { id: "orchestration", name: "Orchestration",  shortName: "Orch",   href: APP_URLS.orchestration, icon: Sparkles },
 ];
 
-export function AppShell({ children, activeApp, user }: AppShellProps) {
+export function AppShell({ children, activeApp, user, subNav, sidebarSubNav }: AppShellProps) {
   return (
     <SoundProvider>
-      <AppShellContent activeApp={activeApp} user={user} children={children} />
+      <AppShellContent activeApp={activeApp} user={user} subNav={subNav} sidebarSubNav={sidebarSubNav} children={children} />
     </SoundProvider>
   );
 }
 
-function AppShellContent({ children, activeApp, user }: AppShellProps) {
+function AppShellContent({ children, activeApp, user, subNav, sidebarSubNav }: AppShellProps) {
   const { play } = useSound();
   const profileHref = getAppUrl('base', '/profile');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -460,6 +464,13 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
             );
           })}
 
+          {/* Sidebar sub-nav — app-specific sub-items, shown below main nav when not collapsed */}
+          {sidebarSubNav && !sidebarCollapsed && (
+            <div className="mt-1">
+              {sidebarSubNav}
+            </div>
+          )}
+
           {/* Decorative valve (hidden when collapsed) */}
           {!sidebarCollapsed && (
             <div className="flex items-center justify-center py-2 opacity-30">
@@ -609,6 +620,13 @@ function AppShellContent({ children, activeApp, user }: AppShellProps) {
             <SteamValve size={18} speed={8} className="opacity-40 hidden xl:block" />
           </div>
         </header>
+
+        {/* Sub-navigation slot — rendered outside the scroll area so it stays fixed on screen */}
+        {subNav && (
+          <div className="shrink-0 mb-3 relative z-20">
+            {subNav}
+          </div>
+        )}
 
         {/* Content Scroll Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden rounded-none md:rounded-2xl relative z-10 glass-panel particle-field min-w-0 min-h-0 steam-particles steam-scroll">

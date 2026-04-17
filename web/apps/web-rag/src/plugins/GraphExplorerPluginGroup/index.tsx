@@ -1,19 +1,45 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { type PluginGroup } from "@catest/ui/plugins";
 import { Card, Badge, Button, cn } from "@catest/ui";
-import { 
-  GitBranch, 
-  Info, 
-  Database, 
-  Search, 
+import {
+  GitBranch,
+  Info,
+  Database,
+  Search,
   Layers,
   Fingerprint,
-  Tag
+  Tag,
+  Code2,
+  Play,
+  Eye,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  Copy,
+  Trash2,
 } from "lucide-react";
 
-// Plugin: Shows relationships of a selected entity from the Memgraph graph
+const VECTOR_OPS = "http://localhost:34085";
+
+// ── Types ──
+
+interface CypherStatement {
+  cypher: string;
+  description: string;
+}
+
+interface AnalysisResult {
+  statements: CypherStatement[];
+  node_count: number;
+  edge_count: number;
+  raw_cypher: string;
+  errors: string[];
+}
+
+// ── Plugin: Relationship Map (existing) ──
+
 function RelationshipMapPlugin() {
   return (
     <div className="relative h-full min-h-[400px] flex items-center justify-center bg-[#050505] rounded-xl border border-[#3e1b0d]/30 overflow-hidden group">
@@ -45,7 +71,8 @@ function RelationshipMapPlugin() {
   );
 }
 
-// Plugin: Inspector panel showing properties of a selected node
+// ── Plugin: Node Inspector (existing) ──
+
 function NodeInspectorPlugin() {
   const properties = [
     { label: "Label", value: "TranslationSegment", icon: Tag, color: "text-[#c9a84c]" },
@@ -81,12 +108,228 @@ function NodeInspectorPlugin() {
   );
 }
 
+// ── Plugin: Code Structure Analyzer (NEW) ──
+
+const LANGUAGES = ["auto", "typescript", "javascript", "python", "rust", "go", "java", "c", "cpp", "csharp"];
+
+function CodeStructureAnalyzerPlugin() {
+  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("auto");
+  const [labelPrefix, setLabelPrefix] = useState("Code");
+  const [loading, setLoading] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+
+  const handleAnalyze = useCallback(async (preview: boolean) => {
+    if (!code.trim()) return;
+    setLoading(true);
+    setPreviewMode(preview);
+    setResult(null);
+
+    try {
+      const endpoint = preview ? "/v1/code/preview" : "/v1/code/analyze";
+      const resp = await fetch(`${VECTOR_OPS}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, language, label_prefix: labelPrefix }),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        setResult({
+          statements: [],
+          node_count: 0,
+          edge_count: 0,
+          raw_cypher: "",
+          errors: [`API error ${resp.status}: ${errText.slice(0, 200)}`],
+        });
+        return;
+      }
+
+      const data: AnalysisResult = await resp.json();
+      setResult(data);
+    } catch (e) {
+      setResult({
+        statements: [],
+        node_count: 0,
+        edge_count: 0,
+        raw_cypher: "",
+        errors: [`Network error: ${e instanceof Error ? e.message : String(e)}`],
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [code, language, labelPrefix]);
+
+  const copyRawCypher = useCallback(() => {
+    if (result?.raw_cypher) {
+      navigator.clipboard.writeText(result.raw_cypher);
+    }
+  }, [result]);
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-1">
+        <Code2 className="w-3.5 h-3.5 text-[#c9a84c]" />
+        <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+          AI Code Structure Analyzer
+        </span>
+      </div>
+
+      {/* Settings row */}
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="text-[9px] font-bold text-[var(--text-muted)]/60 uppercase tracking-wider block mb-1">Language</label>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="w-full bg-[#0a0704] border border-[#3e1b0d]/30 rounded-lg px-2 py-1.5 text-[10px] font-mono text-[#e8d5b5] focus:outline-none focus:border-[#b87333]/50"
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="text-[9px] font-bold text-[var(--text-muted)]/60 uppercase tracking-wider block mb-1">Label Prefix</label>
+          <input
+            type="text"
+            value={labelPrefix}
+            onChange={(e) => setLabelPrefix(e.target.value.replace(/\s/g, "_"))}
+            placeholder="Code"
+            className="w-full bg-[#0a0704] border border-[#3e1b0d]/30 rounded-lg px-2 py-1.5 text-[10px] font-mono text-[#e8d5b5] placeholder-[#8a7b6a]/40 focus:outline-none focus:border-[#b87333]/50"
+          />
+        </div>
+      </div>
+
+      {/* Code input */}
+      <div className="relative">
+        <textarea
+          rows={8}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder={"// Paste your code here...\nfunction hello() {\n  return 'world';\n}"}
+          className="w-full font-mono text-xs leading-relaxed resize-none rounded-xl px-4 py-3 text-[#e8d5b5] placeholder-[#8a7b6a]/40 focus:outline-none transition-all"
+          style={{
+            background: '#0a0704',
+            border: '1px solid rgba(184,115,51,0.2)',
+            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,240,200,0.03)',
+          }}
+        />
+        {/* Scanline effect */}
+        <div
+          className="absolute inset-0 pointer-events-none rounded-xl overflow-hidden opacity-[0.03]"
+          style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)' }}
+        />
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1 h-8 text-[10px] font-bold border-[#3e1b0d]/30 bg-black/30 text-[var(--text-muted)] hover:text-[#c9a84c]"
+          onClick={() => handleAnalyze(true)}
+          disabled={loading || !code.trim()}
+        >
+          {loading && previewMode ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Eye className="w-3 h-3 mr-1.5" />}
+          Preview Cypher
+        </Button>
+        <Button
+          variant="copper"
+          size="sm"
+          className="flex-1 h-8 text-[10px] font-bold"
+          onClick={() => handleAnalyze(false)}
+          disabled={loading || !code.trim()}
+        >
+          {loading && !previewMode ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Play className="w-3 h-3 mr-1.5" />}
+          Analyze & Import
+        </Button>
+      </div>
+
+      {/* Results */}
+      {result && (
+        <div className="space-y-3">
+          {/* Stats bar */}
+          {!previewMode && (result.node_count > 0 || result.edge_count > 0) && (
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#4a8b6e]/10 border border-[#4a8b6e]/20">
+              <CheckCircle2 className="w-4 h-4 text-[#4a8b6e] shrink-0" />
+              <span className="text-[10px] font-bold text-[#4a8b6e]">
+                Imported: {result.node_count} nodes, {result.edge_count} relationships
+              </span>
+            </div>
+          )}
+
+          {/* Errors */}
+          {result.errors.length > 0 && (
+            <div className="space-y-1">
+              {result.errors.map((err, i) => (
+                <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                  <span className="text-[10px] font-mono text-red-300 break-all">{err}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Cypher statements */}
+          {result.statements.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[9px] font-bold text-[var(--text-muted)]/60 uppercase tracking-wider">
+                  Generated Cypher ({result.statements.length} statements)
+                </span>
+                <button
+                  onClick={copyRawCypher}
+                  className="flex items-center gap-1 text-[9px] font-bold text-[var(--text-brass)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <Copy className="w-3 h-3" />
+                  Copy All
+                </button>
+              </div>
+              <div
+                className="max-h-48 overflow-y-auto rounded-xl p-3 space-y-1 steam-scroll"
+                style={{
+                  background: '#0a0704',
+                  border: '1px solid rgba(184,115,51,0.15)',
+                }}
+              >
+                {result.statements.map((stmt, i) => (
+                  <div
+                    key={i}
+                    className="text-[10px] font-mono text-[#e8d5b5]/80 leading-relaxed py-0.5 border-b border-[#3e1b0d]/10 last:border-0"
+                  >
+                    <span className="text-[#b87333]/50 mr-2 select-none">{i + 1}.</span>
+                    {stmt.cypher}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Clear button */}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full h-7 text-[9px] font-bold border-[#3e1b0d]/20 bg-black/20 text-[var(--text-muted)]/60 hover:text-red-400"
+            onClick={() => { setResult(null); setCode(""); }}
+          >
+            <Trash2 className="w-3 h-3 mr-1.5" />
+            Clear
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const GraphExplorerPluginGroup: PluginGroup = {
   id: "rag-graph",
   name: "Knowledge Graph Explorer",
   plugins: [
+    { id: "code-structure",    name: "Code → Cypher",    component: CodeStructureAnalyzerPlugin as React.ComponentType<unknown> },
     { id: "relationship-map",  name: "Relationship Map",  component: RelationshipMapPlugin as React.ComponentType<unknown> },
     { id: "node-inspector",    name: "Node Inspector",    component: NodeInspectorPlugin as React.ComponentType<unknown> },
   ],
 };
-

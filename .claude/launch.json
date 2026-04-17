@@ -50,6 +50,14 @@
       "autoPort": false
     },
     {
+      "name": "web-rag",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/leo19/AppData/Roaming/npm/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-rag", "run", "dev"],
+      "port": 33002,
+      "cwd": "web",
+      "autoPort": false
+    },
+    {
       "name": "envoy-gateway",
       "runtimeExecutable": "kubectl",
       "runtimeArgs": ["port-forward", "-n", "catest", "svc/envoy-gateway", "33088:33088", "--address=0.0.0.0"],

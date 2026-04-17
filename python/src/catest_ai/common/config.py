@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     service_name: str = "catest-ai"
     service_port: int = 34080
 
+    # --- OpenAI-compatible AI API (NVIDIA NIM / OpenAI / etc.) ---
+    api_key: str = ""
+    base_url: str = "https://build.nvidia.com/qwen/qwen3.5-122b-a10b"
+    model: str = "qwen3.5-122b-a10b"
+
     # --- Claude API ---
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"

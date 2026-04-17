@@ -20,7 +20,7 @@ import {
   Loader2,
   Upload,
   Plus,
-  CheckCircle2
+  CheckCircle2,
 } from "lucide-react";
 
 const GATEWAY = "http://localhost:33080";

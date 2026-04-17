@@ -3,6 +3,8 @@ import "./globals.css";
 import { AppShell } from "@catest/ui";
 import { getSession, getUser } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { IntelSubNav } from "@/components/IntelSubNav";
+import { IntelSidebarItems } from "@/components/IntelSidebarItems";
 
 export const metadata: Metadata = {
   title: "CATEST — Knowledge Base",
@@ -25,8 +27,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#050505] text-zinc-100 font-sans antialiased overflow-hidden">
-        <AppShell 
-          activeApp="rag" 
+        <AppShell
+          activeApp="rag"
+          subNav={<IntelSubNav />}
+          sidebarSubNav={<IntelSidebarItems />}
           user={user ? {
             email: user.email,
             displayName: user.display_name,

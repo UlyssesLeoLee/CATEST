@@ -59,11 +59,12 @@ def _node_to_point(record: dict, include_vector: bool = False) -> VectorPoint:
 
     vector = props.pop("vector", []) if include_vector else []
 
+    node_id = str(record.get("id", ""))
     return VectorPoint(
-        id=str(record.get("id", record.get("elementId", ""))),
+        id=node_id,
         vector=vector if isinstance(vector, list) else [],
         label=label,
-        display_name=props.get("name", props.get("source_text", str(record.get("id", ""))[:40])),
+        display_name=props.get("name", props.get("source_text", node_id[:40])),
         backend=VectorBackend.MEMGRAPH,
         payload=props,
     )
@@ -98,33 +99,59 @@ async def query_graph(req: GraphQueryRequest):
     try:
         async with driver.session() as session:
             result = await session.run(cypher)
-            records = await result.data()
-
-            for record in records:
-                # Process nodes
+            # IMPORTANT: Do NOT use result.data() — it converts Node objects to plain
+            # property-dicts, stripping .id, .element_id, and .labels.
+            # Async-iterate to keep raw neo4j.graph.Node / Relationship objects.
+            async for record in result:
+                # ── nodes ───────────────────────────────────────────────────
                 for key in ("n", "m"):
-                    if key in record and record[key] is not None:
-                        node_data = record[key]
-                        node_id = str(node_data.get("id", node_data.get("elementId", "")))
-                        if node_id not in nodes:
-                            # Convert to dict-compatible format
-                            node_dict = {
-                                "id": node_id,
-                                "labels": list(node_data.labels) if hasattr(node_data, "labels") else [],
-                                "properties": dict(node_data) if hasattr(node_data, "items") else {},
-                            }
-                            nodes[node_id] = _node_to_point(node_dict, req.include_vectors)
+                    node_data = record.get(key)
+                    if node_data is None:
+                        continue
 
-                # Process edges
-                if "r" in record and record["r"] is not None:
-                    rel = record["r"]
+                    # Node ID: prefer element_id (string), fallback to integer id
+                    if hasattr(node_data, "element_id") and node_data.element_id:
+                        node_id = str(node_data.element_id)
+                    elif hasattr(node_data, "id"):
+                        node_id = str(node_data.id)
+                    else:
+                        node_id = str(id(node_data))
+
+                    if node_id not in nodes:
+                        node_dict = {
+                            "id": node_id,
+                            "labels": list(node_data.labels) if hasattr(node_data, "labels") else [],
+                            "properties": dict(node_data) if hasattr(node_data, "items") else {},
+                        }
+                        nodes[node_id] = _node_to_point(node_dict, req.include_vectors)
+
+                # ── edges ────────────────────────────────────────────────────
+                rel = record.get("r")
+                if rel is not None:
+                    # source / target IDs — access via .start_node / .end_node Node objects
+                    sn = getattr(rel, "start_node", None)
+                    if sn is not None:
+                        src_id = str(sn.element_id) if (hasattr(sn, "element_id") and sn.element_id) else str(getattr(sn, "id", ""))
+                    else:
+                        src_id = ""
+
+                    en = getattr(rel, "end_node", None)
+                    if en is not None:
+                        tgt_id = str(en.element_id) if (hasattr(en, "element_id") and en.element_id) else str(getattr(en, "id", ""))
+                    else:
+                        tgt_id = ""
+
+                    rel_id = str(rel.element_id) if hasattr(rel, "element_id") else str(id(rel))
+                    rel_type = rel.type if hasattr(rel, "type") else type(rel).__name__
+                    rel_props = dict(rel) if hasattr(rel, "items") else {}
+
                     edges.append(GraphEdge(
-                        id=str(getattr(rel, "element_id", id(rel))),
-                        source_id=str(getattr(rel, "start_node", {}).get("elementId", "")),
-                        target_id=str(getattr(rel, "end_node", {}).get("elementId", "")),
-                        edge_type=rel.type if hasattr(rel, "type") else "",
-                        weight=dict(rel).get("weight", 1.0) if hasattr(rel, "__iter__") else 1.0,
-                        properties=dict(rel) if hasattr(rel, "items") else {},
+                        id=rel_id,
+                        source_id=src_id,
+                        target_id=tgt_id,
+                        edge_type=rel_type,
+                        weight=float(rel_props.get("weight", 1.0)),
+                        properties=rel_props,
                     ))
     except Exception as e:
         logger.error("Graph query failed: %s", e)
