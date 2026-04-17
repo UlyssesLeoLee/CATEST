@@ -166,12 +166,14 @@ function nodeColor(n: GraphNode) {
 // ── Force Graph Canvas ────────────────────────────────────────────────────────
 
 function ForceGraphCanvas({
-  nodes, edges, selectedId, onSelect,
+  nodes, edges, selectedId, onSelect, selectedEdgeId, onSelectEdge,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  selectedEdgeId: string | null;
+  onSelectEdge: (id: string | null) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ w: 600, h: 400 });
@@ -294,14 +296,28 @@ function ForceGraphCanvas({
               const s = posMap.get(e.source_id), t = posMap.get(e.target_id);
               if (!s || !t || e.source_id === e.target_id) return null;
               const mx = (s.x + t.x) / 2, my = (s.y + t.y) / 2;
+              const isEdgeSel = e.id === selectedEdgeId;
+              // highlight edges connected to the selected node
+              const isNodeAdj = selectedId != null && (e.source_id === selectedId || e.target_id === selectedId);
+              const dimmed = (selectedId != null && !isNodeAdj) || (selectedEdgeId != null && !isEdgeSel);
+              const stroke = isEdgeSel
+                ? "rgba(201,168,76,0.9)"
+                : isNodeAdj
+                  ? "rgba(184,115,51,0.70)"
+                  : "rgba(184,115,51,0.25)";
+              const sw = isEdgeSel ? 2.5 : isNodeAdj ? 2 : 1.5;
               return (
-                <g key={e.id}>
+                <g key={e.id} style={{ cursor: "pointer", opacity: dimmed ? 0.2 : 1 }}
+                  onClick={ev => { ev.stopPropagation(); onSelectEdge(isEdgeSel ? null : e.id); onSelect(null); }}>
+                  {/* Wide invisible hit area */}
+                  <line x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke="transparent" strokeWidth={12} />
                   <line
                     x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                    stroke="rgba(184,115,51,0.25)" strokeWidth={1.5}
+                    stroke={stroke} strokeWidth={sw}
                     markerEnd="url(#arr)"
                   />
-                  <text x={mx} y={my - 5} fill="rgba(201,168,76,0.45)"
+                  <text x={mx} y={my - 5}
+                    fill={isEdgeSel ? "rgba(201,168,76,0.95)" : isNodeAdj ? "rgba(201,168,76,0.7)" : "rgba(201,168,76,0.35)"}
                     fontSize={7} textAnchor="middle" fontFamily="monospace" pointerEvents="none">
                     {e.edge_type}
                   </text>
@@ -313,14 +329,23 @@ function ForceGraphCanvas({
             {simNodes.map(sn => {
               const color = nodeColor(sn.data);
               const isSelected = sn.id === selectedId;
+              // adjacent to selected node?
+              const isAdjNode = selectedId != null && !isSelected && edges.some(
+                e => (e.source_id === selectedId && e.target_id === sn.id) || (e.target_id === selectedId && e.source_id === sn.id)
+              );
+              // adjacent to selected edge?
+              const selEdge = selectedEdgeId ? edges.find(e => e.id === selectedEdgeId) : null;
+              const isEdgeAdj = selEdge != null && (sn.id === selEdge.source_id || sn.id === selEdge.target_id);
+              const dimmedNode = (selectedId != null && !isSelected && !isAdjNode) ||
+                                 (selectedEdgeId != null && !isEdgeAdj);
               const name = sn.data.display_name || String(sn.data.payload?.name ?? sn.id.slice(-6));
               const kind = String(sn.data.payload?.kind ?? sn.data.label ?? "");
               return (
                 <g
                   key={sn.id}
                   data-nodeid={sn.id}
-                  onClick={() => onSelect(isSelected ? null : sn.id)}
-                  style={{ cursor: "pointer" }}
+                  onClick={() => { onSelect(isSelected ? null : sn.id); onSelectEdge(null); }}
+                  style={{ cursor: "pointer", opacity: dimmedNode ? 0.2 : 1 }}
                 >
                   {/* Selection ring */}
                   {isSelected && (
@@ -414,17 +439,33 @@ function StatusBar({ statuses }: { statuses: BackendStatus[] }) {
 // ── Node detail panel ─────────────────────────────────────────────────────────
 
 function NodeDetail({
-  node, onClose, onAskAI,
+  node, allEdges, allNodes, onClose, onAskAI, onSelectEdge,
 }: {
   node: GraphNode;
+  allEdges: GraphEdge[];
+  allNodes: GraphNode[];
   onClose: () => void;
   onAskAI: (ctx: string) => void;
+  onSelectEdge: (id: string) => void;
 }) {
+  const [tab, setTab] = useState<"props" | "rels">("props");
   const color = nodeColor(node);
   const name = node.display_name || String(node.payload?.name ?? node.id);
+
+  const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+  const outgoing = allEdges.filter(e => e.source_id === node.id);
+  const incoming = allEdges.filter(e => e.target_id === node.id);
+  const relCount = outgoing.length + incoming.length;
+
+  const TAB = (active: boolean) => cn(
+    "flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all border-b-2",
+    active ? "border-current" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+  );
+
   return (
     <div className="rounded-xl border overflow-hidden"
       style={{ borderColor: `${color}35`, background: "rgba(6,4,2,0.8)" }}>
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b"
         style={{ borderColor: `${color}20`, background: `${color}08` }}>
         <div className="flex items-center gap-2">
@@ -444,13 +485,157 @@ function NodeDetail({
           </button>
         </div>
       </div>
-      <div className="p-3 space-y-1.5 max-h-48 overflow-y-auto">
-        {Object.entries(node.payload).map(([k, v]) => (
-          <div key={k} className="flex gap-3 text-[10px] font-mono">
-            <span className="shrink-0 w-20 truncate" style={{ color: `${color}70` }}>{k}</span>
-            <span className="text-[#e8d5b5]/70 break-all">{String(v)}</span>
+
+      {/* Sub-tabs */}
+      <div className="flex border-b" style={{ borderColor: `${color}15` }}>
+        <button className={TAB(tab === "props")} style={{ color: tab === "props" ? color : undefined }}
+          onClick={() => setTab("props")}>Properties</button>
+        <button className={TAB(tab === "rels")} style={{ color: tab === "rels" ? color : undefined }}
+          onClick={() => setTab("rels")}>
+          Relationships
+          {relCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full text-[8px]"
+            style={{ background: `${color}20`, color }}>{relCount}</span>}
+        </button>
+      </div>
+
+      {/* Properties */}
+      {tab === "props" && (
+        <div className="p-3 space-y-1.5 max-h-40 overflow-y-auto">
+          {Object.entries(node.payload).map(([k, v]) => (
+            <div key={k} className="flex gap-3 text-[10px] font-mono">
+              <span className="shrink-0 w-20 truncate" style={{ color: `${color}70` }}>{k}</span>
+              <span className="text-[#e8d5b5]/70 break-all">{String(v)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Relationships */}
+      {tab === "rels" && (
+        <div className="max-h-40 overflow-y-auto divide-y" style={{ borderColor: `${color}10` }}>
+          {relCount === 0 && (
+            <p className="p-3 text-[9px] font-mono text-[var(--text-muted)]/30 text-center">No relationships in current view</p>
+          )}
+          {outgoing.map(e => {
+            const target = nodeMap.get(e.target_id);
+            const tColor = target ? nodeColor(target) : "#6b7280";
+            const tName = target?.display_name || target?.payload?.name as string || e.target_id.slice(-6);
+            const tKind = String(target?.payload?.kind ?? "");
+            return (
+              <button key={e.id} onClick={() => onSelectEdge(e.id)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[9px] font-mono hover:bg-white/[0.03] transition-colors text-left">
+                <ArrowRight className="w-3 h-3 shrink-0 text-[#b87333]/60" />
+                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
+                  style={{ background: "rgba(184,115,51,0.12)", color: "#b87333" }}>{e.edge_type}</span>
+                <div className="flex items-center gap-1 truncate">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: tColor }} />
+                  <span style={{ color: tColor }}>{tName}</span>
+                  {tKind && <span className="text-[var(--text-muted)]/40 text-[8px]">({tKind})</span>}
+                </div>
+              </button>
+            );
+          })}
+          {incoming.map(e => {
+            const src = nodeMap.get(e.source_id);
+            const sColor = src ? nodeColor(src) : "#6b7280";
+            const sName = src?.display_name || src?.payload?.name as string || e.source_id.slice(-6);
+            const sKind = String(src?.payload?.kind ?? "");
+            return (
+              <button key={e.id} onClick={() => onSelectEdge(e.id)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[9px] font-mono hover:bg-white/[0.03] transition-colors text-left">
+                <ArrowLeft className="w-3 h-3 shrink-0 text-[#5ba87e]/60" />
+                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
+                  style={{ background: "rgba(74,139,110,0.12)", color: "#4a8b6e" }}>{e.edge_type}</span>
+                <div className="flex items-center gap-1 truncate">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sColor }} />
+                  <span style={{ color: sColor }}>{sName}</span>
+                  {sKind && <span className="text-[var(--text-muted)]/40 text-[8px]">({sKind})</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Edge detail panel ─────────────────────────────────────────────────────────
+
+function EdgeDetail({
+  edge, allNodes, onClose, onSelectNode,
+}: {
+  edge: GraphEdge;
+  allNodes: GraphNode[];
+  onClose: () => void;
+  onSelectNode: (id: string) => void;
+}) {
+  const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+  const src = nodeMap.get(edge.source_id);
+  const tgt = nodeMap.get(edge.target_id);
+  const srcColor = src ? nodeColor(src) : "#6b7280";
+  const tgtColor = tgt ? nodeColor(tgt) : "#6b7280";
+  const srcName = src?.display_name || String(src?.payload?.name ?? edge.source_id.slice(-6));
+  const tgtName = tgt?.display_name || String(tgt?.payload?.name ?? edge.target_id.slice(-6));
+
+  return (
+    <div className="rounded-xl border overflow-hidden"
+      style={{ borderColor: "rgba(184,115,51,0.35)", background: "rgba(6,4,2,0.8)" }}>
+      <div className="flex items-center justify-between px-4 py-2.5 border-b"
+        style={{ borderColor: "rgba(184,115,51,0.15)", background: "rgba(184,115,51,0.07)" }}>
+        <div className="flex items-center gap-2">
+          <Link2 className="w-3.5 h-3.5 text-[#b87333]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#c9a84c]">
+            relationship
+          </span>
+          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase"
+            style={{ background: "rgba(184,115,51,0.18)", color: "#c9a84c" }}>
+            {edge.edge_type}
+          </span>
+        </div>
+        <button onClick={onClose} className="w-5 h-5 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Source → Target */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <button onClick={() => src && onSelectNode(src.id)}
+          className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border hover:border-current/50 transition-all text-left"
+          style={{ borderColor: `${srcColor}30`, background: `${srcColor}08` }}>
+          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: srcColor, boxShadow: `0 0 4px ${srcColor}` }} />
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold truncate" style={{ color: srcColor }}>{srcName}</div>
+            <div className="text-[8px] font-mono text-[var(--text-muted)]/40">{String(src?.payload?.kind ?? "")}</div>
           </div>
-        ))}
+        </button>
+
+        <div className="flex flex-col items-center gap-0.5 shrink-0">
+          <ArrowRight className="w-5 h-5 text-[#b87333]/70" />
+          <span className="text-[7px] font-black uppercase tracking-widest text-[#b87333]/50">{edge.edge_type}</span>
+        </div>
+
+        <button onClick={() => tgt && onSelectNode(tgt.id)}
+          className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border hover:border-current/50 transition-all text-left"
+          style={{ borderColor: `${tgtColor}30`, background: `${tgtColor}08` }}>
+          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: tgtColor, boxShadow: `0 0 4px ${tgtColor}` }} />
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold truncate" style={{ color: tgtColor }}>{tgtName}</div>
+            <div className="text-[8px] font-mono text-[var(--text-muted)]/40">{String(tgt?.payload?.kind ?? "")}</div>
+          </div>
+        </button>
+      </div>
+
+      {/* Edge properties */}
+      <div className="px-4 pb-3 space-y-1">
+        <div className="flex gap-3 text-[10px] font-mono">
+          <span className="shrink-0 w-16 text-[#b87333]/50">weight</span>
+          <span className="text-[#e8d5b5]/60">{edge.weight}</span>
+        </div>
+        <div className="flex gap-3 text-[10px] font-mono">
+          <span className="shrink-0 w-16 text-[#b87333]/50">id</span>
+          <span className="text-[#e8d5b5]/40 truncate">{edge.id}</span>
+        </div>
       </div>
     </div>
   );
@@ -1396,6 +1581,7 @@ export default function GraphPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [], node_count: 0, edge_count: 0 });
   const [graphLoading, setGraphLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [aiContext, setAiContext] = useState<string | null>(null);
 
   // Fetch statuses on mount
@@ -1419,6 +1605,7 @@ export default function GraphPage() {
       const data = await res.json();
       setGraphData(data);
       setSelectedId(null);
+      setSelectedEdgeId(null);
     } catch { /* ignore */ }
     setGraphLoading(false);
   }, [prefix]);
@@ -1437,13 +1624,14 @@ export default function GraphPage() {
       });
       setGraphData({ nodes: [], edges: [], node_count: 0, edge_count: 0 });
       setSelectedId(null);
+      setSelectedEdgeId(null);
     } catch { /* ignore */ }
     setDeleting(false);
   }
 
-  // Remove old unused state/functions (handlePreview, doImport, buildHeader)
   const memgraphOnline = statuses.find(s => s.backend === "memgraph")?.connected ?? false;
   const selectedNode = graphData.nodes.find(n => n.id === selectedId) ?? null;
+  const selectedEdge = graphData.edges.find(e => e.id === selectedEdgeId) ?? null;
 
   return (
     <div className="flex flex-col gap-4 h-full min-h-0">
@@ -1532,6 +1720,8 @@ export default function GraphPage() {
                 edges={graphData.edges}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                selectedEdgeId={selectedEdgeId}
+                onSelectEdge={setSelectedEdgeId}
               />
               {graphLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -1543,15 +1733,26 @@ export default function GraphPage() {
               )}
             </div>
 
-            {/* Node detail + AI panel */}
-            {(selectedNode || aiContext) && (
+            {/* Node / Edge detail + AI panel */}
+            {(selectedNode || selectedEdge || aiContext) && (
               <div className="shrink-0 border-t p-3 space-y-2"
                 style={{ borderColor: "rgba(184,115,51,0.12)" }}>
                 {selectedNode && (
                   <NodeDetail
                     node={selectedNode}
+                    allEdges={graphData.edges}
+                    allNodes={graphData.nodes}
                     onClose={() => setSelectedId(null)}
                     onAskAI={ctx => setAiContext(ctx)}
+                    onSelectEdge={id => { setSelectedEdgeId(id); setSelectedId(null); }}
+                  />
+                )}
+                {selectedEdge && (
+                  <EdgeDetail
+                    edge={selectedEdge}
+                    allNodes={graphData.nodes}
+                    onClose={() => setSelectedEdgeId(null)}
+                    onSelectNode={id => { setSelectedId(id); setSelectedEdgeId(null); }}
                   />
                 )}
                 {aiContext && (
