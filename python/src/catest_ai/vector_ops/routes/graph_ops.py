@@ -10,6 +10,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 from catest_ai.common.config import settings
 from catest_ai.vector_ops.schemas import (
@@ -268,3 +269,61 @@ async def backends_status():
 
 # Import qdrant_service at module level to use in backends_status
 from catest_ai.common.qdrant_service import qdrant_service
+
+
+# ── Delete displayed nodes ─────────────────────────────────────────────────────
+
+class DeleteNodesRequest(BaseModel):
+    """Delete a specific set of nodes (and their relationships) from Memgraph."""
+    node_ids: list[str]  # element_id strings as returned by graph query
+
+
+class DeleteNodesResponse(BaseModel):
+    deleted_nodes: int
+    deleted_rels: int
+    errors: list[str] = []
+
+
+@router.post("/graph/delete-nodes", response_model=DeleteNodesResponse)
+async def delete_nodes(req: DeleteNodesRequest):
+    """Delete nodes by element_id and detach all their relationships."""
+    if not req.node_ids:
+        return DeleteNodesResponse(deleted_nodes=0, deleted_rels=0)
+
+    driver = await _get_driver()
+    deleted_nodes = 0
+    deleted_rels = 0
+    errors: list[str] = []
+
+    try:
+        async with driver.session() as session:
+            # Memgraph uses integer IDs internally; element_id is a string like "0","1",...
+            # We try both integer matching and string matching for robustness.
+            id_ints: list[int] = []
+            for eid in req.node_ids:
+                try:
+                    id_ints.append(int(eid))
+                except ValueError:
+                    pass
+
+            if id_ints:
+                cypher = (
+                    "MATCH (n) WHERE id(n) IN $ids "
+                    "DETACH DELETE n "
+                    "RETURN count(n) as cnt"
+                )
+                result = await session.run(cypher, ids=id_ints)
+                summary = await result.consume()
+                deleted_nodes = summary.counters.nodes_deleted
+                deleted_rels = summary.counters.relationships_deleted
+    except Exception as e:
+        errors.append(str(e))
+        logger.error("delete_nodes error: %s", e)
+    finally:
+        await driver.close()
+
+    return DeleteNodesResponse(
+        deleted_nodes=deleted_nodes,
+        deleted_rels=deleted_rels,
+        errors=errors,
+    )

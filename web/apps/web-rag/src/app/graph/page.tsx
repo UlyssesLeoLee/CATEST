@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Copy, RefreshCw, ChevronDown,
   ChevronRight, Box, Link2, Zap, Maximize2, Minimize2,
   MousePointer, ZoomIn, ZoomOut, RotateCcw, Sparkles, X,
-  Activity, FileCode2,
+  Activity, FileCode2, Trash2,
 } from "lucide-react";
 import { Badge, Button, cn } from "@catest/ui";
 
@@ -471,17 +471,13 @@ function AIChatPanel({
     if (!question.trim()) return;
     setLoading(true); setAnswer("");
     try {
-      const res = await fetch(`${VECTOR_OPS}/v1/code/preview`, {
+      const res = await fetch(`${VECTOR_OPS}/v1/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: `# Context:\n${context}\n\n# Question:\n${question}`,
-          language: "auto",
-          label_prefix: "AI_Query",
-        }),
+        body: JSON.stringify({ question, context }),
       });
       const data = await res.json();
-      setAnswer(data.raw_cypher || JSON.stringify(data, null, 2));
+      setAnswer(data.answer || JSON.stringify(data, null, 2));
     } catch (e) {
       setAnswer(`Error: ${e}`);
     }
@@ -945,6 +941,24 @@ export default function GraphPage() {
     setImporting(false);
   }
 
+  const [deleting, setDeleting] = useState(false);
+
+  async function deleteDisplayed() {
+    if (!graphData.nodes.length || !memgraphOnline) return;
+    setDeleting(true);
+    try {
+      const ids = graphData.nodes.map(n => n.id);
+      await fetch(`${VECTOR_OPS}/v1/graph/delete-nodes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ node_ids: ids }),
+      });
+      setGraphData({ nodes: [], edges: [], node_count: 0, edge_count: 0 });
+      setSelectedId(null);
+    } catch { /* ignore */ }
+    setDeleting(false);
+  }
+
   const memgraphOnline = statuses.find(s => s.backend === "memgraph")?.connected ?? false;
   const selectedNode = graphData.nodes.find(n => n.id === selectedId) ?? null;
 
@@ -1018,8 +1032,17 @@ export default function GraphPage() {
                   {graphLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                   Refresh
                 </button>
+                <button
+                  onClick={deleteDisplayed}
+                  disabled={deleting || !graphData.nodes.length || !memgraphOnline}
+                  title="Delete displayed nodes from Memgraph (permanent)"
+                  className="flex items-center gap-1.5 h-7 px-3 rounded-xl border text-[9px] font-bold border-red-500/20 bg-black/20 text-[var(--text-muted)] hover:text-red-400 hover:border-red-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                  {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Delete DB
+                </button>
                 <button onClick={() => setGraphData({ nodes: [], edges: [], node_count: 0, edge_count: 0 })}
-                  className="h-7 px-3 rounded-xl border text-[9px] font-bold border-[#b87333]/20 bg-black/20 text-[var(--text-muted)] hover:text-red-400/70 hover:border-red-500/20 transition-all">
+                  className="h-7 px-3 rounded-xl border text-[9px] font-bold border-[#b87333]/20 bg-black/20 text-[var(--text-muted)] hover:text-amber-400/70 hover:border-amber-500/20 transition-all"
+                  title="Clear canvas only (nodes stay in Memgraph)">
                   Clear
                 </button>
               </div>

@@ -821,7 +821,13 @@
       "Bash(powershell.exe -Command \"Start-Sleep 5; Get-NetTCPConnection -LocalPort 34085 -ErrorAction SilentlyContinue | Select-Object LocalPort, OwningProcess\")",
       "Bash(python3 -c ' *)",
       "Bash(curl -s -X POST http://localhost:34085/v1/graph/query -H 'Content-Type: application/json' -d '{\"cypher\": \"MATCH \\(a\\)-[r1]->\\(b\\) OPTIONAL MATCH \\(b\\)-[r2]->\\(c\\) RETURN a, r1, b, r2, c LIMIT 80\", \"max_nodes\": 200, \"max_edges\": 400}')",
-      "Bash(powershell.exe -Command \"kubectl rollout status deployment catest-web-rag -n catest --timeout=90s\")"
+      "Bash(powershell.exe -Command \"kubectl rollout status deployment catest-web-rag -n catest --timeout=90s\")",
+      "Bash(curl -s -X POST http://localhost:34085/v1/code/preview -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 34085 -ErrorAction SilentlyContinue | Select-Object OwningProcess\")",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 3188 -Force\")",
+      "Bash(powershell.exe -Command \"Start-Sleep 6; try { \\(Invoke-WebRequest -Uri 'http://localhost:34085/healthz' -UseBasicParsing\\).StatusCode } catch { 'NOT UP' }\")",
+      "Bash(curl -s -X POST http://localhost:34085/v1/chat -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 44412 -Force -ErrorAction SilentlyContinue\")"
     ]
   }
 }

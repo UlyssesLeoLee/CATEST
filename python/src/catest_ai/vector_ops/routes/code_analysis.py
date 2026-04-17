@@ -223,3 +223,40 @@ async def preview_code_analysis(req: CodeAnalysisRequest):
         raw_cypher=raw_cypher,
         errors=[] if statements else ["AI returned no valid Cypher statements"],
     )
+
+
+# ── Chat endpoint ──────────────────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    """Free-form Q&A with optional graph context."""
+    question: str = Field(..., min_length=1)
+    context: str = Field(default="", description="Optional context (selected node, graph state, etc.)")
+
+
+class ChatResponse(BaseModel):
+    answer: str
+
+
+CHAT_SYSTEM_PROMPT = """\
+You are an AI assistant embedded in CATEST, a knowledge-base and code-graph tool.
+The user may provide context about a selected graph node or code structure.
+Answer concisely and helpfully. You may suggest Cypher queries when relevant.
+"""
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat(req: ChatRequest):
+    """General-purpose Q&A — optionally grounded in graph node context."""
+    messages: list[dict[str, str]] = [
+        {"role": "system", "content": CHAT_SYSTEM_PROMPT},
+    ]
+    if req.context.strip():
+        messages.append({
+            "role": "user",
+            "content": f"Context:\n{req.context}\n\nQuestion: {req.question}",
+        })
+    else:
+        messages.append({"role": "user", "content": req.question})
+
+    answer = await _call_ai(messages)
+    return ChatResponse(answer=answer)
