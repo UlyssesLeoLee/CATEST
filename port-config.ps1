@@ -64,6 +64,7 @@ $PortRegistry = @(
     @{ Name = 'qdrant';           BasePort = 36333;                                     Svc = 'svc/qdrant-ext';       Target = 36333 }
     @{ Name = 'memgraph';         BasePort = 37687;                                     Svc = 'svc/memgraph-ext';     Target = 37687 }
     @{ Name = 'arroyo';           BasePort = 35115;                                     Svc = 'svc/arroyo-ext';       Target = 35115 }
+    @{ Name = 'visualvs-memgraph';BasePort = 37788;                                     Svc = 'svc/visualvs-memgraph-ext'; Target = 7687 }
 )
 # Compute AltPort dynamically
 foreach ($entry in $PortRegistry) {
@@ -87,6 +88,17 @@ function Test-PortAlive {
     }
 
     # Step 2: HTTP probe — distinguish "alive" from "dead listener" (Docker vpnkit bug)
+    # Skip HTTP probe for known non-HTTP ports to avoid false negatives (like Bolt or SQL)
+    $NonHttpPorts = @(
+        34321, 44321,  # Postgres
+        39092, 49092,  # Kafka
+        37687, 47687,  # Memgraph Bolt
+        37788, 47788   # VisualVS Memgraph Bolt
+    )
+    if ($Port -in $NonHttpPorts) {
+        return 'alive'
+    }
+
     try {
         $resp = Invoke-WebRequest -Uri "http://localhost:$Port/" -UseBasicParsing `
             -MaximumRedirection 0 -TimeoutSec 3 -ErrorAction SilentlyContinue 2>&1
@@ -297,6 +309,7 @@ $urlMap = @{
     'kafka'             = @{ Label = 'Kafka';                 Path = $null }
     'qdrant'            = @{ Label = 'Qdrant';                Path = '/dashboard' }
     'memgraph'          = @{ Label = 'Memgraph';              Path = $null }
+    'visualvs-memgraph' = @{ Label = 'VisualVS Memgraph';     Path = $null }
     'arroyo'            = @{ Label = 'Arroyo';                Path = '/' }
 }
 # Also show Envoy-routed app URLs (these go through the gateway, not direct)

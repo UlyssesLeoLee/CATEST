@@ -51,6 +51,8 @@ $Images = [ordered]@{
     'adapter-codex'       = @{ Tag = 'ghcr.io/ulyssesleolee/catest-adapter-codex:latest';       Type = 'python'; Svc = 'adapter-codex' }
     'adapter-claude-code' = @{ Tag = 'ghcr.io/ulyssesleolee/catest-adapter-claude-code:latest'; Type = 'python'; Svc = 'adapter-claude-code' }
     'adapter-antigravity' = @{ Tag = 'ghcr.io/ulyssesleolee/catest-adapter-antigravity:latest'; Type = 'python'; Svc = 'adapter-antigravity' }
+    # Vector-ops (graph + Qdrant bridge, port 34085)
+    'vector-ops'          = @{ Tag = 'ghcr.io/ulyssesleolee/catest-ai-vector-ops:latest';      Type = 'python'; Svc = 'vector-ops' }
 }
 
 # ── Select targets ────────────────────────────────────────────────────────────

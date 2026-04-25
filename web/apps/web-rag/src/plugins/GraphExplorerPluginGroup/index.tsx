@@ -21,7 +21,12 @@ import {
   Trash2,
 } from "lucide-react";
 
-const VECTOR_OPS = "http://localhost:34085";
+const VECTOR_OPS = (() => {
+  if (typeof window === "undefined") return "http://localhost:34085";
+  const { hostname, port } = window.location;
+  if (hostname === "localhost" && port !== "33088") return "http://localhost:34085";
+  return "/api/vectors";
+})();
 
 // ── Types ──
 
@@ -71,15 +76,47 @@ function RelationshipMapPlugin() {
   );
 }
 
-// ── Plugin: Node Inspector (existing) ──
+// ── Plugin: Node Inspector ──
+
+interface InspectNode {
+  id: string;
+  label: string;
+  display_name: string;
+  payload: Record<string, unknown>;
+}
 
 function NodeInspectorPlugin() {
-  const properties = [
-    { label: "Label", value: "TranslationSegment", icon: Tag, color: "text-[#c9a84c]" },
-    { label: "Internal ID", value: "a3f9-72b1-0c5e", icon: Fingerprint, color: "text-[var(--text-muted)]" },
-    { label: "Confidence", value: "0.992", icon: Layers, color: "text-[#4a8b6e]" },
-    { label: "Keywords", value: "Legal, Core, Contract", icon: Database, color: "text-[#b87333]" },
-  ];
+  const [node, setNode] = React.useState<InspectNode | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [empty, setEmpty] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch(`${VECTOR_OPS}/v1/graph/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cypher: "MATCH (n) RETURN n LIMIT 1", max_nodes: 1, max_edges: 0 }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        const n = (data.nodes ?? [])[0] ?? null;
+        setNode(n);
+        setEmpty(!n);
+      })
+      .catch(() => setEmpty(true))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const properties = node ? [
+    { label: "Label",   value: node.label || "—",        icon: Tag,         color: "text-[#c9a84c]" },
+    { label: "ID",      value: node.id.slice(0, 20),     icon: Fingerprint, color: "text-[var(--text-muted)]" },
+    { label: "Name",    value: node.display_name || "—", icon: Layers,      color: "text-[#4a8b6e]" },
+    ...Object.entries(node.payload ?? {}).slice(0, 2).map(([k, v]) => ({
+      label: k,
+      value: String(v ?? "").slice(0, 32),
+      icon: Database,
+      color: "text-[#b87333]" as const,
+    })),
+  ] : [];
 
   return (
     <div className="space-y-4">
@@ -88,22 +125,35 @@ function NodeInspectorPlugin() {
         <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Entity Inspector</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        {properties.map((prop, i) => (
-          <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-[#3e1b0d]/20 hover:border-[#b87333]/30 transition-colors">
-            <div className="flex items-center gap-3">
-              <prop.icon className={cn("w-3.5 h-3.5", prop.color)} />
-              <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-tight">{prop.label}</span>
-            </div>
-            <span className="text-[10px] font-mono font-bold text-[var(--text-primary)]">{prop.value}</span>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]/40" />
+        </div>
+      ) : (empty || !node) ? (
+        <div className="flex flex-col items-center gap-2 py-8 text-center">
+          <Database className="w-8 h-8 text-[var(--text-muted)]/20" />
+          <span className="text-[10px] text-[var(--text-muted)]/40">No nodes in graph yet</span>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-2">
+            {properties.map((prop, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-[#3e1b0d]/20 hover:border-[#b87333]/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <prop.icon className={cn("w-3.5 h-3.5", prop.color)} />
+                  <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-tight">{prop.label}</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-[var(--text-primary)] truncate max-w-[130px]">{prop.value}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <Button variant="secondary" size="sm" className="w-full h-8 text-[10px] font-bold border-[#3e1b0d]/30 bg-black/30 text-[var(--text-muted)] hover:text-[#c9a84c]">
-        <Search className="w-3 h-3 mr-2" />
-        Find Similar Entities
-      </Button>
+          <Button variant="secondary" size="sm" className="w-full h-8 text-[10px] font-bold border-[#3e1b0d]/30 bg-black/30 text-[var(--text-muted)] hover:text-[#c9a84c]">
+            <Search className="w-3 h-3 mr-2" />
+            Find Similar Entities
+          </Button>
+        </>
+      )}
     </div>
   );
 }

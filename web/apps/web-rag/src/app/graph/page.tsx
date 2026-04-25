@@ -1,7 +1,7 @@
 "use client";
 
 import React, {
-  useState, useCallback, useEffect, useRef, useMemo,
+  useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo,
 } from "react";
 import {
   Database, GitBranch, Terminal, Play, Eye, Loader2,
@@ -13,10 +13,13 @@ import {
 } from "lucide-react";
 import { Badge, Button, cn } from "@catest/ui";
 
-const VECTOR_OPS =
-  typeof window !== "undefined" && window.location.hostname !== "localhost"
-    ? "/api/vector-ops"   // k8s proxy — adjust if needed
-    : "http://localhost:34085";
+const VECTOR_OPS = (() => {
+  if (typeof window === "undefined") return "http://localhost:34085";
+  const { hostname, port } = window.location;
+  // Dev mode: direct port (Next.js dev server, not through Envoy)
+  if (hostname === "localhost" && port !== "33088") return "http://localhost:34085";
+  return "/api/vectors";  // k8s Envoy proxy (port 33088 or any non-localhost host)
+})();
 
 const LANGUAGES = ["auto","typescript","javascript","python","rust","go","java","c","cpp","csharp"];
 
@@ -65,17 +68,25 @@ function useForceGraph(
   width: number,
   height: number,
 ) {
-  const simRef = useRef<SimNode[]>([]);
-  const rafRef = useRef<number>(0);
+  const simRef    = useRef<SimNode[]>([]);
+  // O(1) id→node lookup shared with drag handler — avoids .find() on every mousemove
+  const nodeMapRef = useRef<Map<string, SimNode>>(new Map());
+  const rafRef    = useRef<number>(0);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     cancelAnimationFrame(rafRef.current);
-    if (!width || !height || nodes.length === 0) { simRef.current = []; setTick(t => t + 1); return; }
+    if (!width || !height || nodes.length === 0) {
+      simRef.current = [];
+      nodeMapRef.current = new Map();
+      setTick(t => t + 1);
+      return;
+    }
 
     const cx = width / 2, cy = height / 2;
     const r = Math.min(width, height) * 0.32;
     const step = (2 * Math.PI) / nodes.length;
+    const margin = 28;
 
     // Preserve positions for existing nodes
     const prevMap = new Map(simRef.current.map(n => [n.id, n]));
@@ -85,65 +96,81 @@ function useForceGraph(
         ? { ...prev, data: n }
         : { id: n.id, x: cx + r * Math.cos(i * step), y: cy + r * Math.sin(i * step), vx: 0, vy: 0, data: n };
     });
+    // Keep nodeMap in sync after initialisation
+    nodeMapRef.current = new Map(simRef.current.map(n => [n.id, n]));
 
     let iter = 0;
     const maxIter = 250;
     const ideal = Math.sqrt((width * height) / Math.max(nodes.length, 1)) * 1.4;
+    // Skip repulsion between pairs farther than 3× ideal — big win for sparse graphs
+    const cutoff2 = ideal * ideal * 9;
 
     function simulate() {
       const S = simRef.current;
       if (!S.length) return;
 
-      // Damping
-      for (const n of S) { n.vx *= 0.82; n.vy *= 0.82; }
+      // Run 3 physics steps per animation frame → 3× fewer React re-renders,
+      // same total simulation quality.
+      const STEPS = Math.min(3, maxIter - iter);
+      let totalKE = 0;
 
-      // Repulsion
-      for (let i = 0; i < S.length; i++) {
-        for (let j = i + 1; j < S.length; j++) {
-          const dx = S[j].x - S[i].x || 0.01;
-          const dy = S[j].y - S[i].y || 0.01;
-          const d2 = dx * dx + dy * dy;
-          const d = Math.sqrt(d2) || 0.01;
-          const f = (ideal * ideal * 1.8) / d2;
-          const fx = (dx / d) * f * 0.06;
-          const fy = (dy / d) * f * 0.06;
-          S[i].vx -= fx; S[i].vy -= fy;
-          S[j].vx += fx; S[j].vy += fy;
+      for (let step = 0; step < STEPS; step++) {
+        // Damping
+        for (const n of S) { n.vx *= 0.82; n.vy *= 0.82; }
+
+        // Repulsion — O(n²) with distance cutoff
+        for (let i = 0; i < S.length; i++) {
+          for (let j = i + 1; j < S.length; j++) {
+            const dx = S[j].x - S[i].x || 0.01;
+            const dy = S[j].y - S[i].y || 0.01;
+            const d2 = dx * dx + dy * dy;
+            if (d2 > cutoff2) continue; // skip distant pairs
+            const d = Math.sqrt(d2) || 0.01;
+            const f = (ideal * ideal * 1.8) / d2;
+            const fx = (dx / d) * f * 0.06;
+            const fy = (dy / d) * f * 0.06;
+            S[i].vx -= fx; S[i].vy -= fy;
+            S[j].vx += fx; S[j].vy += fy;
+          }
         }
-      }
 
-      // Attraction (edges)
-      const nm = new Map(S.map(n => [n.id, n]));
-      for (const e of edges) {
-        const a = nm.get(e.source_id), b = nm.get(e.target_id);
-        if (!a || !b || a === b) continue;
-        const dx = b.x - a.x, dy = b.y - a.y;
-        const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-        const f = (d - ideal) * 0.011;
-        const fx = (dx / d) * f, fy = (dy / d) * f;
-        a.vx += fx; a.vy += fy;
-        b.vx -= fx; b.vy -= fy;
-      }
+        // Attraction (edges) — nodeMapRef built once, not every frame
+        const nm = nodeMapRef.current;
+        for (const e of edges) {
+          const a = nm.get(e.source_id), b = nm.get(e.target_id);
+          if (!a || !b || a === b) continue;
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          const f = (d - ideal) * 0.011;
+          const fx = (dx / d) * f, fy = (dy / d) * f;
+          a.vx += fx; a.vy += fy;
+          b.vx -= fx; b.vy -= fy;
+        }
 
-      // Center gravity
-      const margin = 28;
-      for (const n of S) {
-        n.vx += (cx - n.x) * 0.0035;
-        n.vy += (cy - n.y) * 0.0035;
-        n.x = Math.max(margin, Math.min(width - margin, n.x + n.vx));
-        n.y = Math.max(margin, Math.min(height - margin, n.y + n.vy));
+        // Center gravity + clamp
+        for (const n of S) {
+          n.vx += (cx - n.x) * 0.0035;
+          n.vy += (cy - n.y) * 0.0035;
+          n.x = Math.max(margin, Math.min(width - margin, n.x + n.vx));
+          n.y = Math.max(margin, Math.min(height - margin, n.y + n.vy));
+          totalKE += n.vx * n.vx + n.vy * n.vy;
+        }
+        iter++;
       }
 
       setTick(t => t + 1);
-      iter++;
-      if (iter < maxIter) rafRef.current = requestAnimationFrame(simulate);
+
+      // Stop early once kinetic energy falls below threshold (converged)
+      if (iter < maxIter && totalKE > S.length * 0.01) {
+        rafRef.current = requestAnimationFrame(simulate);
+      }
     }
 
     rafRef.current = requestAnimationFrame(simulate);
     return () => cancelAnimationFrame(rafRef.current);
   }, [nodes, edges, width, height]); // eslint-disable-line
 
-  return { simNodes: simRef.current, tick };
+  return { simNodes: simRef.current, nodeMapRef, tick };
 }
 
 // ── Node color palette ────────────────────────────────────────────────────────
@@ -175,71 +202,126 @@ function ForceGraphCanvas({
   selectedEdgeId: string | null;
   onSelectEdge: (id: string | null) => void;
 }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ w: 600, h: 400 });
-  const [tx, setTx] = useState({ x: 0, y: 0, s: 1 });
+  const wrapRef          = useRef<HTMLDivElement>(null);
+  const svgRef           = useRef<SVGSVGElement>(null);
+  const transformGroupRef = useRef<SVGGElement>(null);
+  const [dims, setDims]  = useState({ w: 600, h: 400 });
+
+  // ── Viewport transform ────────────────────────────────────────────────────
+  // Stored in a ref so we can mutate it without triggering React re-renders.
+  // DOM is updated directly via applyTransform(); useLayoutEffect re-syncs
+  // after any React render caused by other state (e.g. simulation ticks).
+  const txRef     = useRef({ x: 0, y: 0, s: 1 });
   const isPanning = useRef(false);
   const panOrigin = useRef({ mx: 0, my: 0, tx: 0, ty: 0 });
   const draggingNode = useRef<string | null>(null);
+  // Cache SVG bounding rect — invalidated on resize
+  const svgRectRef = useRef<DOMRect | null>(null);
 
-  // Resize observer
+  // Resize observer — also invalidates cached rect
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
-    const ro = new ResizeObserver(([e]) =>
-      setDims({ w: e.contentRect.width, h: e.contentRect.height }),
-    );
+    const ro = new ResizeObserver(([e]) => {
+      setDims({ w: e.contentRect.width, h: e.contentRect.height });
+      svgRectRef.current = null;
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  const { simNodes, tick } = useForceGraph(nodes, edges, dims.w, dims.h);
+  const { simNodes, nodeMapRef, tick } = useForceGraph(nodes, edges, dims.w, dims.h);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const posMap = useMemo(() => new Map(simNodes.map(n => [n.id, { x: n.x, y: n.y }])), [tick]);
 
-  function toSVG(clientX: number, clientY: number) {
-    const el = wrapRef.current!.querySelector("svg")!;
-    const rect = el.getBoundingClientRect();
-    return {
-      x: (clientX - rect.left - tx.x) / tx.s,
-      y: (clientY - rect.top - tx.y) / tx.s,
-    };
+  // After every React render (including simulation ticks), re-apply the
+  // current transform so the DOM stays in sync with txRef.
+  useLayoutEffect(() => {
+    const t = txRef.current;
+    transformGroupRef.current?.setAttribute(
+      "transform", `translate(${t.x},${t.y}) scale(${t.s})`,
+    );
+  });
+
+  // Pre-compute adjacency — avoids O(nodes × edges) edges.some() in render hot path
+  const adjNodeIds = useMemo(() => {
+    if (!selectedId) return null;
+    const set = new Set<string>();
+    for (const e of edges) {
+      if (e.source_id === selectedId) set.add(e.target_id);
+      if (e.target_id === selectedId) set.add(e.source_id);
+    }
+    return set;
+  }, [selectedId, edges]);
+
+  const selEdge = useMemo(
+    () => selectedEdgeId ? (edges.find(e => e.id === selectedEdgeId) ?? null) : null,
+    [selectedEdgeId, edges],
+  );
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /** Apply transform directly to DOM — zero React state changes. */
+  function applyTransform(t: { x: number; y: number; s: number }) {
+    txRef.current = t;
+    transformGroupRef.current?.setAttribute(
+      "transform", `translate(${t.x},${t.y}) scale(${t.s})`,
+    );
   }
+
+  function getSVGRect() {
+    if (!svgRectRef.current) svgRectRef.current = svgRef.current?.getBoundingClientRect() ?? null;
+    return svgRectRef.current;
+  }
+
+  function toSVG(clientX: number, clientY: number) {
+    const rect = getSVGRect();
+    if (!rect) return { x: 0, y: 0 };
+    const t = txRef.current;
+    return { x: (clientX - rect.left - t.x) / t.s, y: (clientY - rect.top - t.y) / t.s };
+  }
+
+  // ── Event handlers ────────────────────────────────────────────────────────
 
   function onWheel(e: React.WheelEvent) {
     e.preventDefault();
-    const ns = Math.max(0.25, Math.min(5, tx.s * (e.deltaY > 0 ? 0.9 : 1.1)));
-    setTx(t => ({ ...t, s: ns }));
+    const ns = Math.max(0.25, Math.min(5, txRef.current.s * (e.deltaY > 0 ? 0.9 : 1.1)));
+    applyTransform({ ...txRef.current, s: ns });
   }
 
   function onMouseDown(e: React.MouseEvent) {
-    const target = e.target as Element;
-    // Check if clicking a node
-    const nodeEl = target.closest("[data-nodeid]");
+    const nodeEl = (e.target as Element).closest("[data-nodeid]");
     if (nodeEl) {
       draggingNode.current = nodeEl.getAttribute("data-nodeid");
       return;
     }
-    // Background pan
     isPanning.current = true;
-    panOrigin.current = { mx: e.clientX, my: e.clientY, tx: tx.x, ty: tx.y };
+    svgRef.current?.style.setProperty("cursor", "grabbing");
+    panOrigin.current = { mx: e.clientX, my: e.clientY, tx: txRef.current.x, ty: txRef.current.y };
   }
 
   function onMouseMove(e: React.MouseEvent) {
     if (draggingNode.current) {
-      const pos = toSVG(e.clientX, e.clientY);
-      const node = simNodes.find(n => n.id === draggingNode.current);
+      const pos  = toSVG(e.clientX, e.clientY);
+      // O(1) lookup via nodeMapRef — no .find() scan
+      const node = nodeMapRef.current.get(draggingNode.current);
       if (node) { node.x = pos.x; node.y = pos.y; node.vx = 0; node.vy = 0; }
       return;
     }
     if (!isPanning.current) return;
-    setTx(t => ({
-      ...t,
+    // Direct DOM update — zero React re-renders while panning
+    applyTransform({
+      ...txRef.current,
       x: panOrigin.current.tx + e.clientX - panOrigin.current.mx,
       y: panOrigin.current.ty + e.clientY - panOrigin.current.my,
-    }));
+    });
   }
 
-  function onMouseUp() { isPanning.current = false; draggingNode.current = null; }
+  function onMouseUp() {
+    isPanning.current  = false;
+    draggingNode.current = null;
+    svgRef.current?.style.setProperty("cursor", "grab");
+    svgRectRef.current = null; // invalidate in case of scroll
+  }
 
   function fitView() {
     if (!simNodes.length) return;
@@ -248,11 +330,7 @@ function ForceGraphCanvas({
     const minY = Math.min(...ys), maxY = Math.max(...ys);
     const gw = maxX - minX || 1, gh = maxY - minY || 1;
     const s = Math.min((dims.w - 80) / gw, (dims.h - 80) / gh, 2);
-    setTx({
-      x: (dims.w - gw * s) / 2 - minX * s,
-      y: (dims.h - gh * s) / 2 - minY * s,
-      s,
-    });
+    applyTransform({ x: (dims.w - gw * s) / 2 - minX * s, y: (dims.h - gh * s) / 2 - minY * s, s });
   }
 
   const isEmpty = nodes.length === 0;
@@ -266,8 +344,9 @@ function ForceGraphCanvas({
         </div>
       ) : (
         <svg
+          ref={svgRef}
           className="w-full h-full"
-          style={{ cursor: isPanning.current ? "grabbing" : "grab" }}
+          style={{ cursor: "grab" }}
           onWheel={onWheel}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
@@ -290,32 +369,25 @@ function ForceGraphCanvas({
           </pattern>
           <rect width="100%" height="100%" fill="url(#grid)" />
 
-          <g transform={`translate(${tx.x},${tx.y}) scale(${tx.s})`}>
+          {/* Transform group — managed via ref, not React prop, so pan/zoom
+              never causes React to re-render the node/edge tree */}
+          <g ref={transformGroupRef}>
             {/* Edges */}
             {edges.map(e => {
               const s = posMap.get(e.source_id), t = posMap.get(e.target_id);
               if (!s || !t || e.source_id === e.target_id) return null;
               const mx = (s.x + t.x) / 2, my = (s.y + t.y) / 2;
-              const isEdgeSel = e.id === selectedEdgeId;
-              // highlight edges connected to the selected node
-              const isNodeAdj = selectedId != null && (e.source_id === selectedId || e.target_id === selectedId);
-              const dimmed = (selectedId != null && !isNodeAdj) || (selectedEdgeId != null && !isEdgeSel);
-              const stroke = isEdgeSel
-                ? "rgba(201,168,76,0.9)"
-                : isNodeAdj
-                  ? "rgba(184,115,51,0.70)"
-                  : "rgba(184,115,51,0.25)";
-              const sw = isEdgeSel ? 2.5 : isNodeAdj ? 2 : 1.5;
+              const isEdgeSel  = e.id === selectedEdgeId;
+              const isNodeAdj  = selectedId != null && (e.source_id === selectedId || e.target_id === selectedId);
+              const dimmed     = (selectedId != null && !isNodeAdj) || (selectedEdgeId != null && !isEdgeSel);
+              const stroke     = isEdgeSel ? "rgba(201,168,76,0.9)" : isNodeAdj ? "rgba(184,115,51,0.70)" : "rgba(184,115,51,0.25)";
+              const sw         = isEdgeSel ? 2.5 : isNodeAdj ? 2 : 1.5;
               return (
                 <g key={e.id} style={{ cursor: "pointer", opacity: dimmed ? 0.2 : 1 }}
                   onClick={ev => { ev.stopPropagation(); onSelectEdge(isEdgeSel ? null : e.id); onSelect(null); }}>
                   {/* Wide invisible hit area */}
                   <line x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke="transparent" strokeWidth={12} />
-                  <line
-                    x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                    stroke={stroke} strokeWidth={sw}
-                    markerEnd="url(#arr)"
-                  />
+                  <line x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke={stroke} strokeWidth={sw} markerEnd="url(#arr)" />
                   <text x={mx} y={my - 5}
                     fill={isEdgeSel ? "rgba(201,168,76,0.95)" : isNodeAdj ? "rgba(201,168,76,0.7)" : "rgba(201,168,76,0.35)"}
                     fontSize={7} textAnchor="middle" fontFamily="monospace" pointerEvents="none">
@@ -327,15 +399,11 @@ function ForceGraphCanvas({
 
             {/* Nodes */}
             {simNodes.map(sn => {
-              const color = nodeColor(sn.data);
+              const color      = nodeColor(sn.data);
               const isSelected = sn.id === selectedId;
-              // adjacent to selected node?
-              const isAdjNode = selectedId != null && !isSelected && edges.some(
-                e => (e.source_id === selectedId && e.target_id === sn.id) || (e.target_id === selectedId && e.source_id === sn.id)
-              );
-              // adjacent to selected edge?
-              const selEdge = selectedEdgeId ? edges.find(e => e.id === selectedEdgeId) : null;
-              const isEdgeAdj = selEdge != null && (sn.id === selEdge.source_id || sn.id === selEdge.target_id);
+              // adjNodeIds pre-computed above — O(1) lookup, not O(edges) per node
+              const isAdjNode  = adjNodeIds ? adjNodeIds.has(sn.id) && !isSelected : false;
+              const isEdgeAdj  = selEdge != null && (sn.id === selEdge.source_id || sn.id === selEdge.target_id);
               const dimmedNode = (selectedId != null && !isSelected && !isAdjNode) ||
                                  (selectedEdgeId != null && !isEdgeAdj);
               const name = sn.data.display_name || String(sn.data.payload?.name ?? sn.id.slice(-6));
@@ -350,32 +418,22 @@ function ForceGraphCanvas({
                   {/* Selection ring */}
                   {isSelected && (
                     <circle cx={sn.x} cy={sn.y} r={22} fill="none"
-                      stroke={color} strokeWidth={1.5} opacity={0.6}
-                      strokeDasharray="4 2" />
+                      stroke={color} strokeWidth={1.5} opacity={0.6} strokeDasharray="4 2" />
                   )}
                   {/* Glow halo */}
-                  <circle cx={sn.x} cy={sn.y} r={18}
-                    fill={`${color}18`}
-                    stroke="none"
-                    filter={isSelected ? "url(#glow)" : undefined}
-                  />
+                  <circle cx={sn.x} cy={sn.y} r={18} fill={`${color}18`} stroke="none"
+                    filter={isSelected ? "url(#glow)" : undefined} />
                   {/* Node circle */}
-                  <circle
-                    cx={sn.x} cy={sn.y} r={15}
-                    fill={`${color}28`}
-                    stroke={color}
-                    strokeWidth={isSelected ? 2.5 : 1.5}
-                  />
+                  <circle cx={sn.x} cy={sn.y} r={15} fill={`${color}28`}
+                    stroke={color} strokeWidth={isSelected ? 2.5 : 1.5} />
                   {/* Name label */}
-                  <text x={sn.x} y={sn.y + 4}
-                    fill={color} fontSize={8} textAnchor="middle"
+                  <text x={sn.x} y={sn.y + 4} fill={color} fontSize={8} textAnchor="middle"
                     fontFamily="monospace" fontWeight="bold" pointerEvents="none">
                     {name.length > 11 ? name.slice(0, 10) + "…" : name}
                   </text>
-                  {/* Kind label below node */}
-                  <text x={sn.x} y={sn.y + 28}
-                    fill="rgba(255,255,255,0.25)" fontSize={6.5} textAnchor="middle"
-                    fontFamily="monospace" pointerEvents="none">
+                  {/* Kind label */}
+                  <text x={sn.x} y={sn.y + 28} fill="rgba(255,255,255,0.25)" fontSize={6.5}
+                    textAnchor="middle" fontFamily="monospace" pointerEvents="none">
                     {kind}
                   </text>
                 </g>
@@ -388,11 +446,11 @@ function ForceGraphCanvas({
       {/* Graph controls */}
       {!isEmpty && (
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
-          <button onClick={() => setTx(t => ({ ...t, s: Math.min(5, t.s * 1.25) }))}
+          <button onClick={() => applyTransform({ ...txRef.current, s: Math.min(5, txRef.current.s * 1.25) })}
             className="w-7 h-7 rounded-lg flex items-center justify-center border border-[#b87333]/20 bg-black/60 text-[var(--text-muted)] hover:text-[#c9a84c] hover:border-[#b87333]/40 transition-all">
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => setTx(t => ({ ...t, s: Math.max(0.25, t.s * 0.8) }))}
+          <button onClick={() => applyTransform({ ...txRef.current, s: Math.max(0.25, txRef.current.s * 0.8) })}
             className="w-7 h-7 rounded-lg flex items-center justify-center border border-[#b87333]/20 bg-black/60 text-[var(--text-muted)] hover:text-[#c9a84c] hover:border-[#b87333]/40 transition-all">
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -400,7 +458,7 @@ function ForceGraphCanvas({
             className="w-7 h-7 rounded-lg flex items-center justify-center border border-[#b87333]/20 bg-black/60 text-[var(--text-muted)] hover:text-[#c9a84c] hover:border-[#b87333]/40 transition-all">
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => setTx({ x: 0, y: 0, s: 1 })}
+          <button onClick={() => applyTransform({ x: 0, y: 0, s: 1 })}
             className="w-7 h-7 rounded-lg flex items-center justify-center border border-[#b87333]/20 bg-black/60 text-[var(--text-muted)] hover:text-[#c9a84c] hover:border-[#b87333]/40 transition-all">
             <RotateCcw className="w-3.5 h-3.5" />
           </button>

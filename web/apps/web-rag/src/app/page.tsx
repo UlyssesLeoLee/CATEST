@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { GraphExplorerPluginGroup } from "@/plugins/GraphExplorerPluginGroup";
 import { PluginGroupRenderer }        from "@catest/ui/plugins";
 import { Card, Badge, Button, SearchInput, cn, SteamEmission, VictorianDivider } from "@catest/ui";
@@ -24,6 +24,12 @@ import {
 } from "lucide-react";
 
 const GATEWAY = "http://localhost:33080";
+const VECTOR_OPS = (() => {
+  if (typeof window === "undefined") return "http://localhost:34085";
+  const { hostname, port } = window.location;
+  if (hostname === "localhost" && port !== "33088") return "http://localhost:34085";
+  return "/api/vectors";
+})();
 
 interface SearchResult {
   id?: string;
@@ -105,18 +111,12 @@ function ResultCard({ result, onClick }: { result: SearchResult; onClick?: () =>
   );
 }
 
-// ── Default results ───────────────────────────────────────────────────
-const DEFAULT_RESULTS: SearchResult[] = [
-  { id: "r1", snippet: "Memory Base Pattern: 'handleRequest' must use 'validateAuthorization' as per security baseline 2026.0.4 to prevent token leakage.", score: 0.9542, source: "SecurityPolicy_Baseline", tags: ["Policy", "Security"] },
-  { id: "r2", snippet: "Termbase Match: Pattern 'getSession' is marked as 'Forbidden' for production services. Preferred pattern is 'validateAuthorization'.", score: 0.8819, source: "Termbase_Global", tags: ["Lint", "Standard"] },
-  { id: "r3", snippet: "Snippet match from project 'CoreAPI': Successful fix applied for 'unbounded-recursion' in identical recursive descent parser logic.", score: 0.8210, source: "MB_Core_Fixes", tags: ["Debug", "Refactor"] },
-];
 
 export default function RagPage() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>(DEFAULT_RESULTS);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [latency, setLatency] = useState<number | null>(42);
+  const [latency, setLatency] = useState<number | null>(null);
   const [searched, setSearched] = useState(false);
 
   const [filterOpen, setFilterOpen] = useState(false);
@@ -128,6 +128,19 @@ export default function RagPage() {
   const [indexSource, setIndexSource] = useState("");
   const [indexing, setIndexing] = useState(false);
   const [indexSuccess, setIndexSuccess] = useState(false);
+
+  const [graphStats, setGraphStats] = useState<{ node_count: number; edge_count: number } | null>(null);
+
+  useEffect(() => {
+    fetch(`${VECTOR_OPS}/v1/graph/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cypher: "MATCH (n) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 200", max_nodes: 200, max_edges: 400 }),
+    })
+      .then(r => r.json())
+      .then(d => setGraphStats({ node_count: d.node_count ?? 0, edge_count: d.edge_count ?? 0 }))
+      .catch(() => {});
+  }, []);
 
   const doSearch = useCallback(async (q: string, f: FilterState = filter) => {
     if (!q.trim()) return;
@@ -152,13 +165,13 @@ export default function RagPage() {
           payload: item,
         }));
         if (f.minScore > 0) data = data.filter(r => (r.score ?? 0) >= f.minScore);
-        setResults(data.length > 0 ? data : DEFAULT_RESULTS);
+        setResults(data);
       } else {
-        setResults(DEFAULT_RESULTS);
+        setResults([]);
       }
     } catch {
       setLatency(Date.now() - t0);
-      setResults(DEFAULT_RESULTS);
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -286,7 +299,6 @@ export default function RagPage() {
             </h2>
             <div className="flex items-center gap-4 text-[10px] font-bold text-[var(--text-muted)]/60">
               {latency !== null && <span className="flex items-center gap-1"><Cpu className="w-3 h-3" /> Latency: {latency}ms</span>}
-              <span className="flex items-center gap-1"><Terminal className="w-3 h-3" /> Precision: 0.992</span>
               <button onClick={handleExport} className="flex items-center gap-1 text-[var(--text-brass)] hover:text-[var(--text-primary)] transition-colors">
                 <Download className="w-3 h-3" /> Export
               </button>
@@ -325,7 +337,11 @@ export default function RagPage() {
             </div>
             <div className="p-4 border-t border-[var(--verdigris)]/10 bg-[var(--verdigris)]/5 relative z-10">
               <div className="flex items-center justify-between text-[10px] text-[var(--verdigris)]/80 font-bold uppercase tracking-tight">
-                <span>Rendering 420 nodes</span>
+                <span>
+                  {graphStats
+                    ? `${graphStats.node_count} nodes · ${graphStats.edge_count} edges`
+                    : "Connecting…"}
+                </span>
                 <span>Force-Directed Layout</span>
               </div>
             </div>

@@ -23,6 +23,13 @@ spec:
           args:
             - "--memory-limit=0"
             - "--log-level=WARNING"
+            # Snapshot-based persistence:
+            # /var/lib/memgraph itself stays on overlay2 (mmap-safe).
+            # Only the snapshots sub-dir is mounted on a PVC; snapshot
+            # files use plain read/write so ext4 hostpath works fine.
+            - "--storage-snapshot-on-exit"
+            - "--storage-snapshot-interval-sec=300"
+            - "--storage-snapshot-retention-count=3"
           ports:
             - containerPort: 7687
               name: bolt
@@ -34,10 +41,14 @@ spec:
             requests:
               memory: "512Mi"
               cpu: "250m"
-  # NOTE: No volume mounted at /var/lib/memgraph.
-  # Docker Desktop's hostpath PVC AND emptyDir both use ext4 which does not
-  # support the MAP_SHARED mmap semantics Memgraph's storage engine requires
-  # (SIGSEGV exit 139 when any volume is mounted there).
-  # Memgraph uses the container overlay2 writable layer instead — ephemeral
-  # but fully functional for dev/CI. Data survives pod restarts (not node).
+          volumeMounts:
+            - name: memgraph-snapshots
+              mountPath: /var/lib/memgraph/snapshots
+      volumes:
+        - name: memgraph-snapshots
+          persistentVolumeClaim:
+            claimName: memgraph-snapshots
+  # volumeClaimTemplates intentionally empty:
+  # /var/lib/memgraph main data dir stays on overlay2 (SIGSEGV if mounted
+  # on Docker Desktop ext4 hostpath due to MAP_SHARED mmap requirement).
   volumeClaimTemplates: []

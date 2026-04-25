@@ -67,3 +67,17 @@ spec:
       targetPort: 5115
   selector:
     app: arroyo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: visualvs-memgraph-ext
+  namespace: catest
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 37788
+      targetPort: 7687
+      name: bolt
+  selector:
+    app: visualvs-memgraph

@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visualvs-memgraph
+  namespace: catest
+  labels:
+    app: visualvs-memgraph
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visualvs-memgraph
+  template:
+    metadata:
+      labels:
+        app: visualvs-memgraph
+    spec:
+      containers:
+      - image: memgraph/memgraph:latest
+        imagePullPolicy: Always
+        name: memgraph
+        ports:
+        - containerPort: 7687
+          protocol: TCP

@@ -63,6 +63,8 @@ $Services = @{
     'adapter-codex'       = @{ Deploy = 'catest-adapter-codex';       Image = 'ghcr.io/ulyssesleolee/catest-adapter-codex:latest';       Module = 'python' }
     'adapter-claude-code' = @{ Deploy = 'catest-adapter-claude-code'; Image = 'ghcr.io/ulyssesleolee/catest-adapter-claude-code:latest'; Module = 'python' }
     'adapter-antigravity' = @{ Deploy = 'catest-adapter-antigravity'; Image = 'ghcr.io/ulyssesleolee/catest-adapter-antigravity:latest'; Module = 'python' }
+    # Vector-ops: graph + Qdrant bridge (port 34085). Dir overrides the svcDir name.
+    'vector-ops'          = @{ Deploy = 'catest-ai-vector-ops';       Image = 'ghcr.io/ulyssesleolee/catest-ai-vector-ops:latest';       Module = 'python'; Dir = 'ai-vector-ops' }
 }
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -187,6 +189,11 @@ if ($Build) {
             # Python services use Dockerfile.<service-name> from python/docker/
             $dockerfileName = "Dockerfile.$($name)"
             docker build -t $spec.Image -f "$pythonDir/docker/$dockerfileName" $pythonDir
+            # Fallback: some python services have a Dir that differs from the name
+            if ($LASTEXITCODE -ne 0 -and $spec.ContainsKey('Dir')) {
+                $dockerfileName = "Dockerfile.$($spec.Dir)"
+                docker build -t $spec.Image -f "$pythonDir/docker/$dockerfileName" $pythonDir
+            }
         }
         if ($LASTEXITCODE -ne 0) { Fatal "Docker build failed for $name" }
     }
@@ -377,12 +384,14 @@ $applyOrder = @(
     # Orchestration domain
     'intent-gateway', 'orchestrator-svc', 'memory-service', 'dispatch-router',
     'mcp-facade', 'trace-audit',
-    'adapter-codex', 'adapter-claude-code', 'adapter-antigravity'
+    'adapter-codex', 'adapter-claude-code', 'adapter-antigravity',
+    'vector-ops'
 )
 
 foreach ($name in $applyOrder) {
     if ($name -notin $Selected) { continue }
-    $svcDir = "$K8s/services/$name/"
+    $dirName = if ($spec.ContainsKey('Dir')) { $spec.Dir } else { $name }
+    $svcDir = "$K8s/services/$dirName/"
     if (-not (Test-Path $svcDir)) { Warn "No manifests for $name at $svcDir"; continue }
 
     $spec = $Services[$name]

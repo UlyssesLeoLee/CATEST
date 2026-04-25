@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visualvs-memgraph
+  namespace: catest
+  labels:
+    app: visualvs-memgraph
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visualvs-memgraph
+  template:
+    metadata:
+      labels:
+        app: visualvs-memgraph
+    spec:
+      containers:
+        - name: memgraph
+          image: memgraph/memgraph:latest
+          imagePullPolicy: Always
+          args:
+            # Snapshot-based persistence (same strategy as memgraph StatefulSet):
+            # main data dir stays on overlay2; only snapshots sub-dir is mounted.
+            - "--storage-snapshot-on-exit"
+            - "--storage-snapshot-interval-sec=300"
+            - "--storage-snapshot-retention-count=3"
+          ports:
+            - containerPort: 7687
+              protocol: TCP
+          volumeMounts:
+            - name: visualvs-memgraph-snapshots
+              mountPath: /var/lib/memgraph/snapshots
+      volumes:
+        - name: visualvs-memgraph-snapshots
+          persistentVolumeClaim:
+            claimName: visualvs-memgraph-snapshots

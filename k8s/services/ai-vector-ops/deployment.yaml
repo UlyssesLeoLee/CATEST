@@ -51,13 +51,14 @@ spec:
             httpGet:
               path: /healthz
               port: 34085
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 20
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /healthz
               port: 34085
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             periodSeconds: 10
 ---
 apiVersion: v1
